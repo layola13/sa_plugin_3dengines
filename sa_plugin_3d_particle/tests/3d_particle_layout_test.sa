@@ -1,0 +1,168 @@
+@import "../3d_particle.sal"
+
+@test "3d_particle init and tick"():
+L_ENTRY:
+    p = stack_alloc SA3D_PARTICLE_SIZE
+    call @sa3d_particle_init(&p)
+    age0 = call @sa3d_particle_get_age(&p)
+    lt0 = call @sa3d_particle_get_lifetime(&p)
+    age0_ok = eq age0, 0
+    lt0_ok = eq lt0, 0
+    ok0 = and age0_ok, lt0_ok
+    br ok0 -> L_STEP2, L_ERR
+L_STEP2:
+    store p+SA3D_PARTICLE_lifetime, 1000 as i32
+    store p+SA3D_PARTICLE_velocity, 100 as i32
+    call @sa3d_particle_tick(&p, 10)
+    age1 = call @sa3d_particle_get_age(&p)
+    px = load p+SA3D_PARTICLE_position as i32
+    age1_ok = eq age1, 10
+    px_ok = eq px, 1000
+    ok = and age1_ok, px_ok
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3090)
+
+@test "3d_particle is alive checks lifetime"():
+L_ENTRY:
+    p = stack_alloc SA3D_PARTICLE_SIZE
+    call @sa3d_particle_init(&p)
+    store p+SA3D_PARTICLE_lifetime, 100 as i32
+    alive0 = call @sa3d_particle_is_alive(&p)
+    alive0_ok = eq alive0, 1
+    br alive0_ok -> L_STEP2, L_ERR
+L_STEP2:
+    store p+SA3D_PARTICLE_age, 100 as i32
+    alive1 = call @sa3d_particle_is_alive(&p)
+    alive1_ok = eq alive1, 0
+    br alive1_ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3091)
+
+@test "3d_particle emitter desc init"():
+L_ENTRY:
+    d = alloc SA3D_EMITTER_DESC_SIZE
+    call @sa3d_emitter_desc_init(&d)
+    mp = call @sa3d_emitter_desc_get_max_particles(&d)
+    sr = call @sa3d_emitter_desc_get_spawn_rate(&d)
+    mp_ok = eq mp, 100
+    sr_ok = eq sr, 10
+    ok = and mp_ok, sr_ok
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3092)
+
+@test "3d_particle fixed ms tick and progress"():
+L_ENTRY:
+    p = stack_alloc SA3D_PARTICLE_SIZE
+    call @sa3d_particle_init(&p)
+    call @sa3d_particle_set_lifetime(&p, 1000)
+    call @sa3d_particle_set_position(&p, 10, 20, 30)
+    call @sa3d_particle_set_velocity(&p, 2000, 3000, 4000)
+    alive = call @sa3d_particle_tick_ms(&p, 250)
+    age = call @sa3d_particle_get_age(&p)
+    px = load p+SA3D_PARTICLE_position as i32
+    py = load p+4 as i32
+    pz = load p+8 as i32
+    progress = call @sa3d_particle_age_per_mille(&p)
+    alive_ok = eq alive, 1
+    age_ok = eq age, 250
+    px_ok = eq px, 510
+    py_ok = eq py, 770
+    pz_ok = eq pz, 1030
+    progress_ok = eq progress, 250
+    a = and alive_ok, age_ok
+    b = and px_ok, py_ok
+    c = and pz_ok, progress_ok
+    ab = and a, b
+    ok = and ab, c
+    br ok -> L_STEP2, L_ERR
+L_STEP2:
+    alive2 = call @sa3d_particle_tick_ms(&p, 900)
+    age2 = call @sa3d_particle_get_age(&p)
+    progress2 = call @sa3d_particle_age_per_mille(&p)
+    alive2_ok = eq alive2, 0
+    age2_ok = eq age2, 1000
+    progress2_ok = eq progress2, 1000
+    d = and alive2_ok, age2_ok
+    ok2 = and d, progress2_ok
+    br ok2 -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3093)
+
+@test "3d_particle emitter validation and spawn budget"():
+L_ENTRY:
+    d = alloc SA3D_EMITTER_DESC_SIZE
+    acc = stack_alloc 4
+    call @sa3d_emitter_desc_init(&d)
+    call @sa3d_emitter_desc_set_limits(&d, 4, 10)
+    call @sa3d_emitter_desc_set_lifetime_range(&d, 100, 200)
+    call @sa3d_emitter_desc_set_space(&d, SA3D_PARTICLE_SPACE_WORLD)
+    valid = call @sa3d_emitter_desc_is_valid(&d)
+    valid_ok = eq valid, 1
+    store acc+0, 0 as i32
+    c0 = call @sa3d_emitter_spawn_count(&d, &acc, 50)
+    rem0 = load acc+0 as i32
+    c1 = call @sa3d_emitter_spawn_count(&d, &acc, 100)
+    rem1 = load acc+0 as i32
+    c0_ok = eq c0, 0
+    rem0_ok = eq rem0, 500
+    c1_ok = eq c1, 1
+    rem1_ok = eq rem1, 500
+    space_good = call @sa3d_emitter_space_is_valid(SA3D_PARTICLE_SPACE_WORLD)
+    space_bad = call @sa3d_emitter_space_is_valid(99)
+    space_good_ok = eq space_good, 1
+    space_bad_ok = eq space_bad, 0
+    a = and valid_ok, c0_ok
+    b = and rem0_ok, c1_ok
+    c = and rem1_ok, space_good_ok
+    ab = and a, b
+    cd = and c, space_bad_ok
+    ok = and ab, cd
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3094)
+
+@test "3d_particle emitter spawn particle initializes live particle"():
+L_ENTRY:
+    d = alloc SA3D_EMITTER_DESC_SIZE
+    p = alloc SA3D_PARTICLE_SIZE
+    call @sa3d_emitter_desc_init(&d)
+    store d+SA3D_EMITTER_DESC_lifetime_min, 100 as i32
+    store d+SA3D_EMITTER_DESC_lifetime_max, 110 as i32
+    store d+SA3D_EMITTER_DESC_initial_speed_min, 1000 as i32
+    store d+SA3D_EMITTER_DESC_initial_speed_max, 1010 as i32
+    call @sa3d_emitter_spawn_particle(&d, &p, 5)
+    lifetime = call @sa3d_particle_get_lifetime(&p)
+    speed = load p+SA3D_PARTICLE_velocity as i32
+    seed = load p+SA3D_PARTICLE_seed as i32
+    age = call @sa3d_particle_get_age(&p)
+    alive = call @sa3d_particle_is_alive(&p)
+    lifetime_ok = eq lifetime, 105
+    speed_ok = eq speed, 1000
+    seed_ok = eq seed, 5
+    age_ok = eq age, 0
+    alive_ok = eq alive, 1
+    a = and lifetime_ok, speed_ok
+    b = and seed_ok, age_ok
+    c = and a, b
+    ok = and c, alive_ok
+    !p
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3095)

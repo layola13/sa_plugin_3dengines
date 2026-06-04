@@ -1,0 +1,1316 @@
+#def SA3D_LIGHT_VERSION_MAJOR = 0
+#def SA3D_LIGHT_VERSION_MINOR = 1
+
+#def SA3D_LIGHT_AMBIENT = 0
+#def SA3D_LIGHT_DIRECTIONAL = 1
+#def SA3D_LIGHT_POINT = 2
+#def SA3D_LIGHT_SPOT = 3
+
+#def SA3D_LIGHT_DESC_kind = +0
+#def SA3D_LIGHT_DESC_enabled = +4
+#def SA3D_LIGHT_DESC_color = +8
+#def SA3D_LIGHT_DESC_position = +24
+#def SA3D_LIGHT_DESC_direction = +40
+#def SA3D_LIGHT_DESC_intensity = +56
+#def SA3D_LIGHT_DESC_range = +60
+#def SA3D_LIGHT_DESC_inner_angle = +64
+#def SA3D_LIGHT_DESC_outer_angle = +68
+#def SA3D_LIGHT_DESC_SIZE = 72
+
+#def SA3D_LIGHT_BEVY_kind = +0
+#def SA3D_LIGHT_BEVY_enabled = +4
+#def SA3D_LIGHT_BEVY_color = +8
+#def SA3D_LIGHT_BEVY_intensity = +24
+#def SA3D_LIGHT_BEVY_range = +28
+#def SA3D_LIGHT_BEVY_radius = +32
+#def SA3D_LIGHT_BEVY_inner_angle = +36
+#def SA3D_LIGHT_BEVY_outer_angle = +40
+#def SA3D_LIGHT_BEVY_shadow_maps_enabled = +44
+#def SA3D_LIGHT_BEVY_contact_shadows_enabled = +48
+#def SA3D_LIGHT_BEVY_affects_lightmapped = +52
+#def SA3D_LIGHT_BEVY_shadow_depth_bias = +56
+#def SA3D_LIGHT_BEVY_shadow_normal_bias = +60
+#def SA3D_LIGHT_BEVY_shadow_map_near_z = +64
+#def SA3D_LIGHT_BEVY_SIZE = 72
+
+#def SA3D_LIGHT_CONST_AMBIENT_BRIGHTNESS = 1117782016
+#def SA3D_LIGHT_CONST_DIRECTIONAL_ILLUMINANCE = 1176256512
+#def SA3D_LIGHT_CONST_POINT_INTENSITY = 1232348160
+#def SA3D_LIGHT_CONST_SPOT_INTENSITY = 1232348160
+#def SA3D_LIGHT_CONST_RANGE = 1101004800
+#def SA3D_LIGHT_CONST_SPOT_OUTER_ANGLE = 1061752795
+#def SA3D_LIGHT_CONST_POINT_SHADOW_DEPTH_BIAS = 1034147594
+#def SA3D_LIGHT_CONST_POINT_SHADOW_NORMAL_BIAS = 1058642330
+#def SA3D_LIGHT_CONST_LIGHT_SHADOW_MAP_NEAR_Z = 1036831949
+#def SA3D_LIGHT_CONST_DIRECTIONAL_SPOT_SHADOW_DEPTH_BIAS = 1017370378
+#def SA3D_LIGHT_CONST_DIRECTIONAL_SPOT_SHADOW_NORMAL_BIAS = 1072064102
+
+#def SA3D_CUBEMAP_LAYOUT_CROSS_VERTICAL = 0
+#def SA3D_CUBEMAP_LAYOUT_CROSS_HORIZONTAL = 1
+#def SA3D_CUBEMAP_LAYOUT_SEQUENCE_VERTICAL = 2
+#def SA3D_CUBEMAP_LAYOUT_SEQUENCE_HORIZONTAL = 3
+
+#def SA3D_SHADOW_FILTERING_METHOD_HARDWARE_2X2 = 0
+#def SA3D_SHADOW_FILTERING_METHOD_GAUSSIAN = 1
+#def SA3D_SHADOW_FILTERING_METHOD_TEMPORAL = 2
+
+#def SA3D_LIGHT_MARKER_NOT_SHADOW_CASTER = 1
+#def SA3D_LIGHT_MARKER_NOT_SHADOW_RECEIVER = 2
+#def SA3D_LIGHT_MARKER_TRANSMITTED_SHADOW_RECEIVER = 4
+
+#def SA3D_LIGHT_DIRECTIONAL_TEXTURE_image = +0
+#def SA3D_LIGHT_DIRECTIONAL_TEXTURE_tiled = +8
+#def SA3D_LIGHT_DIRECTIONAL_TEXTURE_SIZE = 16
+
+#def SA3D_LIGHT_POINT_TEXTURE_image = +0
+#def SA3D_LIGHT_POINT_TEXTURE_cubemap_layout = +8
+#def SA3D_LIGHT_POINT_TEXTURE_SIZE = 16
+
+#def SA3D_LIGHT_SPOT_TEXTURE_image = +0
+#def SA3D_LIGHT_SPOT_TEXTURE_SIZE = 8
+
+#def SA3D_DIRECTIONAL_LIGHT_SHADOW_MAP_size = +0
+#def SA3D_DIRECTIONAL_LIGHT_SHADOW_MAP_SIZE = 8
+
+#def SA3D_POINT_LIGHT_SHADOW_MAP_size = +0
+#def SA3D_POINT_LIGHT_SHADOW_MAP_SIZE = 8
+
+#def SA3D_SUN_DISK_angular_size = +0
+#def SA3D_SUN_DISK_intensity = +4
+#def SA3D_SUN_DISK_SIZE = 8
+
+#def SA3D_CASCADE_SHADOW_CONFIG_num_cascades = +0
+#def SA3D_CASCADE_SHADOW_CONFIG_minimum_distance = +4
+#def SA3D_CASCADE_SHADOW_CONFIG_maximum_distance = +8
+#def SA3D_CASCADE_SHADOW_CONFIG_first_cascade_far_bound = +12
+#def SA3D_CASCADE_SHADOW_CONFIG_overlap_proportion = +16
+#def SA3D_CASCADE_SHADOW_CONFIG_bound0 = +20
+#def SA3D_CASCADE_SHADOW_CONFIG_bound1 = +24
+#def SA3D_CASCADE_SHADOW_CONFIG_bound2 = +28
+#def SA3D_CASCADE_SHADOW_CONFIG_bound3 = +32
+#def SA3D_CASCADE_SHADOW_CONFIG_SIZE = 36
+
+@import "../sa_plugin_3d_math/3d_math.sal"
+
+@sa3d_light_desc_clear(&light: ptr) -> void:
+L_ENTRY:
+    color = ptr_add light, SA3D_LIGHT_DESC_color
+    position = ptr_add light, SA3D_LIGHT_DESC_position
+    direction = ptr_add light, SA3D_LIGHT_DESC_direction
+    store light+SA3D_LIGHT_DESC_kind, SA3D_LIGHT_AMBIENT as i32
+    store light+SA3D_LIGHT_DESC_enabled, 0 as i32
+    store color+SA3D_COLOR_r, SA3D_F32_ONE_BITS as i32
+    store color+SA3D_COLOR_g, SA3D_F32_ONE_BITS as i32
+    store color+SA3D_COLOR_b, SA3D_F32_ONE_BITS as i32
+    store color+SA3D_COLOR_a, SA3D_F32_ONE_BITS as i32
+    store position+SA3D_VEC3_x, SA3D_F32_ZERO_BITS as i32
+    store position+SA3D_VEC3_y, SA3D_F32_ZERO_BITS as i32
+    store position+SA3D_VEC3_z, SA3D_F32_ZERO_BITS as i32
+    store position+SA3D_VEC4_w, SA3D_F32_ZERO_BITS as i32
+    store direction+SA3D_VEC3_x, SA3D_F32_ZERO_BITS as i32
+    store direction+SA3D_VEC3_y, SA3D_F32_ZERO_BITS as i32
+    store direction+SA3D_VEC3_z, SA3D_F32_NEG_ONE_BITS as i32
+    store direction+SA3D_VEC4_w, SA3D_F32_ZERO_BITS as i32
+    store light+SA3D_LIGHT_DESC_intensity, SA3D_F32_ZERO_BITS as i32
+    store light+SA3D_LIGHT_DESC_range, SA3D_F32_ZERO_BITS as i32
+    store light+SA3D_LIGHT_DESC_inner_angle, SA3D_F32_ZERO_BITS as i32
+    store light+SA3D_LIGHT_DESC_outer_angle, SA3D_F32_ZERO_BITS as i32
+    !direction
+    !position
+    !color
+    !light
+    return
+
+@sa3d_light_desc_init(&light: ptr, kind: i32, intensity: i32, range: i32) -> void:
+L_ENTRY:
+    call @sa3d_light_desc_clear(&light)
+    store light+SA3D_LIGHT_DESC_kind, kind as i32
+    store light+SA3D_LIGHT_DESC_enabled, 1 as i32
+    store light+SA3D_LIGHT_DESC_intensity, intensity as i32
+    store light+SA3D_LIGHT_DESC_range, range as i32
+    !range
+    !intensity
+    !kind
+    !light
+    return
+
+@sa3d_light_ambient(&light: ptr, brightness: i32) -> void:
+L_ENTRY:
+    call @sa3d_light_desc_init(&light, SA3D_LIGHT_AMBIENT, brightness, SA3D_F32_ZERO_BITS)
+    !brightness
+    !light
+    return
+
+@sa3d_light_directional(&light: ptr, illuminance: i32, dx: i32, dy: i32, dz: i32) -> void:
+L_ENTRY:
+    call @sa3d_light_desc_init(&light, SA3D_LIGHT_DIRECTIONAL, illuminance, SA3D_F32_ZERO_BITS)
+    call @sa3d_light_set_direction(&light, dx, dy, dz)
+    !dz
+    !dy
+    !dx
+    !illuminance
+    !light
+    return
+
+@sa3d_light_point(&light: ptr, intensity: i32, range: i32, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    call @sa3d_light_desc_init(&light, SA3D_LIGHT_POINT, intensity, range)
+    call @sa3d_light_set_position(&light, x, y, z)
+    !z
+    !y
+    !x
+    !range
+    !intensity
+    !light
+    return
+
+@sa3d_light_spot(&light: ptr, intensity: i32, range: i32, inner_angle: i32, outer_angle: i32) -> void:
+L_ENTRY:
+    call @sa3d_light_desc_init(&light, SA3D_LIGHT_SPOT, intensity, range)
+    store light+SA3D_LIGHT_DESC_inner_angle, inner_angle as i32
+    store light+SA3D_LIGHT_DESC_outer_angle, outer_angle as i32
+    !outer_angle
+    !inner_angle
+    !range
+    !intensity
+    !light
+    return
+
+@sa3d_light_set_enabled(&light: ptr, enabled: i32) -> void:
+L_ENTRY:
+    store light+SA3D_LIGHT_DESC_enabled, enabled as i32
+    !enabled
+    !light
+    return
+
+@sa3d_light_is_enabled(&light: ptr) -> i32:
+L_ENTRY:
+    enabled = load light+SA3D_LIGHT_DESC_enabled as i32
+    active = ne enabled, 0
+    br active -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !active
+    !enabled
+    !light
+    return 1
+
+L_FALSE:
+    !active
+    !enabled
+    !light
+    return 0
+
+@sa3d_light_set_color(&light: ptr, r: i32, g: i32, b: i32, a: i32) -> void:
+L_ENTRY:
+    color = ptr_add light, SA3D_LIGHT_DESC_color
+    store color+SA3D_COLOR_r, r as i32
+    store color+SA3D_COLOR_g, g as i32
+    store color+SA3D_COLOR_b, b as i32
+    store color+SA3D_COLOR_a, a as i32
+    !a
+    !b
+    !g
+    !r
+    !color
+    !light
+    return
+
+@sa3d_light_set_position(&light: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    position = ptr_add light, SA3D_LIGHT_DESC_position
+    store position+SA3D_VEC3_x, x as i32
+    store position+SA3D_VEC3_y, y as i32
+    store position+SA3D_VEC3_z, z as i32
+    !z
+    !y
+    !x
+    !position
+    !light
+    return
+
+@sa3d_light_set_direction(&light: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    direction = ptr_add light, SA3D_LIGHT_DESC_direction
+    store direction+SA3D_VEC3_x, x as i32
+    store direction+SA3D_VEC3_y, y as i32
+    store direction+SA3D_VEC3_z, z as i32
+    !z
+    !y
+    !x
+    !direction
+    !light
+    return
+
+@sa3d_light_set_intensity(&light: ptr, intensity: i32) -> void:
+L_ENTRY:
+    store light+SA3D_LIGHT_DESC_intensity, intensity as i32
+    !intensity
+    !light
+    return
+
+@sa3d_light_set_range(&light: ptr, range: i32) -> void:
+L_ENTRY:
+    store light+SA3D_LIGHT_DESC_range, range as i32
+    !range
+    !light
+    return
+
+@sa3d_light_set_spot_angles(&light: ptr, inner_angle: i32, outer_angle: i32) -> void:
+L_ENTRY:
+    store light+SA3D_LIGHT_DESC_inner_angle, inner_angle as i32
+    store light+SA3D_LIGHT_DESC_outer_angle, outer_angle as i32
+    !outer_angle
+    !inner_angle
+    !light
+    return
+
+@sa3d_light_kind_is_valid(kind: i32) -> i32:
+L_ENTRY:
+    is_ambient = eq kind, SA3D_LIGHT_AMBIENT
+    is_directional = eq kind, SA3D_LIGHT_DIRECTIONAL
+    is_point = eq kind, SA3D_LIGHT_POINT
+    is_spot = eq kind, SA3D_LIGHT_SPOT
+    p1 = or is_ambient, is_directional
+    p2 = or is_point, is_spot
+    ok = or p1, p2
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p2
+    !p1
+    !is_spot
+    !is_point
+    !is_directional
+    !is_ambient
+    !kind
+    return 1
+
+L_FALSE:
+    !ok
+    !p2
+    !p1
+    !is_spot
+    !is_point
+    !is_directional
+    !is_ambient
+    !kind
+    return 0
+
+@sa3d_light_is_positional(&light: ptr) -> i32:
+L_ENTRY:
+    kind = load light+SA3D_LIGHT_DESC_kind as i32
+    is_point = eq kind, SA3D_LIGHT_POINT
+    is_spot = eq kind, SA3D_LIGHT_SPOT
+    ok = or is_point, is_spot
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !is_spot
+    !is_point
+    !kind
+    !light
+    return 1
+
+L_FALSE:
+    !ok
+    !is_spot
+    !is_point
+    !kind
+    !light
+    return 0
+
+@sa3d_light_has_finite_range(&light: ptr) -> i32:
+L_ENTRY:
+    positional = call @sa3d_light_is_positional(&light)
+    range = load light+SA3D_LIGHT_DESC_range as i32
+    positive = sgt range, 0
+    ok = and positional, positive
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !positive
+    !range
+    !positional
+    !light
+    return 1
+
+L_FALSE:
+    !ok
+    !positive
+    !range
+    !positional
+    !light
+    return 0
+
+@sa3d_light_spot_angles_valid(&light: ptr) -> i32:
+L_ENTRY:
+    kind = load light+SA3D_LIGHT_DESC_kind as i32
+    is_spot = eq kind, SA3D_LIGHT_SPOT
+    br is_spot -> L_CHECK, L_TRUE_NON_SPOT
+
+L_TRUE_NON_SPOT:
+    !is_spot
+    !kind
+    !light
+    return 1
+
+L_CHECK:
+    inner = load light+SA3D_LIGHT_DESC_inner_angle as i32
+    outer = load light+SA3D_LIGHT_DESC_outer_angle as i32
+    ok = sle inner, outer
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !outer
+    !inner
+    !is_spot
+    !kind
+    !light
+    return 1
+
+L_FALSE:
+    !ok
+    !outer
+    !inner
+    !is_spot
+    !kind
+    !light
+    return 0
+
+@sa3d_light_desc_validate(&light: ptr) -> i32:
+L_ENTRY:
+    kind = load light+SA3D_LIGHT_DESC_kind as i32
+    kind_ok = call @sa3d_light_kind_is_valid(kind)
+    enabled = call @sa3d_light_is_enabled(&light)
+    spot_ok = call @sa3d_light_spot_angles_valid(&light)
+    positional = call @sa3d_light_is_positional(&light)
+    range = load light+SA3D_LIGHT_DESC_range as i32
+    range_positive = sgt range, 0
+    non_positional = eq positional, 0
+    range_final = or non_positional, range_positive
+    p1 = and kind_ok, enabled
+    p2 = and spot_ok, range_final
+    ok = and p1, p2
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p2
+    !p1
+    !range_final
+    !non_positional
+    !range_positive
+    !range
+    !positional
+    !spot_ok
+    !enabled
+    !kind_ok
+    !kind
+    !light
+    return 1
+
+L_FALSE:
+    !ok
+    !p2
+    !p1
+    !range_final
+    !non_positional
+    !range_positive
+    !range
+    !positional
+    !spot_ok
+    !enabled
+    !kind_ok
+    !kind
+    !light
+    return 0
+
+@sa3d_light_affects_point(&light: ptr, &point: ptr) -> i32:
+L_ENTRY:
+    enabled = call @sa3d_light_is_enabled(&light)
+    active = ne enabled, 0
+    br active -> L_KIND, L_FALSE_DISABLED
+
+L_FALSE_DISABLED:
+    !active
+    !enabled
+    !point
+    !light
+    return 0
+
+L_KIND:
+    kind = load light+SA3D_LIGHT_DESC_kind as i32
+    is_ambient = eq kind, SA3D_LIGHT_AMBIENT
+    is_directional = eq kind, SA3D_LIGHT_DIRECTIONAL
+    global_light = or is_ambient, is_directional
+    br global_light -> L_TRUE_GLOBAL, L_RANGE
+
+L_TRUE_GLOBAL:
+    !global_light
+    !is_directional
+    !is_ambient
+    !kind
+    !active
+    !enabled
+    !point
+    !light
+    return 1
+
+L_RANGE:
+    range = load light+SA3D_LIGHT_DESC_range as i32
+    positive = sgt range, 0
+    br positive -> L_DISTANCE, L_FALSE_RANGE
+
+L_DISTANCE:
+    position = ptr_add light, SA3D_LIGHT_DESC_position
+    lx = load position+SA3D_VEC3_x as i32
+    ly = load position+SA3D_VEC3_y as i32
+    lz = load position+SA3D_VEC3_z as i32
+    px = load point+SA3D_VEC3_x as i32
+    py = load point+SA3D_VEC3_y as i32
+    pz = load point+SA3D_VEC3_z as i32
+    dx = sub px, lx
+    dy = sub py, ly
+    dz = sub pz, lz
+    dx2 = mul dx, dx
+    dy2 = mul dy, dy
+    dz2 = mul dz, dz
+    dxy = add dx2, dy2
+    dist2 = add dxy, dz2
+    range2 = mul range, range
+    inside = sle dist2, range2
+    br inside -> L_TRUE_DISTANCE, L_FALSE_DISTANCE
+
+L_TRUE_DISTANCE:
+    !inside
+    !range2
+    !dist2
+    !dxy
+    !dz2
+    !dy2
+    !dx2
+    !dz
+    !dy
+    !dx
+    !pz
+    !py
+    !px
+    !lz
+    !ly
+    !lx
+    !position
+    !positive
+    !range
+    !global_light
+    !is_directional
+    !is_ambient
+    !kind
+    !active
+    !enabled
+    !point
+    !light
+    return 1
+
+L_FALSE_DISTANCE:
+    !inside
+    !range2
+    !dist2
+    !dxy
+    !dz2
+    !dy2
+    !dx2
+    !dz
+    !dy
+    !dx
+    !pz
+    !py
+    !px
+    !lz
+    !ly
+    !lx
+    !position
+    !positive
+    !range
+    !global_light
+    !is_directional
+    !is_ambient
+    !kind
+    !active
+    !enabled
+    !point
+    !light
+    return 0
+
+L_FALSE_RANGE:
+    !positive
+    !range
+    !global_light
+    !is_directional
+    !is_ambient
+    !kind
+    !active
+    !enabled
+    !point
+    !light
+    return 0
+
+@sa3d_light_bevy_set_white(&light: ptr) -> void:
+L_ENTRY:
+    color = ptr_add light, SA3D_LIGHT_BEVY_color
+    store color+SA3D_COLOR_r, 1.0 as f32
+    store color+SA3D_COLOR_g, 1.0 as f32
+    store color+SA3D_COLOR_b, 1.0 as f32
+    store color+SA3D_COLOR_a, 1.0 as f32
+    !color
+    !light
+    return
+
+@sa3d_light_bevy_clear(&light: ptr) -> void:
+L_ENTRY:
+    call @sa3d_light_bevy_set_white(&light)
+    store light+SA3D_LIGHT_BEVY_kind, SA3D_LIGHT_AMBIENT as i32
+    store light+SA3D_LIGHT_BEVY_enabled, 1 as i32
+    store light+SA3D_LIGHT_BEVY_intensity, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_range, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_radius, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_inner_angle, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_outer_angle, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_maps_enabled, 0 as i32
+    store light+SA3D_LIGHT_BEVY_contact_shadows_enabled, 0 as i32
+    store light+SA3D_LIGHT_BEVY_affects_lightmapped, 1 as i32
+    store light+SA3D_LIGHT_BEVY_shadow_depth_bias, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_normal_bias, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_map_near_z, 0.0 as f32
+    !light
+    return
+
+@sa3d_light_bevy_default_ambient(&light: ptr) -> void:
+L_ENTRY:
+    call @sa3d_light_bevy_clear(&light)
+    store light+SA3D_LIGHT_BEVY_kind, SA3D_LIGHT_AMBIENT as i32
+    store light+SA3D_LIGHT_BEVY_intensity, 80.0 as f32
+    !light
+    return
+
+@sa3d_light_bevy_global_ambient_none(&light: ptr) -> void:
+L_ENTRY:
+    call @sa3d_light_bevy_default_ambient(&light)
+    store light+SA3D_LIGHT_BEVY_intensity, 0.0 as f32
+    !light
+    return
+
+@sa3d_light_bevy_default_directional(&light: ptr) -> void:
+L_ENTRY:
+    call @sa3d_light_bevy_clear(&light)
+    store light+SA3D_LIGHT_BEVY_kind, SA3D_LIGHT_DIRECTIONAL as i32
+    store light+SA3D_LIGHT_BEVY_intensity, 10000.0 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_depth_bias, 0.02 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_normal_bias, 1.8 as f32
+    !light
+    return
+
+@sa3d_light_bevy_default_point(&light: ptr) -> void:
+L_ENTRY:
+    call @sa3d_light_bevy_clear(&light)
+    store light+SA3D_LIGHT_BEVY_kind, SA3D_LIGHT_POINT as i32
+    store light+SA3D_LIGHT_BEVY_intensity, 1000000.0 as f32
+    store light+SA3D_LIGHT_BEVY_range, 20.0 as f32
+    store light+SA3D_LIGHT_BEVY_radius, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_depth_bias, 0.08 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_normal_bias, 0.6 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_map_near_z, 0.1 as f32
+    !light
+    return
+
+@sa3d_light_bevy_default_spot(&light: ptr) -> void:
+L_ENTRY:
+    call @sa3d_light_bevy_clear(&light)
+    store light+SA3D_LIGHT_BEVY_kind, SA3D_LIGHT_SPOT as i32
+    store light+SA3D_LIGHT_BEVY_intensity, 1000000.0 as f32
+    store light+SA3D_LIGHT_BEVY_range, 20.0 as f32
+    store light+SA3D_LIGHT_BEVY_radius, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_inner_angle, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_outer_angle, 0.78539816339 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_depth_bias, 0.02 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_normal_bias, 1.8 as f32
+    store light+SA3D_LIGHT_BEVY_shadow_map_near_z, 0.1 as f32
+    !light
+    return
+
+@sa3d_light_bevy_set_shadow_flags(&light: ptr, shadow_maps: i32, contact_shadows: i32) -> void:
+L_ENTRY:
+    store light+SA3D_LIGHT_BEVY_shadow_maps_enabled, shadow_maps as i32
+    store light+SA3D_LIGHT_BEVY_contact_shadows_enabled, contact_shadows as i32
+    !contact_shadows
+    !shadow_maps
+    !light
+    return
+
+@sa3d_light_bevy_set_radius(&light: ptr, radius: f32) -> void:
+L_ENTRY:
+    negative = fcmp_lt radius, 0.0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store light+SA3D_LIGHT_BEVY_radius, 0.0 as f32
+    !negative
+    !radius
+    !light
+    return
+
+L_SET:
+    store light+SA3D_LIGHT_BEVY_radius, radius as f32
+    !negative
+    !radius
+    !light
+    return
+
+@sa3d_light_bevy_set_range(&light: ptr, range: f32) -> void:
+L_ENTRY:
+    negative = fcmp_lt range, 0.0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store light+SA3D_LIGHT_BEVY_range, 0.0 as f32
+    !negative
+    !range
+    !light
+    return
+
+L_SET:
+    store light+SA3D_LIGHT_BEVY_range, range as f32
+    !negative
+    !range
+    !light
+    return
+
+@sa3d_light_bevy_spot_angles_valid(&light: ptr) -> i32:
+L_ENTRY:
+    inner = load light+SA3D_LIGHT_BEVY_inner_angle as f32
+    outer = load light+SA3D_LIGHT_BEVY_outer_angle as f32
+    inner_non_negative = fcmp_ge inner, 0.0
+    outer_non_negative = fcmp_ge outer, 0.0
+    ordered = fcmp_le inner, outer
+    below_hemi = fcmp_lt outer, 1.57079632679
+    p1 = and inner_non_negative, outer_non_negative
+    p2 = and ordered, below_hemi
+    ok = and p1, p2
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p2
+    !p1
+    !below_hemi
+    !ordered
+    !outer_non_negative
+    !inner_non_negative
+    !outer
+    !inner
+    !light
+    return 1
+
+L_FALSE:
+    !ok
+    !p2
+    !p1
+    !below_hemi
+    !ordered
+    !outer_non_negative
+    !inner_non_negative
+    !outer
+    !inner
+    !light
+    return 0
+
+@sa3d_light_bevy_set_spot_angles_clamped(&light: ptr, inner: f32, outer: f32) -> void:
+L_ENTRY:
+    outer_neg = fcmp_lt outer, 0.0
+    br outer_neg -> L_OUTER_ZERO, L_OUTER_LIMIT
+
+L_OUTER_ZERO:
+    store light+SA3D_LIGHT_BEVY_outer_angle, 0.0 as f32
+    store light+SA3D_LIGHT_BEVY_inner_angle, 0.0 as f32
+    !outer_neg
+    !outer
+    !inner
+    !light
+    return
+
+L_OUTER_LIMIT:
+    too_wide = fcmp_ge outer, 1.57079632679
+    br too_wide -> L_OUTER_HEMI, L_OUTER_SET
+
+L_OUTER_HEMI:
+    store light+SA3D_LIGHT_BEVY_outer_angle, 1.57079625130 as f32
+    outer_final_h = load light+SA3D_LIGHT_BEVY_outer_angle as f32
+    inner_neg_h = fcmp_lt inner, 0.0
+    br inner_neg_h -> L_INNER_ZERO_H, L_INNER_ORDER_H
+
+L_INNER_ZERO_H:
+    store light+SA3D_LIGHT_BEVY_inner_angle, 0.0 as f32
+    !inner_neg_h
+    !outer_final_h
+    !too_wide
+    !outer_neg
+    !outer
+    !inner
+    !light
+    return
+
+L_INNER_ORDER_H:
+    inner_gt_h = fcmp_gt inner, outer_final_h
+    br inner_gt_h -> L_INNER_OUTER_H, L_INNER_SET_H
+
+L_INNER_OUTER_H:
+    store light+SA3D_LIGHT_BEVY_inner_angle, outer_final_h as f32
+    !inner_gt_h
+    !inner_neg_h
+    !outer_final_h
+    !too_wide
+    !outer_neg
+    !outer
+    !inner
+    !light
+    return
+
+L_INNER_SET_H:
+    store light+SA3D_LIGHT_BEVY_inner_angle, inner as f32
+    !inner_gt_h
+    !inner_neg_h
+    !outer_final_h
+    !too_wide
+    !outer_neg
+    !outer
+    !inner
+    !light
+    return
+
+L_OUTER_SET:
+    store light+SA3D_LIGHT_BEVY_outer_angle, outer as f32
+    outer_final = load light+SA3D_LIGHT_BEVY_outer_angle as f32
+    inner_neg = fcmp_lt inner, 0.0
+    br inner_neg -> L_INNER_ZERO, L_INNER_ORDER
+
+L_INNER_ZERO:
+    store light+SA3D_LIGHT_BEVY_inner_angle, 0.0 as f32
+    !inner_neg
+    !outer_final
+    !too_wide
+    !outer_neg
+    !outer
+    !inner
+    !light
+    return
+
+L_INNER_ORDER:
+    inner_gt = fcmp_gt inner, outer_final
+    br inner_gt -> L_INNER_OUTER, L_INNER_SET
+
+L_INNER_OUTER:
+    store light+SA3D_LIGHT_BEVY_inner_angle, outer_final as f32
+    !inner_gt
+    !inner_neg
+    !outer_final
+    !too_wide
+    !outer_neg
+    !outer
+    !inner
+    !light
+    return
+
+L_INNER_SET:
+    store light+SA3D_LIGHT_BEVY_inner_angle, inner as f32
+    !inner_gt
+    !inner_neg
+    !outer_final
+    !too_wide
+    !outer_neg
+    !outer
+    !inner
+    !light
+    return
+
+@sa3d_light_bevy_validate(&light: ptr) -> i32:
+L_ENTRY:
+    kind = load light+SA3D_LIGHT_BEVY_kind as i32
+    kind_ok = call @sa3d_light_kind_is_valid(kind)
+    enabled = load light+SA3D_LIGHT_BEVY_enabled as i32
+    enabled_ok = ne enabled, 0
+    range = load light+SA3D_LIGHT_BEVY_range as f32
+    radius = load light+SA3D_LIGHT_BEVY_radius as f32
+    intensity = load light+SA3D_LIGHT_BEVY_intensity as f32
+    range_ok = fcmp_ge range, 0.0
+    radius_ok = fcmp_ge radius, 0.0
+    intensity_ok = fcmp_ge intensity, 0.0
+    is_spot = eq kind, SA3D_LIGHT_SPOT
+    br is_spot -> L_SPOT, L_NON_SPOT
+
+L_SPOT:
+    spot_ok = call @sa3d_light_bevy_spot_angles_valid(&light)
+    p1 = and kind_ok, enabled_ok
+    p2 = and range_ok, radius_ok
+    p3 = and intensity_ok, spot_ok
+    q = and p1, p2
+    ok = and q, p3
+    br ok -> L_TRUE_SPOT, L_FALSE_SPOT
+
+L_TRUE_SPOT:
+    !ok
+    !q
+    !p3
+    !p2
+    !p1
+    !spot_ok
+    !is_spot
+    !intensity_ok
+    !radius_ok
+    !range_ok
+    !intensity
+    !radius
+    !range
+    !enabled_ok
+    !enabled
+    !kind_ok
+    !kind
+    !light
+    return 1
+
+L_FALSE_SPOT:
+    !ok
+    !q
+    !p3
+    !p2
+    !p1
+    !spot_ok
+    !is_spot
+    !intensity_ok
+    !radius_ok
+    !range_ok
+    !intensity
+    !radius
+    !range
+    !enabled_ok
+    !enabled
+    !kind_ok
+    !kind
+    !light
+    return 0
+
+L_NON_SPOT:
+    p1n = and kind_ok, enabled_ok
+    p2n = and range_ok, radius_ok
+    okn0 = and p1n, p2n
+    okn = and okn0, intensity_ok
+    br okn -> L_TRUE_NON, L_FALSE_NON
+
+L_TRUE_NON:
+    !okn
+    !okn0
+    !p2n
+    !p1n
+    !is_spot
+    !intensity_ok
+    !radius_ok
+    !range_ok
+    !intensity
+    !radius
+    !range
+    !enabled_ok
+    !enabled
+    !kind_ok
+    !kind
+    !light
+    return 1
+
+L_FALSE_NON:
+    !okn
+    !okn0
+    !p2n
+    !p1n
+    !is_spot
+    !intensity_ok
+    !radius_ok
+    !range_ok
+    !intensity
+    !radius
+    !range
+    !enabled_ok
+    !enabled
+    !kind_ok
+    !kind
+    !light
+    return 0
+
+@sa3d_light_bevy_point_attenuation(&light: ptr, distance: f32) -> f32:
+L_ENTRY:
+    range = load light+SA3D_LIGHT_BEVY_range as f32
+    positive_range = fcmp_gt range, 0.0
+    distance_ok = fcmp_ge distance, 0.0
+    ok = and positive_range, distance_ok
+    br ok -> L_CHECK_RANGE, L_ZERO
+
+L_ZERO:
+    !ok
+    !distance_ok
+    !positive_range
+    !range
+    !distance
+    !light
+    return 0.0
+
+L_CHECK_RANGE:
+    inside = fcmp_le distance, range
+    br inside -> L_CALC, L_OUT
+
+L_OUT:
+    !inside
+    !ok
+    !distance_ok
+    !positive_range
+    !range
+    !distance
+    !light
+    return 0.0
+
+L_CALC:
+    d_over_r = fdiv distance, range
+    d2 = fmul d_over_r, d_over_r
+    d4 = fmul d2, d2
+    one_minus = fsub 1.0, d4
+    att = fmul one_minus, one_minus
+    !one_minus
+    !d4
+    !d2
+    !d_over_r
+    !inside
+    !ok
+    !distance_ok
+    !positive_range
+    !range
+    !distance
+    !light
+    return att
+
+@sa3d_shadow_filtering_method_is_valid(method: i32) -> i32:
+L_ENTRY:
+    hardware = eq method, SA3D_SHADOW_FILTERING_METHOD_HARDWARE_2X2
+    gaussian = eq method, SA3D_SHADOW_FILTERING_METHOD_GAUSSIAN
+    temporal = eq method, SA3D_SHADOW_FILTERING_METHOD_TEMPORAL
+    p = or hardware, gaussian
+    ok = or p, temporal
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p
+    !temporal
+    !gaussian
+    !hardware
+    !method
+    return 1
+
+L_FALSE:
+    !ok
+    !p
+    !temporal
+    !gaussian
+    !hardware
+    !method
+    return 0
+
+@sa3d_shadow_filtering_method_default() -> i32:
+L_ENTRY:
+    return SA3D_SHADOW_FILTERING_METHOD_GAUSSIAN
+
+@sa3d_light_marker_mask_is_valid(mask: i32) -> i32:
+L_ENTRY:
+    extra = and mask, -8
+    ok = eq extra, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !extra
+    !mask
+    return 1
+
+L_FALSE:
+    !ok
+    !extra
+    !mask
+    return 0
+
+@sa3d_light_marker_mask_has(mask: i32, flag: i32) -> i32:
+L_ENTRY:
+    present = and mask, flag
+    ok = ne present, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !present
+    !flag
+    !mask
+    return 1
+
+L_FALSE:
+    !ok
+    !present
+    !flag
+    !mask
+    return 0
+
+@sa3d_directional_light_texture_init(&texture: ptr) -> void:
+L_ENTRY:
+    store texture+SA3D_LIGHT_DIRECTIONAL_TEXTURE_image, 0 as i64
+    store texture+SA3D_LIGHT_DIRECTIONAL_TEXTURE_tiled, 0 as i32
+    !texture
+    return
+
+@sa3d_point_light_texture_init(&texture: ptr) -> void:
+L_ENTRY:
+    store texture+SA3D_LIGHT_POINT_TEXTURE_image, 0 as i64
+    store texture+SA3D_LIGHT_POINT_TEXTURE_cubemap_layout, SA3D_CUBEMAP_LAYOUT_CROSS_VERTICAL as i32
+    !texture
+    return
+
+@sa3d_spot_light_texture_init(&texture: ptr) -> void:
+L_ENTRY:
+    store texture+SA3D_LIGHT_SPOT_TEXTURE_image, 0 as i64
+    !texture
+    return
+
+@sa3d_directional_light_shadow_map_init(&shadow_map: ptr) -> void:
+L_ENTRY:
+    store shadow_map+SA3D_DIRECTIONAL_LIGHT_SHADOW_MAP_size, 2048 as i64
+    !shadow_map
+    return
+
+@sa3d_point_light_shadow_map_init(&shadow_map: ptr) -> void:
+L_ENTRY:
+    store shadow_map+SA3D_POINT_LIGHT_SHADOW_MAP_size, 1024 as i64
+    !shadow_map
+    return
+
+@sa3d_sun_disk_earth(&sun_disk: ptr) -> void:
+L_ENTRY:
+    store sun_disk+SA3D_SUN_DISK_angular_size, 0.00930842 as f32
+    store sun_disk+SA3D_SUN_DISK_intensity, 1.0 as f32
+    !sun_disk
+    return
+
+@sa3d_sun_disk_off(&sun_disk: ptr) -> void:
+L_ENTRY:
+    store sun_disk+SA3D_SUN_DISK_angular_size, 0.0 as f32
+    store sun_disk+SA3D_SUN_DISK_intensity, 0.0 as f32
+    !sun_disk
+    return
+
+@sa3d_sun_disk_default(&sun_disk: ptr) -> void:
+L_ENTRY:
+    call @sa3d_sun_disk_earth(&sun_disk)
+    !sun_disk
+    return
+
+@sa3d_directional_light_shadow_map_validate(&shadow_map: ptr) -> i32:
+L_ENTRY:
+    size = load shadow_map+SA3D_DIRECTIONAL_LIGHT_SHADOW_MAP_size as i64
+    positive = sgt size, 0
+    br positive -> L_CHECK, L_FIX_ONE
+
+L_FIX_ONE:
+    store shadow_map+SA3D_DIRECTIONAL_LIGHT_SHADOW_MAP_size, 1 as i64
+    !positive
+    !size
+    !shadow_map
+    return 0
+
+L_CHECK:
+    size_minus = sub size, 1
+    masked = and size, size_minus
+    pow2 = eq masked, 0
+    br pow2 -> L_OK, L_FIX
+
+L_OK:
+    !pow2
+    !masked
+    !size_minus
+    !positive
+    !size
+    !shadow_map
+    return 1
+
+L_FIX:
+    s1 = lshr size_minus, 1
+    v1 = or size_minus, s1
+    s2 = lshr v1, 2
+    v2 = or v1, s2
+    s3 = lshr v2, 4
+    v3 = or v2, s3
+    s4 = lshr v3, 8
+    v4 = or v3, s4
+    s5 = lshr v4, 16
+    v5 = or v4, s5
+    s6 = lshr v5, 32
+    v6 = or v5, s6
+    next = add v6, 1
+    store shadow_map+SA3D_DIRECTIONAL_LIGHT_SHADOW_MAP_size, next as i64
+    !next
+    !s6
+    !v5
+    !s5
+    !v4
+    !s4
+    !v3
+    !s3
+    !v2
+    !s2
+    !v1
+    !s1
+    !pow2
+    !masked
+    !size_minus
+    !positive
+    !size
+    !shadow_map
+    return 0
+
+@sa3d_cascade_shadow_config_default(&config: ptr) -> void:
+L_ENTRY:
+    store config+SA3D_CASCADE_SHADOW_CONFIG_num_cascades, 4 as i32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_minimum_distance, 0.1 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_maximum_distance, 150.0 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_first_cascade_far_bound, 10.0 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_overlap_proportion, 0.2 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_bound0, 10.0 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_bound1, 24.6621207433 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_bound2, 60.8220199557 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_bound3, 150.0 as f32
+    !config
+    return
+
+@sa3d_cascade_shadow_config_build_single(&config: ptr, minimum_distance: f32, maximum_distance: f32, overlap_proportion: f32) -> i32:
+L_ENTRY:
+    min_ok = fcmp_ge minimum_distance, 0.0
+    max_ok = fcmp_gt maximum_distance, minimum_distance
+    overlap_low = fcmp_ge overlap_proportion, 0.0
+    overlap_high = fcmp_lt overlap_proportion, 1.0
+    overlap_ok = and overlap_low, overlap_high
+    p = and min_ok, max_ok
+    ok = and p, overlap_ok
+    br ok -> L_SET, L_FALSE
+
+L_SET:
+    store config+SA3D_CASCADE_SHADOW_CONFIG_num_cascades, 1 as i32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_minimum_distance, minimum_distance as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_maximum_distance, maximum_distance as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_first_cascade_far_bound, maximum_distance as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_overlap_proportion, overlap_proportion as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_bound0, maximum_distance as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_bound1, 0.0 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_bound2, 0.0 as f32
+    store config+SA3D_CASCADE_SHADOW_CONFIG_bound3, 0.0 as f32
+    !ok
+    !p
+    !overlap_ok
+    !overlap_high
+    !overlap_low
+    !max_ok
+    !min_ok
+    !overlap_proportion
+    !maximum_distance
+    !minimum_distance
+    !config
+    return 1
+
+L_FALSE:
+    !ok
+    !p
+    !overlap_ok
+    !overlap_high
+    !overlap_low
+    !max_ok
+    !min_ok
+    !overlap_proportion
+    !maximum_distance
+    !minimum_distance
+    !config
+    return 0
+
+@sa3d_cascade_shadow_config_validate(&config: ptr) -> i32:
+L_ENTRY:
+    num = load config+SA3D_CASCADE_SHADOW_CONFIG_num_cascades as i32
+    minimum_distance = load config+SA3D_CASCADE_SHADOW_CONFIG_minimum_distance as f32
+    maximum_distance = load config+SA3D_CASCADE_SHADOW_CONFIG_maximum_distance as f32
+    first_bound = load config+SA3D_CASCADE_SHADOW_CONFIG_first_cascade_far_bound as f32
+    overlap = load config+SA3D_CASCADE_SHADOW_CONFIG_overlap_proportion as f32
+    num_ok_low = sgt num, 0
+    num_ok_high = sle num, 4
+    num_ok = and num_ok_low, num_ok_high
+    min_ok = fcmp_ge minimum_distance, 0.0
+    max_ok = fcmp_gt maximum_distance, minimum_distance
+    single = eq num, 1
+    first_ok_multi = fcmp_gt first_bound, minimum_distance
+    first_ok = or single, first_ok_multi
+    overlap_low = fcmp_ge overlap, 0.0
+    overlap_high = fcmp_lt overlap, 1.0
+    overlap_ok = and overlap_low, overlap_high
+    p1 = and num_ok, min_ok
+    p2 = and max_ok, first_ok
+    p3 = and p1, p2
+    ok = and p3, overlap_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p3
+    !p2
+    !p1
+    !overlap_ok
+    !overlap_high
+    !overlap_low
+    !first_ok
+    !first_ok_multi
+    !single
+    !max_ok
+    !min_ok
+    !num_ok
+    !num_ok_high
+    !num_ok_low
+    !overlap
+    !first_bound
+    !maximum_distance
+    !minimum_distance
+    !num
+    !config
+    return 1
+
+L_FALSE:
+    !ok
+    !p3
+    !p2
+    !p1
+    !overlap_ok
+    !overlap_high
+    !overlap_low
+    !first_ok
+    !first_ok_multi
+    !single
+    !max_ok
+    !min_ok
+    !num_ok
+    !num_ok_high
+    !num_ok_low
+    !overlap
+    !first_bound
+    !maximum_distance
+    !minimum_distance
+    !num
+    !config
+    return 0

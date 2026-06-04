@@ -1,0 +1,15 @@
+{
+  "schema": "sa.plugin/1",
+  "name": "3d_image",
+  "version": "0.1.0",
+  "source": { "type": "local", "path": "." },
+  "abi": { "plugin": 1, "saasm": ">=0.4.0" },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_image.so" } },
+  "interfaces": { "sal": { "path": "3d_image.sal" } },
+  "assets": { "share": [{ "path": "3d_image.sal", "target": "3d_image.sal" }] },
+  "skills": ["3d.image"],
+  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [], "env": [], "process": { "spawn": false, "exec": [] } },
+  "dependencies": {
+    "3d_color": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_color", "optional": false }
+  }
+}

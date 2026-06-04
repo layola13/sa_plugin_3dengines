@@ -1,0 +1,102 @@
+<Component name="Sa3dCube">
+  <state>
+    sa3d_ctx = 0
+    shader = 0
+    pipeline = 0
+    vertex = 0
+    index = 0
+    uniform = 0
+    frame = 0
+  </state>
+
+  <section class="sa3d-stage">
+    <h1>SA 3D Engine Cube</h1>
+    <p>WGSL, geometry, indices, and uniform frames are emitted from SA/WASM memory.</p>
+    <canvas id="sa3d-canvas" width="1024" height="768" renderer="sa3d"></canvas>
+  </section>
+
+  @ffi_wrapper onMount:
+  L_ENTRY:
+    canvas = call @sax_dom_query(*SA3D_CUBE_CANVAS_SELECTOR, SA3D_CUBE_CANVAS_SELECTOR_LEN)
+    out_ctx = stack_alloc 8
+    rc_ctx = call @sa3d_request_context(canvas, *out_ctx)
+    ctx_h = load out_ctx+0 as i64
+    store state+Sa3dCube_sa3d_ctx, ctx_h as i64
+    has_ctx = ne ctx_h, 0
+    br has_ctx -> L_REQUEST_FRAME, L_MOUNT_DONE
+
+  L_REQUEST_FRAME:
+    rc_frame = call @sa3d_request_frame(ctx_h, *SA3D_CUBE_FRAME_HANDLER, SA3D_CUBE_FRAME_HANDLER_LEN, ctx)
+    ret
+
+  L_MOUNT_DONE:
+    ret
+
+  @ffi_wrapper onUnmount:
+  L_ENTRY:
+    ctx_h = load state+Sa3dCube_sa3d_ctx as i64
+    rc_cancel = call @sa3d_cancel_frame(ctx_h)
+    ret
+
+  @ffi_wrapper frame:
+  L_ENTRY:
+    ctx_h = load state+Sa3dCube_sa3d_ctx as i64
+    has_ctx = ne ctx_h, 0
+    br has_ctx -> L_CHECK_INIT, L_DONE
+
+  L_CHECK_INIT:
+    vertex_h = load state+Sa3dCube_vertex as i64
+    has_vertex = ne vertex_h, 0
+    br has_vertex -> L_DRAW, L_INIT
+
+  L_INIT:
+    out_shader = stack_alloc 8
+    rc_shader = call @sa3d_create_shader(ctx_h, *SA3D_CUBE_SHADER, SA3D_CUBE_SHADER_LEN, *out_shader)
+    shader_h = load out_shader+0 as i64
+    store state+Sa3dCube_shader, shader_h as i64
+
+    out_vertex = stack_alloc 8
+    rc_vertex = call @sa3d_create_buffer(ctx_h, SA3D_CUBE_VERTEX_USAGE, *SA3D_CUBE_VERTICES, SA3D_CUBE_VERTEX_BYTES, *out_vertex)
+    vertex_h = load out_vertex+0 as i64
+    store state+Sa3dCube_vertex, vertex_h as i64
+
+    out_index = stack_alloc 8
+    rc_index = call @sa3d_create_buffer(ctx_h, SA3D_CUBE_INDEX_USAGE, *SA3D_CUBE_INDICES, SA3D_CUBE_INDEX_BYTES, *out_index)
+    index_h = load out_index+0 as i64
+    store state+Sa3dCube_index, index_h as i64
+
+    out_uniform = stack_alloc 8
+    rc_uniform = call @sa3d_create_buffer(ctx_h, SA3D_CUBE_UNIFORM_USAGE, *SA3D_CUBE_UNIFORM_FRAME_0, SA3D_CUBE_UNIFORM_BYTES, *out_uniform)
+    uniform_h = load out_uniform+0 as i64
+    store state+Sa3dCube_uniform, uniform_h as i64
+
+    out_pipeline = stack_alloc 8
+    rc_pipeline = call @sa3d_create_cube_pipeline(ctx_h, shader_h, *SA3D_CUBE_VS_ENTRY, SA3D_CUBE_VS_ENTRY_LEN, *SA3D_CUBE_FS_ENTRY, SA3D_CUBE_FS_ENTRY_LEN, *out_pipeline)
+    pipeline_h = load out_pipeline+0 as i64
+    store state+Sa3dCube_pipeline, pipeline_h as i64
+    jmp L_DRAW
+
+  L_DRAW:
+    pipeline_h = load state+Sa3dCube_pipeline as i64
+    index_h = load state+Sa3dCube_index as i64
+    uniform_h = load state+Sa3dCube_uniform as i64
+    frame_idx = load state+Sa3dCube_frame as i64
+    rc_write = call @sa3d_write_buffer_frame(ctx_h, uniform_h, 0, *SA3D_CUBE_UNIFORM_FRAMES, SA3D_CUBE_UNIFORM_FRAME_BYTES, frame_idx)
+    rc_submit = call @sa3d_submit_cube_frame(ctx_h, pipeline_h, vertex_h, index_h, uniform_h, SA3D_CUBE_INDEX_COUNT)
+    next_frame = add frame_idx, 1
+    should_wrap = eq next_frame, SA3D_CUBE_FRAME_COUNT
+    br should_wrap -> L_RESET_FRAME, L_STORE_FRAME
+
+  L_STORE_FRAME:
+    store state+Sa3dCube_frame, next_frame as i64
+    ret
+
+  L_RESET_FRAME:
+    store state+Sa3dCube_frame, 0 as i64
+    ret
+
+  L_DONE:
+    ret
+
+  !sa3d_ctx !shader !pipeline !vertex !index !uniform !frame
+</Component>

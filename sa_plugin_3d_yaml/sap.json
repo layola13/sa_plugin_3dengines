@@ -1,0 +1,13 @@
+{
+  "schema": "sa.plugin/1",
+  "name": "3d_yaml",
+  "version": "0.1.0",
+  "source": { "type": "local", "path": "." },
+  "abi": { "plugin": 1, "saasm": ">=0.4.0" },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_yaml.so" } },
+  "interfaces": { "sal": { "path": "3d_yaml.sal" } },
+  "assets": { "share": [{ "path": "3d_yaml.sal", "target": "3d_yaml.sal" }] },
+  "skills": ["3d.yaml"],
+  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [], "env": [], "process": { "spawn": false, "exec": [] } },
+  "dependencies": {}
+}

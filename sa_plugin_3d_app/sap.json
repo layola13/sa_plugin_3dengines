@@ -1,0 +1,15 @@
+{
+  "schema": "sa.plugin/1",
+  "name": "3d_app",
+  "version": "0.1.0",
+  "source": { "type": "local", "path": "." },
+  "abi": { "plugin": 1, "saasm": ">=0.4.0" },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_app.so" } },
+  "interfaces": { "sal": { "path": "3d_app.sal" } },
+  "assets": { "share": [{ "path": "3d_app.sal", "target": "3d_app.sal" }] },
+  "skills": ["3d.app"],
+  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [], "env": [], "process": { "spawn": false, "exec": [] } },
+  "dependencies": {
+    "3d_time": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_time", "optional": false }
+  }
+}

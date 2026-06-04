@@ -1,0 +1,51 @@
+{
+  "schema": "sa.plugin/1",
+  "name": "3d",
+  "version": "0.1.0",
+  "source": { "type": "local", "path": "." },
+  "abi": { "plugin": 1, "saasm": ">=0.4.0", "symbols": "browser-imports" },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d.so" } },
+  "interfaces": {
+    "wasm_imports": [{ "path": "sa3d.sai" }],
+    "sal": { "path": "3d.sal" }
+  },
+  "assets": {
+    "share": [
+      { "path": "3d.sal", "target": "3d.sal" },
+      { "path": "zig-out/share/sa3d_airlock.js", "target": "sa3d_airlock.js" },
+      { "path": "sa3d.sai", "target": "sa3d.sai" },
+      { "path": "sa3d.sal", "target": "sa3d.sal" },
+      { "path": "demos/rotating_cube_3d.sax", "target": "demos/rotating_cube_3d.sax" },
+      { "path": "demos/rotating_cube_3d_decl.sax3d", "target": "demos/rotating_cube_3d_decl.sax3d" },
+      { "path": "demos/scene_cubes_3d.sax", "target": "demos/scene_cubes_3d.sax" },
+      { "path": "tools/lower_sa3d_scene.mjs", "target": "tools/lower_sa3d_scene.mjs" }
+    ]
+  },
+  "skills": ["3d"],
+  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [], "env": ["HOME", "SA_*"], "process": { "spawn": false, "exec": [] } },
+  "dependencies": {
+    "3d_animation": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_animation", "optional": false },
+    "3d_app": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_app", "optional": false },
+    "3d_math": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_math", "optional": false },
+    "3d_time": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_time", "optional": false },
+    "3d_color": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_color", "optional": false },
+    "3d_shader": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_shader", "optional": false },
+    "3d_image": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_image", "optional": false },
+    "3d_transform": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_transform", "optional": false },
+    "3d_geometry": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_geometry", "optional": false },
+    "3d_camera": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_camera", "optional": false },
+    "3d_camera_controller": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_camera_controller", "optional": false },
+    "3d_material": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_material", "optional": false },
+    "3d_pbr": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_pbr", "optional": false },
+    "3d_light": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_light", "optional": false },
+    "3d_scene": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_scene", "optional": false },
+    "3d_gizmos": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_gizmos", "optional": false },
+    "3d_gltf": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_gltf", "optional": false },
+    "3d_xml": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_xml", "optional": false },
+    "3d_yaml": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_yaml", "optional": false },
+    "3d_render_wgpu": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_render_wgpu", "optional": false },
+    "3d_particle": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_particle", "optional": false },
+    "3d_input": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_input", "optional": false },
+    "3d_ecs": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_ecs", "optional": false }
+  }
+}

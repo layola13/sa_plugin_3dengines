@@ -1,0 +1,384 @@
+#def SA3D_GIZMOS_VERSION_MAJOR = 0
+#def SA3D_GIZMOS_VERSION_MINOR = 1
+
+#def SA3D_GIZMO_LINE = 1
+#def SA3D_GIZMO_RAY = 2
+#def SA3D_GIZMO_AABB = 3
+#def SA3D_GIZMO_SPHERE = 4
+#def SA3D_GIZMO_GRID = 5
+
+#def SA3D_GIZMO_FLAGS_DEPTH_TEST = 1
+#def SA3D_GIZMO_FLAGS_SCREEN_SPACE = 2
+
+#def SA3D_GIZMO_LINE_DESC_start = +0
+#def SA3D_GIZMO_LINE_DESC_end = +12
+#def SA3D_GIZMO_LINE_DESC_color = +24
+#def SA3D_GIZMO_LINE_DESC_width = +40
+#def SA3D_GIZMO_LINE_DESC_flags = +44
+#def SA3D_GIZMO_LINE_DESC_SIZE = 48
+
+#def SA3D_GIZMO_SHAPE_DESC_kind = +0
+#def SA3D_GIZMO_SHAPE_DESC_flags = +4
+#def SA3D_GIZMO_SHAPE_DESC_transform = +8
+#def SA3D_GIZMO_SHAPE_DESC_color = +72
+#def SA3D_GIZMO_SHAPE_DESC_params = +88
+#def SA3D_GIZMO_SHAPE_DESC_SIZE = 104
+
+#def SA3D_GIZMO_LIST_DESC_lines_ptr = +0
+#def SA3D_GIZMO_LIST_DESC_lines_len = +8
+#def SA3D_GIZMO_LIST_DESC_shapes_ptr = +16
+#def SA3D_GIZMO_LIST_DESC_shapes_len = +24
+#def SA3D_GIZMO_LIST_DESC_camera = +32
+#def SA3D_GIZMO_LIST_DESC_SIZE = 40
+
+@import "../sa_plugin_3d_math/3d_math.sal"
+
+@sa3d_gizmo_line_desc_init(&line: ptr) -> void:
+L_ENTRY:
+    store line+SA3D_GIZMO_LINE_DESC_start, 0 as i32
+    store line+4, 0 as i32
+    store line+8, 0 as i32
+    store line+SA3D_GIZMO_LINE_DESC_end, 0 as i32
+    store line+16, 0 as i32
+    store line+20, 0 as i32
+    store line+SA3D_GIZMO_LINE_DESC_color, 1065353216 as i32
+    store line+28, 0 as i32
+    store line+32, 0 as i32
+    store line+36, 1065353216 as i32
+    store line+SA3D_GIZMO_LINE_DESC_width, 1065353216 as i32
+    store line+SA3D_GIZMO_LINE_DESC_flags, 0 as i32
+    !line
+    return
+
+@sa3d_gizmo_line_desc_set_start(&line: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    store line+SA3D_GIZMO_LINE_DESC_start, x as i32
+    store line+4, y as i32
+    store line+8, z as i32
+    !z
+    !y
+    !x
+    !line
+    return
+
+@sa3d_gizmo_line_desc_set_end(&line: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    store line+SA3D_GIZMO_LINE_DESC_end, x as i32
+    store line+16, y as i32
+    store line+20, z as i32
+    !z
+    !y
+    !x
+    !line
+    return
+
+@sa3d_gizmo_line_desc_get_start_x(&line: ptr) -> i32:
+L_ENTRY:
+    x = load line+SA3D_GIZMO_LINE_DESC_start as i32
+    !line
+    return x
+
+@sa3d_gizmo_line_desc_get_end_x(&line: ptr) -> i32:
+L_ENTRY:
+    x = load line+SA3D_GIZMO_LINE_DESC_end as i32
+    !line
+    return x
+
+@sa3d_gizmo_kind_is_valid(kind: i32) -> i32:
+L_ENTRY:
+    is_line = eq kind, SA3D_GIZMO_LINE
+    is_ray = eq kind, SA3D_GIZMO_RAY
+    is_aabb = eq kind, SA3D_GIZMO_AABB
+    is_sphere = eq kind, SA3D_GIZMO_SPHERE
+    is_grid = eq kind, SA3D_GIZMO_GRID
+    a = or is_line, is_ray
+    b = or is_aabb, is_sphere
+    c = or a, b
+    ok = or c, is_grid
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !c
+    !b
+    !a
+    !is_grid
+    !is_sphere
+    !is_aabb
+    !is_ray
+    !is_line
+    !kind
+    return 1
+
+L_FALSE:
+    !ok
+    !c
+    !b
+    !a
+    !is_grid
+    !is_sphere
+    !is_aabb
+    !is_ray
+    !is_line
+    !kind
+    return 0
+
+@sa3d_gizmo_flags_are_valid(flags: i32) -> i32:
+L_ENTRY:
+    known = or SA3D_GIZMO_FLAGS_DEPTH_TEST, SA3D_GIZMO_FLAGS_SCREEN_SPACE
+    extra = and flags, -4
+    ok = eq extra, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !extra
+    !known
+    !flags
+    return 1
+
+L_FALSE:
+    !ok
+    !extra
+    !known
+    !flags
+    return 0
+
+@sa3d_gizmo_line_desc_set_color(&line: ptr, r: i32, g: i32, b: i32, a: i32) -> void:
+L_ENTRY:
+    store line+SA3D_GIZMO_LINE_DESC_color, r as i32
+    store line+28, g as i32
+    store line+32, b as i32
+    store line+36, a as i32
+    !a
+    !b
+    !g
+    !r
+    !line
+    return
+
+@sa3d_gizmo_line_desc_set_width_flags(&line: ptr, width: i32, flags: i32) -> void:
+L_ENTRY:
+    store line+SA3D_GIZMO_LINE_DESC_width, width as i32
+    store line+SA3D_GIZMO_LINE_DESC_flags, flags as i32
+    !flags
+    !width
+    !line
+    return
+
+@sa3d_gizmo_line_desc_is_valid(&line: ptr) -> i32:
+L_ENTRY:
+    width = load line+SA3D_GIZMO_LINE_DESC_width as i32
+    flags = load line+SA3D_GIZMO_LINE_DESC_flags as i32
+    width_ok = sgt width, 0
+    flags_ok = call @sa3d_gizmo_flags_are_valid(flags)
+    flags_valid = ne flags_ok, 0
+    ok = and width_ok, flags_valid
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !flags_valid
+    !flags_ok
+    !width_ok
+    !flags
+    !width
+    !line
+    return 1
+
+L_FALSE:
+    !ok
+    !flags_valid
+    !flags_ok
+    !width_ok
+    !flags
+    !width
+    !line
+    return 0
+
+@sa3d_gizmo_line_desc_write_bounds(&line: ptr, &aabb: ptr) -> void:
+L_ENTRY:
+    sx = load line+SA3D_GIZMO_LINE_DESC_start as i32
+    sy = load line+4 as i32
+    sz = load line+8 as i32
+    ex = load line+SA3D_GIZMO_LINE_DESC_end as i32
+    ey = load line+16 as i32
+    ez = load line+20 as i32
+    min_x = call @sa3d_i32_min(sx, ex)
+    min_y = call @sa3d_i32_min(sy, ey)
+    min_z = call @sa3d_i32_min(sz, ez)
+    max_x = call @sa3d_i32_max(sx, ex)
+    max_y = call @sa3d_i32_max(sy, ey)
+    max_z = call @sa3d_i32_max(sz, ez)
+    store aabb+SA3D_AABB_min, min_x as i32
+    store aabb+4, min_y as i32
+    store aabb+8, min_z as i32
+    store aabb+12, 0 as i32
+    store aabb+SA3D_AABB_max, max_x as i32
+    store aabb+20, max_y as i32
+    store aabb+24, max_z as i32
+    store aabb+28, 0 as i32
+    !max_z
+    !max_y
+    !max_x
+    !min_z
+    !min_y
+    !min_x
+    !ez
+    !ey
+    !ex
+    !sz
+    !sy
+    !sx
+    !aabb
+    !line
+    return
+
+@sa3d_gizmo_list_desc_init(&list: ptr) -> void:
+L_ENTRY:
+    store list+SA3D_GIZMO_LIST_DESC_lines_ptr, 0 as i64
+    store list+SA3D_GIZMO_LIST_DESC_lines_len, 0 as i64
+    store list+SA3D_GIZMO_LIST_DESC_shapes_ptr, 0 as i64
+    store list+SA3D_GIZMO_LIST_DESC_shapes_len, 0 as i64
+    store list+SA3D_GIZMO_LIST_DESC_camera, 0 as i64
+    !list
+    return
+
+@sa3d_gizmo_list_desc_get_lines_len(&list: ptr) -> i64:
+L_ENTRY:
+    len = load list+SA3D_GIZMO_LIST_DESC_lines_len as i64
+    !list
+    return len
+
+@sa3d_gizmo_list_desc_set_lines(&list: ptr, lines: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store list+SA3D_GIZMO_LIST_DESC_lines_ptr, 0 as i64
+    store list+SA3D_GIZMO_LIST_DESC_lines_len, 0 as i64
+    !negative
+    !len
+    !lines
+    !list
+    return
+
+L_SET:
+    store list+SA3D_GIZMO_LIST_DESC_lines_ptr, lines as ptr
+    store list+SA3D_GIZMO_LIST_DESC_lines_len, len as i64
+    !negative
+    !len
+    !lines
+    !list
+    return
+
+@sa3d_gizmo_list_desc_set_shapes(&list: ptr, shapes: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store list+SA3D_GIZMO_LIST_DESC_shapes_ptr, 0 as i64
+    store list+SA3D_GIZMO_LIST_DESC_shapes_len, 0 as i64
+    !negative
+    !len
+    !shapes
+    !list
+    return
+
+L_SET:
+    store list+SA3D_GIZMO_LIST_DESC_shapes_ptr, shapes as ptr
+    store list+SA3D_GIZMO_LIST_DESC_shapes_len, len as i64
+    !negative
+    !len
+    !shapes
+    !list
+    return
+
+@sa3d_gizmo_list_desc_total_primitives(&list: ptr) -> i64:
+L_ENTRY:
+    lines = load list+SA3D_GIZMO_LIST_DESC_lines_len as i64
+    shapes = load list+SA3D_GIZMO_LIST_DESC_shapes_len as i64
+    total = add lines, shapes
+    !shapes
+    !lines
+    !list
+    return total
+
+@sa3d_gizmo_shape_desc_init(&shape: ptr) -> void:
+L_ENTRY:
+    store shape+SA3D_GIZMO_SHAPE_DESC_kind, SA3D_GIZMO_LINE as i32
+    store shape+SA3D_GIZMO_SHAPE_DESC_flags, 0 as i32
+    store shape+SA3D_GIZMO_SHAPE_DESC_transform, 1065353216 as i32
+    store shape+28, 1065353216 as i32
+    store shape+48, 1065353216 as i32
+    store shape+68, 1065353216 as i32
+    store shape+SA3D_GIZMO_SHAPE_DESC_color, 1065353216 as i32
+    store shape+76, 1065353216 as i32
+    store shape+80, 1065353216 as i32
+    store shape+84, 1065353216 as i32
+    store shape+SA3D_GIZMO_SHAPE_DESC_params, 0 as i64
+    store shape+96, 0 as i64
+    store shape+100, 0 as i32
+    !shape
+    return
+
+@sa3d_gizmo_shape_desc_get_kind(&shape: ptr) -> i32:
+L_ENTRY:
+    kind = load shape+SA3D_GIZMO_SHAPE_DESC_kind as i32
+    !shape
+    return kind
+
+@sa3d_gizmo_shape_desc_set_kind_flags(&shape: ptr, kind: i32, flags: i32) -> void:
+L_ENTRY:
+    store shape+SA3D_GIZMO_SHAPE_DESC_kind, kind as i32
+    store shape+SA3D_GIZMO_SHAPE_DESC_flags, flags as i32
+    !flags
+    !kind
+    !shape
+    return
+
+@sa3d_gizmo_shape_desc_set_params3(&shape: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    store shape+SA3D_GIZMO_SHAPE_DESC_params, x as i32
+    store shape+92, y as i32
+    store shape+96, z as i32
+    !z
+    !y
+    !x
+    !shape
+    return
+
+@sa3d_gizmo_shape_desc_is_valid(&shape: ptr) -> i32:
+L_ENTRY:
+    kind = load shape+SA3D_GIZMO_SHAPE_DESC_kind as i32
+    flags = load shape+SA3D_GIZMO_SHAPE_DESC_flags as i32
+    kind_ok = call @sa3d_gizmo_kind_is_valid(kind)
+    flags_ok = call @sa3d_gizmo_flags_are_valid(flags)
+    kind_valid = ne kind_ok, 0
+    flags_valid = ne flags_ok, 0
+    ok = and kind_valid, flags_valid
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !flags_valid
+    !kind_valid
+    !flags_ok
+    !kind_ok
+    !flags
+    !kind
+    !shape
+    return 1
+
+L_FALSE:
+    !ok
+    !flags_valid
+    !kind_valid
+    !flags_ok
+    !kind_ok
+    !flags
+    !kind
+    !shape
+    return 0

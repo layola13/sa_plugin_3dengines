@@ -1,0 +1,648 @@
+#def SA3D_PARTICLE_VERSION_MAJOR = 0
+#def SA3D_PARTICLE_VERSION_MINOR = 1
+
+#def SA3D_PARTICLE_SPACE_LOCAL = 0
+#def SA3D_PARTICLE_SPACE_WORLD = 1
+
+#def SA3D_PARTICLE_position = +0
+#def SA3D_PARTICLE_velocity = +16
+#def SA3D_PARTICLE_color = +32
+#def SA3D_PARTICLE_age = +48
+#def SA3D_PARTICLE_lifetime = +52
+#def SA3D_PARTICLE_size = +56
+#def SA3D_PARTICLE_seed = +60
+#def SA3D_PARTICLE_SIZE = 64
+
+#def SA3D_EMITTER_DESC_max_particles = +0
+#def SA3D_EMITTER_DESC_spawn_rate = +4
+#def SA3D_EMITTER_DESC_lifetime_min = +8
+#def SA3D_EMITTER_DESC_lifetime_max = +12
+#def SA3D_EMITTER_DESC_initial_speed_min = +16
+#def SA3D_EMITTER_DESC_initial_speed_max = +20
+#def SA3D_EMITTER_DESC_space = +24
+#def SA3D_EMITTER_DESC_material = +32
+#def SA3D_EMITTER_DESC_SIZE = 40
+
+@sa3d_particle_init(&particle: ptr) -> void:
+L_ENTRY:
+    store particle+0, 0 as i32
+    store particle+4, 0 as i32
+    store particle+8, 0 as i32
+    store particle+SA3D_PARTICLE_velocity, 0 as i32
+    store particle+20, 0 as i32
+    store particle+24, 0 as i32
+    store particle+32, 1065353216 as i32
+    store particle+36, 1065353216 as i32
+    store particle+40, 1065353216 as i32
+    store particle+44, 1065353216 as i32
+    store particle+SA3D_PARTICLE_age, 0 as i32
+    store particle+SA3D_PARTICLE_lifetime, 0 as i32
+    store particle+SA3D_PARTICLE_size, 1065353216 as i32
+    store particle+SA3D_PARTICLE_seed, 0 as i32
+    !particle
+    return
+
+@sa3d_particle_get_age(&particle: ptr) -> i32:
+L_ENTRY:
+    age = load particle+SA3D_PARTICLE_age as i32
+    !particle
+    return age
+
+@sa3d_particle_get_lifetime(&particle: ptr) -> i32:
+L_ENTRY:
+    lt = load particle+SA3D_PARTICLE_lifetime as i32
+    !particle
+    return lt
+
+@sa3d_particle_set_position(&particle: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    store particle+SA3D_PARTICLE_position, x as i32
+    store particle+4, y as i32
+    store particle+8, z as i32
+    !z
+    !y
+    !x
+    !particle
+    return
+
+@sa3d_particle_set_velocity(&particle: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    store particle+SA3D_PARTICLE_velocity, x as i32
+    store particle+20, y as i32
+    store particle+24, z as i32
+    !z
+    !y
+    !x
+    !particle
+    return
+
+@sa3d_particle_set_color(&particle: ptr, r: i32, g: i32, b: i32, a: i32) -> void:
+L_ENTRY:
+    store particle+SA3D_PARTICLE_color, r as i32
+    store particle+36, g as i32
+    store particle+40, b as i32
+    store particle+44, a as i32
+    !a
+    !b
+    !g
+    !r
+    !particle
+    return
+
+@sa3d_particle_set_lifetime(&particle: ptr, lifetime: i32) -> void:
+L_ENTRY:
+    negative = slt lifetime, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store particle+SA3D_PARTICLE_lifetime, 0 as i32
+    !negative
+    !lifetime
+    !particle
+    return
+
+L_SET:
+    store particle+SA3D_PARTICLE_lifetime, lifetime as i32
+    !negative
+    !lifetime
+    !particle
+    return
+
+@sa3d_particle_reset_age(&particle: ptr) -> void:
+L_ENTRY:
+    store particle+SA3D_PARTICLE_age, 0 as i32
+    !particle
+    return
+
+@sa3d_particle_is_alive(&particle: ptr) -> i32:
+L_ENTRY:
+    age = load particle+SA3D_PARTICLE_age as i32
+    lt = load particle+SA3D_PARTICLE_lifetime as i32
+    alive = slt age, lt
+    !lt
+    !age
+    !particle
+    br alive -> L_YES, L_NO
+L_YES:
+    !alive
+    return 1
+L_NO:
+    !alive
+    return 0
+
+@sa3d_particle_tick(&particle: ptr, delta: i32) -> i32:
+L_ENTRY:
+    age = load particle+SA3D_PARTICLE_age as i32
+    lt = load particle+SA3D_PARTICLE_lifetime as i32
+    vx = load particle+SA3D_PARTICLE_velocity as i32
+    vy = load particle+20 as i32
+    vz = load particle+24 as i32
+    px = load particle+SA3D_PARTICLE_position as i32
+    py = load particle+4 as i32
+    pz = load particle+8 as i32
+    new_age = add age, delta
+    dx = mul vx, delta
+    dy = mul vy, delta
+    dz = mul vz, delta
+    new_px = add px, dx
+    new_py = add py, dy
+    new_pz = add pz, dz
+    store particle+SA3D_PARTICLE_age, new_age as i32
+    store particle+SA3D_PARTICLE_position, new_px as i32
+    store particle+4, new_py as i32
+    store particle+8, new_pz as i32
+    !new_pz
+    !new_py
+    !new_px
+    !dz
+    !dy
+    !dx
+    !pz
+    !py
+    !px
+    !vz
+    !vy
+    !vx
+    !lt
+    !age
+    !new_age
+    !delta
+    !particle
+    return 0
+
+@sa3d_particle_tick_ms(&particle: ptr, delta_ms: i32) -> i32:
+L_ENTRY:
+    age = load particle+SA3D_PARTICLE_age as i32
+    lt = load particle+SA3D_PARTICLE_lifetime as i32
+    vx = load particle+SA3D_PARTICLE_velocity as i32
+    vy = load particle+20 as i32
+    vz = load particle+24 as i32
+    px = load particle+SA3D_PARTICLE_position as i32
+    py = load particle+4 as i32
+    pz = load particle+8 as i32
+    new_age_raw = add age, delta_ms
+    over_life = sgt new_age_raw, lt
+    life_positive = sgt lt, 0
+    should_clamp = and over_life, life_positive
+    br should_clamp -> L_CLAMP, L_MOVE_RAW
+
+L_CLAMP:
+    dx_raw_c = mul vx, delta_ms
+    dy_raw_c = mul vy, delta_ms
+    dz_raw_c = mul vz, delta_ms
+    dx_c = sdiv dx_raw_c, 1000
+    dy_c = sdiv dy_raw_c, 1000
+    dz_c = sdiv dz_raw_c, 1000
+    new_px_c = add px, dx_c
+    new_py_c = add py, dy_c
+    new_pz_c = add pz, dz_c
+    store particle+SA3D_PARTICLE_age, lt as i32
+    store particle+SA3D_PARTICLE_position, new_px_c as i32
+    store particle+4, new_py_c as i32
+    store particle+8, new_pz_c as i32
+    !new_pz_c
+    !new_py_c
+    !new_px_c
+    !dz_c
+    !dy_c
+    !dx_c
+    !dz_raw_c
+    !dy_raw_c
+    !dx_raw_c
+    !should_clamp
+    !life_positive
+    !over_life
+    !new_age_raw
+    !pz
+    !py
+    !px
+    !vz
+    !vy
+    !vx
+    !lt
+    !age
+    !delta_ms
+    !particle
+    return 0
+
+L_MOVE_RAW:
+    dx_raw = mul vx, delta_ms
+    dy_raw = mul vy, delta_ms
+    dz_raw = mul vz, delta_ms
+    dx = sdiv dx_raw, 1000
+    dy = sdiv dy_raw, 1000
+    dz = sdiv dz_raw, 1000
+    new_px = add px, dx
+    new_py = add py, dy
+    new_pz = add pz, dz
+    store particle+SA3D_PARTICLE_age, new_age_raw as i32
+    store particle+SA3D_PARTICLE_position, new_px as i32
+    store particle+4, new_py as i32
+    store particle+8, new_pz as i32
+    alive = call @sa3d_particle_is_alive(&particle)
+    !new_pz
+    !new_py
+    !new_px
+    !dz
+    !dy
+    !dx
+    !dz_raw
+    !dy_raw
+    !dx_raw
+    !should_clamp
+    !life_positive
+    !over_life
+    !new_age_raw
+    !pz
+    !py
+    !px
+    !vz
+    !vy
+    !vx
+    !lt
+    !age
+    !delta_ms
+    !particle
+    return alive
+
+@sa3d_particle_age_per_mille(&particle: ptr) -> i32:
+L_ENTRY:
+    age = load particle+SA3D_PARTICLE_age as i32
+    lifetime = load particle+SA3D_PARTICLE_lifetime as i32
+    invalid = sle lifetime, 0
+    br invalid -> L_ZERO, L_CALC
+
+L_ZERO:
+    !invalid
+    !lifetime
+    !age
+    !particle
+    return 0
+
+L_CALC:
+    age64 = sext age as i64
+    lifetime64 = sext lifetime as i64
+    scaled = mul age64, 1000
+    progress64 = sdiv scaled, lifetime64
+    progress = trunc progress64 as i32
+    over = sgt progress, 1000
+    br over -> L_FULL, L_VALUE
+
+L_FULL:
+    !over
+    !progress
+    !progress64
+    !scaled
+    !lifetime64
+    !age64
+    !invalid
+    !lifetime
+    !age
+    !particle
+    return 1000
+
+L_VALUE:
+    !over
+    !progress64
+    !scaled
+    !lifetime64
+    !age64
+    !invalid
+    !lifetime
+    !age
+    !particle
+    return progress
+
+@sa3d_emitter_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_EMITTER_DESC_max_particles, 100 as i32
+    store desc+SA3D_EMITTER_DESC_spawn_rate, 10 as i32
+    store desc+SA3D_EMITTER_DESC_lifetime_min, 1000 as i32
+    store desc+SA3D_EMITTER_DESC_lifetime_max, 3000 as i32
+    store desc+SA3D_EMITTER_DESC_initial_speed_min, 1065353216 as i32
+    store desc+SA3D_EMITTER_DESC_initial_speed_max, 1082130432 as i32
+    store desc+SA3D_EMITTER_DESC_space, SA3D_PARTICLE_SPACE_LOCAL as i32
+    store desc+SA3D_EMITTER_DESC_material, 0 as i64
+    !desc
+    return
+
+@sa3d_emitter_desc_get_max_particles(&desc: ptr) -> i32:
+L_ENTRY:
+    mp = load desc+SA3D_EMITTER_DESC_max_particles as i32
+    !desc
+    return mp
+
+@sa3d_emitter_desc_get_spawn_rate(&desc: ptr) -> i32:
+L_ENTRY:
+    sr = load desc+SA3D_EMITTER_DESC_spawn_rate as i32
+    !desc
+    return sr
+
+@sa3d_emitter_space_is_valid(space: i32) -> i32:
+L_ENTRY:
+    is_local = eq space, SA3D_PARTICLE_SPACE_LOCAL
+    is_world = eq space, SA3D_PARTICLE_SPACE_WORLD
+    ok = or is_local, is_world
+    !is_world
+    !is_local
+    !space
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_emitter_desc_set_limits(&desc: ptr, max_particles: i32, spawn_rate: i32) -> void:
+L_ENTRY:
+    max_bad = slt max_particles, 0
+    rate_bad = slt spawn_rate, 0
+    br max_bad -> L_ZERO_MAX, L_RATE
+
+L_ZERO_MAX:
+    store desc+SA3D_EMITTER_DESC_max_particles, 0 as i32
+    br rate_bad -> L_ZERO_RATE_AFTER_MAX, L_SET_RATE_AFTER_MAX
+
+L_ZERO_RATE_AFTER_MAX:
+    store desc+SA3D_EMITTER_DESC_spawn_rate, 0 as i32
+    !rate_bad
+    !max_bad
+    !spawn_rate
+    !max_particles
+    !desc
+    return
+
+L_SET_RATE_AFTER_MAX:
+    store desc+SA3D_EMITTER_DESC_spawn_rate, spawn_rate as i32
+    !rate_bad
+    !max_bad
+    !spawn_rate
+    !max_particles
+    !desc
+    return
+
+L_RATE:
+    store desc+SA3D_EMITTER_DESC_max_particles, max_particles as i32
+    br rate_bad -> L_ZERO_RATE, L_SET_RATE
+
+L_ZERO_RATE:
+    store desc+SA3D_EMITTER_DESC_spawn_rate, 0 as i32
+    !rate_bad
+    !max_bad
+    !spawn_rate
+    !max_particles
+    !desc
+    return
+
+L_SET_RATE:
+    store desc+SA3D_EMITTER_DESC_spawn_rate, spawn_rate as i32
+    !rate_bad
+    !max_bad
+    !spawn_rate
+    !max_particles
+    !desc
+    return
+
+@sa3d_emitter_desc_set_lifetime_range(&desc: ptr, min_ms: i32, max_ms: i32) -> void:
+L_ENTRY:
+    min_bad = slt min_ms, 0
+    max_bad = slt max_ms, min_ms
+    any_bad = or min_bad, max_bad
+    br any_bad -> L_DEFAULT, L_SET
+
+L_DEFAULT:
+    store desc+SA3D_EMITTER_DESC_lifetime_min, 0 as i32
+    store desc+SA3D_EMITTER_DESC_lifetime_max, 0 as i32
+    !any_bad
+    !max_bad
+    !min_bad
+    !max_ms
+    !min_ms
+    !desc
+    return
+
+L_SET:
+    store desc+SA3D_EMITTER_DESC_lifetime_min, min_ms as i32
+    store desc+SA3D_EMITTER_DESC_lifetime_max, max_ms as i32
+    !any_bad
+    !max_bad
+    !min_bad
+    !max_ms
+    !min_ms
+    !desc
+    return
+
+@sa3d_emitter_desc_set_space(&desc: ptr, space: i32) -> void:
+L_ENTRY:
+    valid = call @sa3d_emitter_space_is_valid(space)
+    ok = ne valid, 0
+    br ok -> L_SET, L_DEFAULT
+
+L_SET:
+    store desc+SA3D_EMITTER_DESC_space, space as i32
+    !ok
+    !valid
+    !space
+    !desc
+    return
+
+L_DEFAULT:
+    store desc+SA3D_EMITTER_DESC_space, SA3D_PARTICLE_SPACE_LOCAL as i32
+    !ok
+    !valid
+    !space
+    !desc
+    return
+
+@sa3d_emitter_desc_is_valid(&desc: ptr) -> i32:
+L_ENTRY:
+    max_particles = load desc+SA3D_EMITTER_DESC_max_particles as i32
+    spawn_rate = load desc+SA3D_EMITTER_DESC_spawn_rate as i32
+    lifetime_min = load desc+SA3D_EMITTER_DESC_lifetime_min as i32
+    lifetime_max = load desc+SA3D_EMITTER_DESC_lifetime_max as i32
+    speed_min = load desc+SA3D_EMITTER_DESC_initial_speed_min as i32
+    speed_max = load desc+SA3D_EMITTER_DESC_initial_speed_max as i32
+    space = load desc+SA3D_EMITTER_DESC_space as i32
+    max_ok = sge max_particles, 0
+    rate_ok = sge spawn_rate, 0
+    life_min_ok = sge lifetime_min, 0
+    life_range_ok = sge lifetime_max, lifetime_min
+    speed_range_ok = sge speed_max, speed_min
+    space_ok = call @sa3d_emitter_space_is_valid(space)
+    a = and max_ok, rate_ok
+    b = and life_min_ok, life_range_ok
+    c = and speed_range_ok, space_ok
+    ab = and a, b
+    ok = and ab, c
+    !ab
+    !c
+    !b
+    !a
+    !space_ok
+    !speed_range_ok
+    !life_range_ok
+    !life_min_ok
+    !rate_ok
+    !max_ok
+    !space
+    !speed_max
+    !speed_min
+    !lifetime_max
+    !lifetime_min
+    !spawn_rate
+    !max_particles
+    !desc
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_emitter_spawn_count(&desc: ptr, accumulator: ptr, delta_ms: i32) -> i32:
+L_ENTRY:
+    spawn_rate = load desc+SA3D_EMITTER_DESC_spawn_rate as i32
+    max_particles = load desc+SA3D_EMITTER_DESC_max_particles as i32
+    acc = load accumulator+0 as i32
+    rate_bad = sle spawn_rate, 0
+    max_bad = sle max_particles, 0
+    disabled = or rate_bad, max_bad
+    br disabled -> L_ZERO, L_ACCUM
+
+L_ZERO:
+    store accumulator+0, 0 as i32
+    !disabled
+    !max_bad
+    !rate_bad
+    !acc
+    !max_particles
+    !spawn_rate
+    !delta_ms
+    !accumulator
+    !desc
+    return 0
+
+L_ACCUM:
+    produced = mul spawn_rate, delta_ms
+    budget = add acc, produced
+    count_raw = sdiv budget, 1000
+    remainder = srem budget, 1000
+    over_max = sgt count_raw, max_particles
+    br over_max -> L_CLAMP, L_STORE
+
+L_CLAMP:
+    store accumulator+0, remainder as i32
+    !over_max
+    !remainder
+    !count_raw
+    !budget
+    !produced
+    !disabled
+    !max_bad
+    !rate_bad
+    !acc
+    !spawn_rate
+    !delta_ms
+    !accumulator
+    !desc
+    return max_particles
+
+L_STORE:
+    store accumulator+0, remainder as i32
+    !over_max
+    !remainder
+    !budget
+    !produced
+    !disabled
+    !max_bad
+    !rate_bad
+    !acc
+    !max_particles
+    !spawn_rate
+    !delta_ms
+    !accumulator
+    !desc
+    return count_raw
+
+@sa3d_emitter_spawn_particle(&desc: ptr, particle: ptr, seed: i32) -> void:
+L_ENTRY:
+    lifetime_min = load desc+SA3D_EMITTER_DESC_lifetime_min as i32
+    lifetime_max = load desc+SA3D_EMITTER_DESC_lifetime_max as i32
+    speed_min = load desc+SA3D_EMITTER_DESC_initial_speed_min as i32
+    speed_max = load desc+SA3D_EMITTER_DESC_initial_speed_max as i32
+    lifetime_slot = stack_alloc 4
+    speed_slot = stack_alloc 4
+    lifetime_span = sub lifetime_max, lifetime_min
+    lifetime_span_pos = sgt lifetime_span, 0
+    br lifetime_span_pos -> L_LIFETIME_RANDOM, L_LIFETIME_MIN
+
+L_LIFETIME_RANDOM:
+    lifetime_mod_base = add lifetime_span, 1
+    seed_life = srem seed, lifetime_mod_base
+    lifetime = add lifetime_min, seed_life
+    store lifetime_slot+0, lifetime as i32
+    !lifetime
+    !seed_life
+    !lifetime_mod_base
+    !lifetime_span_pos
+    !lifetime_span
+    jmp L_SPEED_BEGIN
+
+L_LIFETIME_MIN:
+    lifetime = add lifetime_min, 0
+    store lifetime_slot+0, lifetime as i32
+    !lifetime
+    !lifetime_span_pos
+    !lifetime_span
+    jmp L_SPEED_BEGIN
+
+L_SPEED_BEGIN:
+    speed_span = sub speed_max, speed_min
+    speed_span_pos = sgt speed_span, 0
+    br speed_span_pos -> L_SPEED_RANDOM, L_SPEED_MIN
+
+L_SPEED_RANDOM:
+    speed_mod_base = add speed_span, 1
+    seed_speed_base = add seed, 17
+    seed_speed = srem seed_speed_base, speed_mod_base
+    speed = add speed_min, seed_speed
+    store speed_slot+0, speed as i32
+    !speed
+    !seed_speed
+    !seed_speed_base
+    !speed_mod_base
+    !speed_span_pos
+    !speed_span
+    jmp L_STORE
+
+L_SPEED_MIN:
+    speed = add speed_min, 0
+    store speed_slot+0, speed as i32
+    !speed
+    !speed_span_pos
+    !speed_span
+    jmp L_STORE
+
+L_STORE:
+    lifetime_final = load lifetime_slot+0 as i32
+    speed_final = load speed_slot+0 as i32
+    call @sa3d_particle_init(&particle)
+    store particle+SA3D_PARTICLE_lifetime, lifetime_final as i32
+    store particle+SA3D_PARTICLE_velocity, speed_final as i32
+    store particle+SA3D_PARTICLE_seed, seed as i32
+    !speed_final
+    !lifetime_final
+    !speed_max
+    !speed_min
+    !lifetime_max
+    !lifetime_min
+    !seed
+    !particle
+    !desc
+    return

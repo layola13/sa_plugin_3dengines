@@ -1,0 +1,820 @@
+#def SA3D_APP_VERSION_MAJOR = 0
+#def SA3D_APP_VERSION_MINOR = 1
+
+#def SA3D_APP_STAGE_STARTUP = 1
+#def SA3D_APP_STAGE_PRE_UPDATE = 2
+#def SA3D_APP_STAGE_UPDATE = 3
+#def SA3D_APP_STAGE_POST_UPDATE = 4
+#def SA3D_APP_STAGE_RENDER = 5
+#def SA3D_APP_STAGE_SHUTDOWN = 6
+
+#def SA3D_APP_PLUGIN_DESC_name_ptr = +0
+#def SA3D_APP_PLUGIN_DESC_name_len = +8
+#def SA3D_APP_PLUGIN_DESC_version_major = +16
+#def SA3D_APP_PLUGIN_DESC_version_minor = +20
+#def SA3D_APP_PLUGIN_DESC_flags = +24
+#def SA3D_APP_PLUGIN_DESC_dependency_mask = +32
+#def SA3D_APP_PLUGIN_DESC_SIZE = 40
+
+#def SA3D_APP_SYSTEM_DESC_name_ptr = +0
+#def SA3D_APP_SYSTEM_DESC_name_len = +8
+#def SA3D_APP_SYSTEM_DESC_stage = +16
+#def SA3D_APP_SYSTEM_DESC_order = +20
+#def SA3D_APP_SYSTEM_DESC_fn = +24
+#def SA3D_APP_SYSTEM_DESC_userdata = +32
+#def SA3D_APP_SYSTEM_DESC_SIZE = 40
+
+#def SA3D_APP_SCHEDULE_DESC_systems_ptr = +0
+#def SA3D_APP_SCHEDULE_DESC_systems_len = +8
+#def SA3D_APP_SCHEDULE_DESC_stage_mask = +16
+#def SA3D_APP_SCHEDULE_DESC_time_frame = +24
+#def SA3D_APP_SCHEDULE_DESC_SIZE = 32
+
+@sa3d_app_plugin_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_APP_PLUGIN_DESC_name_ptr, 0 as i64
+    store desc+SA3D_APP_PLUGIN_DESC_name_len, 0 as i64
+    store desc+SA3D_APP_PLUGIN_DESC_version_major, 0 as i32
+    store desc+SA3D_APP_PLUGIN_DESC_version_minor, 0 as i32
+    store desc+SA3D_APP_PLUGIN_DESC_flags, 0 as i32
+    store desc+SA3D_APP_PLUGIN_DESC_dependency_mask, 0 as i64
+    !desc
+    return
+
+@sa3d_app_plugin_desc_set_name(&desc: ptr, name_ptr: i64, name_len: i64) -> void:
+L_ENTRY:
+    negative = slt name_len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store desc+SA3D_APP_PLUGIN_DESC_name_ptr, 0 as i64
+    store desc+SA3D_APP_PLUGIN_DESC_name_len, 0 as i64
+    !negative
+    !name_len
+    !name_ptr
+    !desc
+    return
+
+L_SET:
+    store desc+SA3D_APP_PLUGIN_DESC_name_ptr, name_ptr as i64
+    store desc+SA3D_APP_PLUGIN_DESC_name_len, name_len as i64
+    !negative
+    !name_len
+    !name_ptr
+    !desc
+    return
+
+@sa3d_app_plugin_desc_set_version(&desc: ptr, major: i32, minor: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_APP_PLUGIN_DESC_version_major, major as i32
+    store desc+SA3D_APP_PLUGIN_DESC_version_minor, minor as i32
+    !minor
+    !major
+    !desc
+    return
+
+@sa3d_app_plugin_desc_get_version_major(&desc: ptr) -> i32:
+L_ENTRY:
+    m = load desc+SA3D_APP_PLUGIN_DESC_version_major as i32
+    !desc
+    return m
+
+@sa3d_app_stage_is_valid(stage: i32) -> i32:
+L_ENTRY:
+    is_startup = eq stage, SA3D_APP_STAGE_STARTUP
+    is_pre = eq stage, SA3D_APP_STAGE_PRE_UPDATE
+    is_update = eq stage, SA3D_APP_STAGE_UPDATE
+    is_post = eq stage, SA3D_APP_STAGE_POST_UPDATE
+    is_render = eq stage, SA3D_APP_STAGE_RENDER
+    is_shutdown = eq stage, SA3D_APP_STAGE_SHUTDOWN
+    a = or is_startup, is_pre
+    b = or is_update, is_post
+    c = or is_render, is_shutdown
+    ab = or a, b
+    ok = or ab, c
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !ab
+    !c
+    !b
+    !a
+    !is_shutdown
+    !is_render
+    !is_post
+    !is_update
+    !is_pre
+    !is_startup
+    !stage
+    return 1
+
+L_FALSE:
+    !ok
+    !ab
+    !c
+    !b
+    !a
+    !is_shutdown
+    !is_render
+    !is_post
+    !is_update
+    !is_pre
+    !is_startup
+    !stage
+    return 0
+
+@sa3d_app_stage_bit(stage: i32) -> i32:
+L_ENTRY:
+    is_startup = eq stage, SA3D_APP_STAGE_STARTUP
+    br is_startup -> L_STARTUP, L_PRE
+L_STARTUP:
+    !is_startup
+    !stage
+    return 1
+L_PRE:
+    is_pre = eq stage, SA3D_APP_STAGE_PRE_UPDATE
+    br is_pre -> L_PRE_TRUE, L_UPDATE
+L_PRE_TRUE:
+    !is_pre
+    !is_startup
+    !stage
+    return 2
+L_UPDATE:
+    is_update = eq stage, SA3D_APP_STAGE_UPDATE
+    br is_update -> L_UPDATE_TRUE, L_POST
+L_UPDATE_TRUE:
+    !is_update
+    !is_pre
+    !is_startup
+    !stage
+    return 4
+L_POST:
+    is_post = eq stage, SA3D_APP_STAGE_POST_UPDATE
+    br is_post -> L_POST_TRUE, L_RENDER
+L_POST_TRUE:
+    !is_post
+    !is_update
+    !is_pre
+    !is_startup
+    !stage
+    return 8
+L_RENDER:
+    is_render = eq stage, SA3D_APP_STAGE_RENDER
+    br is_render -> L_RENDER_TRUE, L_SHUTDOWN
+L_RENDER_TRUE:
+    !is_render
+    !is_post
+    !is_update
+    !is_pre
+    !is_startup
+    !stage
+    return 16
+L_SHUTDOWN:
+    is_shutdown = eq stage, SA3D_APP_STAGE_SHUTDOWN
+    br is_shutdown -> L_SHUTDOWN_TRUE, L_ZERO
+L_SHUTDOWN_TRUE:
+    !is_shutdown
+    !is_render
+    !is_post
+    !is_update
+    !is_pre
+    !is_startup
+    !stage
+    return 32
+L_ZERO:
+    !is_shutdown
+    !is_render
+    !is_post
+    !is_update
+    !is_pre
+    !is_startup
+    !stage
+    return 0
+
+@sa3d_app_stage_mask_is_valid(mask: i32) -> i32:
+L_ENTRY:
+    extra = and mask, -64
+    ok = eq extra, 0
+    br ok -> L_TRUE, L_FALSE
+L_TRUE:
+    !ok
+    !extra
+    !mask
+    return 1
+L_FALSE:
+    !ok
+    !extra
+    !mask
+    return 0
+
+@sa3d_app_plugin_desc_is_valid(&desc: ptr) -> i32:
+L_ENTRY:
+    name_len = load desc+SA3D_APP_PLUGIN_DESC_name_len as i64
+    major = load desc+SA3D_APP_PLUGIN_DESC_version_major as i32
+    minor = load desc+SA3D_APP_PLUGIN_DESC_version_minor as i32
+    has_name = sgt name_len, 0
+    major_ok = sge major, 0
+    minor_ok = sge minor, 0
+    a = and has_name, major_ok
+    ok = and a, minor_ok
+    br ok -> L_TRUE, L_FALSE
+L_TRUE:
+    !ok
+    !a
+    !minor_ok
+    !major_ok
+    !has_name
+    !minor
+    !major
+    !name_len
+    !desc
+    return 1
+L_FALSE:
+    !ok
+    !a
+    !minor_ok
+    !major_ok
+    !has_name
+    !minor
+    !major
+    !name_len
+    !desc
+    return 0
+
+@sa3d_app_system_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_APP_SYSTEM_DESC_name_ptr, 0 as i64
+    store desc+SA3D_APP_SYSTEM_DESC_name_len, 0 as i64
+    store desc+SA3D_APP_SYSTEM_DESC_stage, 0 as i32
+    store desc+SA3D_APP_SYSTEM_DESC_order, 0 as i32
+    store desc+SA3D_APP_SYSTEM_DESC_fn, 0 as i64
+    store desc+SA3D_APP_SYSTEM_DESC_userdata, 0 as i64
+    !desc
+    return
+
+@sa3d_app_system_desc_set_stage(&desc: ptr, stage: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_APP_SYSTEM_DESC_stage, stage as i32
+    !stage
+    !desc
+    return
+
+@sa3d_app_system_desc_set_name(&desc: ptr, name_ptr: i64, name_len: i64) -> void:
+L_ENTRY:
+    negative = slt name_len, 0
+    br negative -> L_ZERO, L_SET
+L_ZERO:
+    store desc+SA3D_APP_SYSTEM_DESC_name_ptr, 0 as i64
+    store desc+SA3D_APP_SYSTEM_DESC_name_len, 0 as i64
+    !negative
+    !name_len
+    !name_ptr
+    !desc
+    return
+L_SET:
+    store desc+SA3D_APP_SYSTEM_DESC_name_ptr, name_ptr as i64
+    store desc+SA3D_APP_SYSTEM_DESC_name_len, name_len as i64
+    !negative
+    !name_len
+    !name_ptr
+    !desc
+    return
+
+@sa3d_app_system_desc_set_order_fn(&desc: ptr, order: i32, fn_handle: i64, userdata: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_APP_SYSTEM_DESC_order, order as i32
+    store desc+SA3D_APP_SYSTEM_DESC_fn, fn_handle as i64
+    store desc+SA3D_APP_SYSTEM_DESC_userdata, userdata as i64
+    !userdata
+    !fn_handle
+    !order
+    !desc
+    return
+
+@sa3d_app_system_desc_get_stage(&desc: ptr) -> i32:
+L_ENTRY:
+    s = load desc+SA3D_APP_SYSTEM_DESC_stage as i32
+    !desc
+    return s
+
+@sa3d_app_system_desc_is_valid(&desc: ptr) -> i32:
+L_ENTRY:
+    name_len = load desc+SA3D_APP_SYSTEM_DESC_name_len as i64
+    stage = load desc+SA3D_APP_SYSTEM_DESC_stage as i32
+    fn_handle = load desc+SA3D_APP_SYSTEM_DESC_fn as i64
+    has_name = sgt name_len, 0
+    stage_ok = call @sa3d_app_stage_is_valid(stage)
+    stage_valid = ne stage_ok, 0
+    has_fn = ne fn_handle, 0
+    a = and has_name, stage_valid
+    ok = and a, has_fn
+    br ok -> L_TRUE, L_FALSE
+L_TRUE:
+    !ok
+    !a
+    !has_fn
+    !stage_valid
+    !stage_ok
+    !has_name
+    !fn_handle
+    !stage
+    !name_len
+    !desc
+    return 1
+L_FALSE:
+    !ok
+    !a
+    !has_fn
+    !stage_valid
+    !stage_ok
+    !has_name
+    !fn_handle
+    !stage
+    !name_len
+    !desc
+    return 0
+
+@sa3d_app_schedule_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_APP_SCHEDULE_DESC_systems_ptr, 0 as i64
+    store desc+SA3D_APP_SCHEDULE_DESC_systems_len, 0 as i64
+    store desc+SA3D_APP_SCHEDULE_DESC_stage_mask, 0 as i32
+    store desc+SA3D_APP_SCHEDULE_DESC_time_frame, 0 as i64
+    !desc
+    return
+
+@sa3d_app_schedule_desc_get_stage_mask(&desc: ptr) -> i32:
+L_ENTRY:
+    m = load desc+SA3D_APP_SCHEDULE_DESC_stage_mask as i32
+    !desc
+    return m
+
+@sa3d_app_schedule_desc_set_stage_mask(&desc: ptr, mask: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_APP_SCHEDULE_DESC_stage_mask, mask as i32
+    !mask
+    !desc
+    return
+
+@sa3d_app_schedule_desc_set_systems(&desc: ptr, systems: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+L_ZERO:
+    store desc+SA3D_APP_SCHEDULE_DESC_systems_ptr, 0 as i64
+    store desc+SA3D_APP_SCHEDULE_DESC_systems_len, 0 as i64
+    !negative
+    !len
+    !systems
+    !desc
+    return
+L_SET:
+    store desc+SA3D_APP_SCHEDULE_DESC_systems_ptr, systems as ptr
+    store desc+SA3D_APP_SCHEDULE_DESC_systems_len, len as i64
+    !negative
+    !len
+    !systems
+    !desc
+    return
+
+@sa3d_app_schedule_desc_enable_stage(&desc: ptr, stage: i32) -> i32:
+L_ENTRY:
+    bit = call @sa3d_app_stage_bit(stage)
+    valid = ne bit, 0
+    br valid -> L_SET, L_BAD
+L_SET:
+    old = load desc+SA3D_APP_SCHEDULE_DESC_stage_mask as i32
+    next = or old, bit
+    store desc+SA3D_APP_SCHEDULE_DESC_stage_mask, next as i32
+    !next
+    !old
+    !valid
+    !bit
+    !stage
+    !desc
+    return 1
+L_BAD:
+    !valid
+    !bit
+    !stage
+    !desc
+    return 0
+
+@sa3d_app_schedule_desc_is_valid(&desc: ptr) -> i32:
+L_ENTRY:
+    len = load desc+SA3D_APP_SCHEDULE_DESC_systems_len as i64
+    mask = load desc+SA3D_APP_SCHEDULE_DESC_stage_mask as i32
+    len_ok = sge len, 0
+    mask_ok = call @sa3d_app_stage_mask_is_valid(mask)
+    mask_valid = ne mask_ok, 0
+    ok = and len_ok, mask_valid
+    br ok -> L_TRUE, L_FALSE
+L_TRUE:
+    !ok
+    !mask_valid
+    !mask_ok
+    !len_ok
+    !mask
+    !len
+    !desc
+    return 1
+L_FALSE:
+    !ok
+    !mask_valid
+    !mask_ok
+    !len_ok
+    !mask
+    !len
+    !desc
+    return 0
+
+#def SA3D_APP_SCHEDULE_FIRST = 1
+#def SA3D_APP_SCHEDULE_PRE_UPDATE = 2
+#def SA3D_APP_SCHEDULE_RUN_FIXED_MAIN_LOOP = 3
+#def SA3D_APP_SCHEDULE_UPDATE = 4
+#def SA3D_APP_SCHEDULE_SPAWN_SCENE = 5
+#def SA3D_APP_SCHEDULE_POST_UPDATE = 6
+#def SA3D_APP_SCHEDULE_LAST = 7
+#def SA3D_APP_SCHEDULE_PRE_STARTUP = 8
+#def SA3D_APP_SCHEDULE_STARTUP = 9
+#def SA3D_APP_SCHEDULE_POST_STARTUP = 10
+#def SA3D_APP_FIXED_FIRST = 11
+#def SA3D_APP_FIXED_PRE_UPDATE = 12
+#def SA3D_APP_FIXED_UPDATE = 13
+#def SA3D_APP_FIXED_POST_UPDATE = 14
+#def SA3D_APP_FIXED_LAST = 15
+#def SA3D_APP_ANIMATION_SYSTEMS = 16
+#def SA3D_APP_SCENE_SPAWNER_WORLD_INSTANCE = 17
+#def SA3D_APP_SCENE_SPAWNER_SCENE_SPAWN = 18
+#def SA3D_APP_RUN_FIXED_MAIN_LOOP_BEFORE = 19
+#def SA3D_APP_RUN_FIXED_MAIN_LOOP_FIXED = 20
+#def SA3D_APP_RUN_FIXED_MAIN_LOOP_AFTER = 21
+
+#def SA3D_APP_MAIN_SCHEDULE_ORDER_labels_ptr = +0
+#def SA3D_APP_MAIN_SCHEDULE_ORDER_labels_len = +8
+#def SA3D_APP_MAIN_SCHEDULE_ORDER_labels_cap = +16
+#def SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_ptr = +24
+#def SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_len = +32
+#def SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_cap = +40
+#def SA3D_APP_MAIN_SCHEDULE_ORDER_SIZE = 48
+
+#def SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_ptr = +0
+#def SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_len = +8
+#def SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_cap = +16
+#def SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_SIZE = 24
+
+@sa3d_app_labels_find_index(labels: ptr, len: i64, target: i64) -> i64:
+L_ENTRY:
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_CHECK
+
+L_CHECK:
+    i = load i_slot+0 as i64
+    done = sge i, len
+    br done -> L_NOT_FOUND, L_COMPARE
+
+L_COMPARE:
+    offset = mul i, 8
+    slot = ptr_add labels, offset
+    current = load slot+0 as i64
+    match = eq current, target
+    br match -> L_FOUND, L_NEXT
+
+L_NEXT:
+    next = add i, 1
+    store i_slot+0, next as i64
+    !next
+    !match
+    !current
+    !slot
+    !offset
+    !i
+    !done
+    jmp L_CHECK
+
+L_FOUND:
+    !match
+    !current
+    !slot
+    !offset
+    !done
+    !len
+    !target
+    !labels
+    return i
+
+L_NOT_FOUND:
+    !done
+    !i
+    !len
+    !target
+    !labels
+    return -1
+
+@sa3d_app_labels_insert_at(labels: ptr, len_ptr: ptr, cap: i64, index: i64, value: i64) -> i32:
+L_ENTRY:
+    len = load len_ptr+0 as i64
+    can_grow = slt len, cap
+    index_low = sge index, 0
+    index_high = sle index, len
+    a = and can_grow, index_low
+    ok = and a, index_high
+    br ok -> L_SHIFT_INIT, L_FAIL
+
+L_SHIFT_INIT:
+    i_slot = stack_alloc 8
+    store i_slot+0, len as i64
+    jmp L_SHIFT_CHECK
+
+L_SHIFT_CHECK:
+    i = load i_slot+0 as i64
+    need_shift = sgt i, index
+    br need_shift -> L_SHIFT_BODY, L_WRITE
+
+L_SHIFT_BODY:
+    prev = sub i, 1
+    src_off = mul prev, 8
+    dst_off = mul i, 8
+    src = ptr_add labels, src_off
+    dst = ptr_add labels, dst_off
+    item = load src+0 as i64
+    store dst+0, item as i64
+    store i_slot+0, prev as i64
+    !item
+    !dst
+    !src
+    !dst_off
+    !src_off
+    !prev
+    !need_shift
+    !i
+    jmp L_SHIFT_CHECK
+
+L_WRITE:
+    slot_off = mul index, 8
+    slot = ptr_add labels, slot_off
+    store slot+0, value as i64
+    new_len = add len, 1
+    store len_ptr+0, new_len as i64
+    !new_len
+    !slot
+    !slot_off
+    !need_shift
+    !i
+    !ok
+    !a
+    !index_high
+    !index_low
+    !can_grow
+    !len
+    !value
+    !index
+    !cap
+    !len_ptr
+    !labels
+    return 1
+
+L_FAIL:
+    !ok
+    !a
+    !index_high
+    !index_low
+    !can_grow
+    !len
+    !value
+    !index
+    !cap
+    !len_ptr
+    !labels
+    return 0
+
+@sa3d_app_main_schedule_order_default(&order: ptr, labels: ptr, startup_labels: ptr) -> void:
+L_ENTRY:
+    store order+SA3D_APP_MAIN_SCHEDULE_ORDER_labels_ptr, labels as i64
+    store order+SA3D_APP_MAIN_SCHEDULE_ORDER_labels_len, 7 as i64
+    store order+SA3D_APP_MAIN_SCHEDULE_ORDER_labels_cap, 16 as i64
+    store order+SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_ptr, startup_labels as i64
+    store order+SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_len, 3 as i64
+    store order+SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_cap, 8 as i64
+    store labels+0, SA3D_APP_SCHEDULE_FIRST as i64
+    store labels+8, SA3D_APP_SCHEDULE_PRE_UPDATE as i64
+    store labels+16, SA3D_APP_SCHEDULE_RUN_FIXED_MAIN_LOOP as i64
+    store labels+24, SA3D_APP_SCHEDULE_UPDATE as i64
+    store labels+32, SA3D_APP_SCHEDULE_SPAWN_SCENE as i64
+    store labels+40, SA3D_APP_SCHEDULE_POST_UPDATE as i64
+    store labels+48, SA3D_APP_SCHEDULE_LAST as i64
+    store startup_labels+0, SA3D_APP_SCHEDULE_PRE_STARTUP as i64
+    store startup_labels+8, SA3D_APP_SCHEDULE_STARTUP as i64
+    store startup_labels+16, SA3D_APP_SCHEDULE_POST_STARTUP as i64
+    !startup_labels
+    !labels
+    !order
+    return
+
+@sa3d_app_fixed_main_schedule_order_default(&order: ptr, labels: ptr) -> void:
+L_ENTRY:
+    store order+SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_ptr, labels as i64
+    store order+SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_len, 5 as i64
+    store order+SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_cap, 8 as i64
+    store labels+0, SA3D_APP_FIXED_FIRST as i64
+    store labels+8, SA3D_APP_FIXED_PRE_UPDATE as i64
+    store labels+16, SA3D_APP_FIXED_UPDATE as i64
+    store labels+24, SA3D_APP_FIXED_POST_UPDATE as i64
+    store labels+32, SA3D_APP_FIXED_LAST as i64
+    !labels
+    !order
+    return
+
+@sa3d_app_main_schedule_order_insert_after(&order: ptr, after: i64, schedule: i64) -> i32:
+L_ENTRY:
+    labels = load order+SA3D_APP_MAIN_SCHEDULE_ORDER_labels_ptr as i64
+    len = load order+SA3D_APP_MAIN_SCHEDULE_ORDER_labels_len as i64
+    found = call @sa3d_app_labels_find_index(labels, len, after)
+    valid = sge found, 0
+    br valid -> L_INSERT, L_FAIL
+
+L_INSERT:
+    index = add found, 1
+    len_ptr = ptr_add order, SA3D_APP_MAIN_SCHEDULE_ORDER_labels_len
+    out = call @sa3d_app_labels_insert_at(labels, &len_ptr, 16, index, schedule)
+    !len_ptr
+    !index
+    !valid
+    !found
+    !len
+    !after
+    !schedule
+    !labels
+    !order
+    return out
+
+L_FAIL:
+    !valid
+    !found
+    !len
+    !after
+    !schedule
+    !labels
+    !order
+    return 0
+
+@sa3d_app_main_schedule_order_insert_before(&order: ptr, before: i64, schedule: i64) -> i32:
+L_ENTRY:
+    labels = load order+SA3D_APP_MAIN_SCHEDULE_ORDER_labels_ptr as i64
+    len = load order+SA3D_APP_MAIN_SCHEDULE_ORDER_labels_len as i64
+    found = call @sa3d_app_labels_find_index(labels, len, before)
+    valid = sge found, 0
+    br valid -> L_INSERT, L_FAIL
+
+L_INSERT:
+    len_ptr = ptr_add order, SA3D_APP_MAIN_SCHEDULE_ORDER_labels_len
+    out = call @sa3d_app_labels_insert_at(labels, &len_ptr, 16, found, schedule)
+    !len_ptr
+    !valid
+    !found
+    !len
+    !before
+    !schedule
+    !labels
+    !order
+    return out
+
+L_FAIL:
+    !valid
+    !found
+    !len
+    !before
+    !schedule
+    !labels
+    !order
+    return 0
+
+@sa3d_app_main_schedule_order_insert_startup_after(&order: ptr, after: i64, schedule: i64) -> i32:
+L_ENTRY:
+    labels = load order+SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_ptr as i64
+    len = load order+SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_len as i64
+    found = call @sa3d_app_labels_find_index(labels, len, after)
+    valid = sge found, 0
+    br valid -> L_INSERT, L_FAIL
+
+L_INSERT:
+    index = add found, 1
+    len_ptr = ptr_add order, SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_len
+    out = call @sa3d_app_labels_insert_at(labels, &len_ptr, 8, index, schedule)
+    !len_ptr
+    !index
+    !valid
+    !found
+    !len
+    !after
+    !schedule
+    !labels
+    !order
+    return out
+
+L_FAIL:
+    !valid
+    !found
+    !len
+    !after
+    !schedule
+    !labels
+    !order
+    return 0
+
+@sa3d_app_main_schedule_order_insert_startup_before(&order: ptr, before: i64, schedule: i64) -> i32:
+L_ENTRY:
+    labels = load order+SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_ptr as i64
+    len = load order+SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_len as i64
+    found = call @sa3d_app_labels_find_index(labels, len, before)
+    valid = sge found, 0
+    br valid -> L_INSERT, L_FAIL
+
+L_INSERT:
+    len_ptr = ptr_add order, SA3D_APP_MAIN_SCHEDULE_ORDER_startup_labels_len
+    out = call @sa3d_app_labels_insert_at(labels, &len_ptr, 8, found, schedule)
+    !len_ptr
+    !valid
+    !found
+    !len
+    !before
+    !schedule
+    !labels
+    !order
+    return out
+
+L_FAIL:
+    !valid
+    !found
+    !len
+    !before
+    !schedule
+    !labels
+    !order
+    return 0
+
+@sa3d_app_fixed_main_schedule_order_insert_after(&order: ptr, after: i64, schedule: i64) -> i32:
+L_ENTRY:
+    labels = load order+SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_ptr as i64
+    len = load order+SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_len as i64
+    found = call @sa3d_app_labels_find_index(labels, len, after)
+    valid = sge found, 0
+    br valid -> L_INSERT, L_FAIL
+
+L_INSERT:
+    index = add found, 1
+    len_ptr = ptr_add order, SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_len
+    out = call @sa3d_app_labels_insert_at(labels, &len_ptr, 8, index, schedule)
+    !len_ptr
+    !index
+    !valid
+    !found
+    !len
+    !after
+    !schedule
+    !labels
+    !order
+    return out
+
+L_FAIL:
+    !valid
+    !found
+    !len
+    !after
+    !schedule
+    !labels
+    !order
+    return 0
+
+@sa3d_app_fixed_main_schedule_order_insert_before(&order: ptr, before: i64, schedule: i64) -> i32:
+L_ENTRY:
+    labels = load order+SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_ptr as i64
+    len = load order+SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_len as i64
+    found = call @sa3d_app_labels_find_index(labels, len, before)
+    valid = sge found, 0
+    br valid -> L_INSERT, L_FAIL
+
+L_INSERT:
+    len_ptr = ptr_add order, SA3D_APP_FIXED_MAIN_SCHEDULE_ORDER_labels_len
+    out = call @sa3d_app_labels_insert_at(labels, &len_ptr, 8, found, schedule)
+    !len_ptr
+    !valid
+    !found
+    !len
+    !before
+    !schedule
+    !labels
+    !order
+    return out
+
+L_FAIL:
+    !valid
+    !found
+    !len
+    !before
+    !schedule
+    !labels
+    !order
+    return 0

@@ -1,0 +1,1183 @@
+#def SA3D_ANIMATION_VERSION_MAJOR = 0
+#def SA3D_ANIMATION_VERSION_MINOR = 1
+
+#def SA3D_ANIMATION_TARGET_TRANSLATION = 1
+#def SA3D_ANIMATION_TARGET_ROTATION = 2
+#def SA3D_ANIMATION_TARGET_SCALE = 3
+#def SA3D_ANIMATION_TARGET_WEIGHTS = 4
+
+#def SA3D_ANIMATION_INTERPOLATION_STEP = 0
+#def SA3D_ANIMATION_INTERPOLATION_LINEAR = 1
+#def SA3D_ANIMATION_INTERPOLATION_CUBIC_SPLINE = 2
+
+#def SA3D_ANIMATION_PLAYER_FLAG_PLAYING = 1
+#def SA3D_ANIMATION_PLAYER_FLAG_PAUSED = 2
+#def SA3D_ANIMATION_PLAYER_FLAG_REPEAT = 4
+#def SA3D_ANIMATION_PLAYER_FLAG_FINISHED = 8
+
+#def SA3D_ANIMATION_SAMPLER_input_times = +0
+#def SA3D_ANIMATION_SAMPLER_input_len = +8
+#def SA3D_ANIMATION_SAMPLER_output_values = +16
+#def SA3D_ANIMATION_SAMPLER_output_len = +24
+#def SA3D_ANIMATION_SAMPLER_value_stride = +32
+#def SA3D_ANIMATION_SAMPLER_interpolation = +40
+#def SA3D_ANIMATION_SAMPLER_SIZE = 48
+
+#def SA3D_ANIMATION_CHANNEL_target_node = +0
+#def SA3D_ANIMATION_CHANNEL_target_path = +8
+#def SA3D_ANIMATION_CHANNEL_sampler = +16
+#def SA3D_ANIMATION_CHANNEL_SIZE = 24
+
+#def SA3D_ANIMATION_CLIP_name_ptr = +0
+#def SA3D_ANIMATION_CLIP_name_len = +8
+#def SA3D_ANIMATION_CLIP_duration_ms = +16
+#def SA3D_ANIMATION_CLIP_samplers_ptr = +24
+#def SA3D_ANIMATION_CLIP_samplers_len = +32
+#def SA3D_ANIMATION_CLIP_channels_ptr = +40
+#def SA3D_ANIMATION_CLIP_channels_len = +48
+#def SA3D_ANIMATION_CLIP_curve_count = +56
+#def SA3D_ANIMATION_CLIP_SIZE = 64
+
+#def SA3D_ANIMATION_PLAYER_clip = +0
+#def SA3D_ANIMATION_PLAYER_time_ms = +8
+#def SA3D_ANIMATION_PLAYER_speed = +16
+#def SA3D_ANIMATION_PLAYER_weight = +20
+#def SA3D_ANIMATION_PLAYER_flags = +24
+#def SA3D_ANIMATION_PLAYER_SIZE = 32
+
+@sa3d_animation_clip_init(&clip: ptr) -> void:
+L_ENTRY:
+    store clip+SA3D_ANIMATION_CLIP_name_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_name_len, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_duration_ms, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_samplers_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_samplers_len, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_channels_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_channels_len, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_curve_count, 0 as i64
+    !clip
+    return
+
+@sa3d_animation_clip_set_duration(&clip: ptr, duration_ms: i64) -> void:
+L_ENTRY:
+    invalid = slt duration_ms, 0
+    br invalid -> L_ZERO, L_SET
+
+L_ZERO:
+    store clip+SA3D_ANIMATION_CLIP_duration_ms, 0 as i64
+    !invalid
+    !duration_ms
+    !clip
+    return
+
+L_SET:
+    store clip+SA3D_ANIMATION_CLIP_duration_ms, duration_ms as i64
+    !invalid
+    !duration_ms
+    !clip
+    return
+
+@sa3d_animation_clip_get_duration(&clip: ptr) -> i64:
+L_ENTRY:
+    dur = load clip+SA3D_ANIMATION_CLIP_duration_ms as i64
+    !clip
+    return dur
+
+@sa3d_animation_clip_set_name(&clip: ptr, name_ptr: i64, name_len: i64) -> void:
+L_ENTRY:
+    invalid_len = slt name_len, 0
+    br invalid_len -> L_EMPTY, L_CHECK_PTR
+
+L_CHECK_PTR:
+    empty_ptr = eq name_ptr, 0
+    non_empty = sgt name_len, 0
+    invalid_ptr = and empty_ptr, non_empty
+    br invalid_ptr -> L_EMPTY2, L_SET
+
+L_EMPTY:
+    store clip+SA3D_ANIMATION_CLIP_name_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_name_len, 0 as i64
+    !invalid_len
+    !name_len
+    !name_ptr
+    !clip
+    return
+
+L_EMPTY2:
+    store clip+SA3D_ANIMATION_CLIP_name_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_name_len, 0 as i64
+    !invalid_ptr
+    !non_empty
+    !empty_ptr
+    !invalid_len
+    !name_len
+    !name_ptr
+    !clip
+    return
+
+L_SET:
+    store clip+SA3D_ANIMATION_CLIP_name_ptr, name_ptr as i64
+    store clip+SA3D_ANIMATION_CLIP_name_len, name_len as i64
+    !invalid_ptr
+    !non_empty
+    !empty_ptr
+    !invalid_len
+    !name_len
+    !name_ptr
+    !clip
+    return
+
+@sa3d_animation_clip_set_curve_count(&clip: ptr, curve_count: i64) -> void:
+L_ENTRY:
+    negative = slt curve_count, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store clip+SA3D_ANIMATION_CLIP_curve_count, 0 as i64
+    !negative
+    !curve_count
+    !clip
+    return
+
+L_SET:
+    store clip+SA3D_ANIMATION_CLIP_curve_count, curve_count as i64
+    !negative
+    !curve_count
+    !clip
+    return
+
+@sa3d_animation_clip_get_curve_count(&clip: ptr) -> i64:
+L_ENTRY:
+    out = load clip+SA3D_ANIMATION_CLIP_curve_count as i64
+    !clip
+    return out
+
+@sa3d_animation_clip_set_samplers(&clip: ptr, samplers_ptr: i64, samplers_len: i64) -> void:
+L_ENTRY:
+    invalid_len = slt samplers_len, 0
+    br invalid_len -> L_EMPTY, L_CHECK_PTR
+
+L_CHECK_PTR:
+    empty_ptr = eq samplers_ptr, 0
+    non_empty = sgt samplers_len, 0
+    invalid_ptr = and empty_ptr, non_empty
+    br invalid_ptr -> L_EMPTY2, L_SET
+
+L_EMPTY:
+    store clip+SA3D_ANIMATION_CLIP_samplers_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_samplers_len, 0 as i64
+    !invalid_len
+    !samplers_len
+    !samplers_ptr
+    !clip
+    return
+
+L_EMPTY2:
+    store clip+SA3D_ANIMATION_CLIP_samplers_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_samplers_len, 0 as i64
+    !invalid_ptr
+    !non_empty
+    !empty_ptr
+    !invalid_len
+    !samplers_len
+    !samplers_ptr
+    !clip
+    return
+
+L_SET:
+    store clip+SA3D_ANIMATION_CLIP_samplers_ptr, samplers_ptr as i64
+    store clip+SA3D_ANIMATION_CLIP_samplers_len, samplers_len as i64
+    !invalid_ptr
+    !non_empty
+    !empty_ptr
+    !invalid_len
+    !samplers_len
+    !samplers_ptr
+    !clip
+    return
+
+@sa3d_animation_clip_set_channels(&clip: ptr, channels_ptr: i64, channels_len: i64) -> void:
+L_ENTRY:
+    invalid_len = slt channels_len, 0
+    br invalid_len -> L_EMPTY, L_CHECK_PTR
+
+L_CHECK_PTR:
+    empty_ptr = eq channels_ptr, 0
+    non_empty = sgt channels_len, 0
+    invalid_ptr = and empty_ptr, non_empty
+    br invalid_ptr -> L_EMPTY2, L_SET
+
+L_EMPTY:
+    store clip+SA3D_ANIMATION_CLIP_channels_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_channels_len, 0 as i64
+    !invalid_len
+    !channels_len
+    !channels_ptr
+    !clip
+    return
+
+L_EMPTY2:
+    store clip+SA3D_ANIMATION_CLIP_channels_ptr, 0 as i64
+    store clip+SA3D_ANIMATION_CLIP_channels_len, 0 as i64
+    !invalid_ptr
+    !non_empty
+    !empty_ptr
+    !invalid_len
+    !channels_len
+    !channels_ptr
+    !clip
+    return
+
+L_SET:
+    store clip+SA3D_ANIMATION_CLIP_channels_ptr, channels_ptr as i64
+    store clip+SA3D_ANIMATION_CLIP_channels_len, channels_len as i64
+    !invalid_ptr
+    !non_empty
+    !empty_ptr
+    !invalid_len
+    !channels_len
+    !channels_ptr
+    !clip
+    return
+
+@sa3d_animation_interpolation_is_valid(interpolation: i32) -> i32:
+L_ENTRY:
+    is_step = eq interpolation, SA3D_ANIMATION_INTERPOLATION_STEP
+    is_linear = eq interpolation, SA3D_ANIMATION_INTERPOLATION_LINEAR
+    is_cubic = eq interpolation, SA3D_ANIMATION_INTERPOLATION_CUBIC_SPLINE
+    step_or_linear = or is_step, is_linear
+    ok = or step_or_linear, is_cubic
+    !step_or_linear
+    !is_cubic
+    !is_linear
+    !is_step
+    !interpolation
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_animation_target_path_is_valid(target_path: i32) -> i32:
+L_ENTRY:
+    is_translation = eq target_path, SA3D_ANIMATION_TARGET_TRANSLATION
+    is_rotation = eq target_path, SA3D_ANIMATION_TARGET_ROTATION
+    is_scale = eq target_path, SA3D_ANIMATION_TARGET_SCALE
+    is_weights = eq target_path, SA3D_ANIMATION_TARGET_WEIGHTS
+    a = or is_translation, is_rotation
+    b = or is_scale, is_weights
+    ok = or a, b
+    !b
+    !a
+    !is_weights
+    !is_scale
+    !is_rotation
+    !is_translation
+    !target_path
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_animation_sampler_init(&sampler: ptr, input_times: i64, input_len: i64, output_values: i64, output_len: i64, value_stride: i64, interpolation: i32) -> void:
+L_ENTRY:
+    store sampler+SA3D_ANIMATION_SAMPLER_input_times, input_times as i64
+    store sampler+SA3D_ANIMATION_SAMPLER_input_len, input_len as i64
+    store sampler+SA3D_ANIMATION_SAMPLER_output_values, output_values as i64
+    store sampler+SA3D_ANIMATION_SAMPLER_output_len, output_len as i64
+    store sampler+SA3D_ANIMATION_SAMPLER_value_stride, value_stride as i64
+    store sampler+SA3D_ANIMATION_SAMPLER_interpolation, interpolation as i32
+    !interpolation
+    !value_stride
+    !output_len
+    !output_values
+    !input_len
+    !input_times
+    !sampler
+    return
+
+@sa3d_animation_sampler_is_valid(&sampler: ptr) -> i32:
+L_ENTRY:
+    input_times = load sampler+SA3D_ANIMATION_SAMPLER_input_times as i64
+    input_len = load sampler+SA3D_ANIMATION_SAMPLER_input_len as i64
+    output_values = load sampler+SA3D_ANIMATION_SAMPLER_output_values as i64
+    output_len = load sampler+SA3D_ANIMATION_SAMPLER_output_len as i64
+    value_stride = load sampler+SA3D_ANIMATION_SAMPLER_value_stride as i64
+    interpolation = load sampler+SA3D_ANIMATION_SAMPLER_interpolation as i32
+    has_inputs = sgt input_len, 0
+    has_outputs = sgt output_len, 0
+    has_stride = sgt value_stride, 0
+    input_ptr_ok = ne input_times, 0
+    output_ptr_ok = ne output_values, 0
+    interp_ok = call @sa3d_animation_interpolation_is_valid(interpolation)
+    a = and has_inputs, has_outputs
+    b = and has_stride, input_ptr_ok
+    c = and output_ptr_ok, interp_ok
+    d = and a, b
+    ok = and d, c
+    !d
+    !c
+    !b
+    !a
+    !interp_ok
+    !output_ptr_ok
+    !input_ptr_ok
+    !has_stride
+    !has_outputs
+    !has_inputs
+    !interpolation
+    !value_stride
+    !output_len
+    !output_values
+    !input_len
+    !input_times
+    !sampler
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_animation_channel_init(&channel: ptr, target_node: i64, target_path: i32, sampler_index: i64) -> void:
+L_ENTRY:
+    store channel+SA3D_ANIMATION_CHANNEL_target_node, target_node as i64
+    store channel+SA3D_ANIMATION_CHANNEL_target_path, target_path as i32
+    store channel+SA3D_ANIMATION_CHANNEL_sampler, sampler_index as i64
+    !sampler_index
+    !target_path
+    !target_node
+    !channel
+    return
+
+@sa3d_animation_channel_is_valid(&channel: ptr, sampler_count: i64) -> i32:
+L_ENTRY:
+    target_path = load channel+SA3D_ANIMATION_CHANNEL_target_path as i32
+    sampler_index = load channel+SA3D_ANIMATION_CHANNEL_sampler as i64
+    target_ok = call @sa3d_animation_target_path_is_valid(target_path)
+    index_non_negative = sge sampler_index, 0
+    index_in_range = slt sampler_index, sampler_count
+    sampler_count_ok = sgt sampler_count, 0
+    a = and target_ok, index_non_negative
+    b = and index_in_range, sampler_count_ok
+    ok = and a, b
+    !b
+    !a
+    !sampler_count_ok
+    !index_in_range
+    !index_non_negative
+    !target_ok
+    !sampler_index
+    !target_path
+    !sampler_count
+    !channel
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_animation_player_init(&player: ptr) -> void:
+L_ENTRY:
+    store player+SA3D_ANIMATION_PLAYER_clip, 0 as i64
+    store player+SA3D_ANIMATION_PLAYER_time_ms, 0 as i64
+    store player+SA3D_ANIMATION_PLAYER_speed, 1000 as i32
+    store player+SA3D_ANIMATION_PLAYER_weight, 1000 as i32
+    store player+SA3D_ANIMATION_PLAYER_flags, 0 as i32
+    !player
+    return
+
+@sa3d_animation_player_get_time(&player: ptr) -> i64:
+L_ENTRY:
+    t = load player+SA3D_ANIMATION_PLAYER_time_ms as i64
+    !player
+    return t
+
+@sa3d_animation_player_get_speed(&player: ptr) -> i32:
+L_ENTRY:
+    s = load player+SA3D_ANIMATION_PLAYER_speed as i32
+    !player
+    return s
+
+@sa3d_animation_player_get_flags(&player: ptr) -> i32:
+L_ENTRY:
+    f = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    !player
+    return f
+
+@sa3d_animation_player_set_speed(&player: ptr, speed: i32) -> void:
+L_ENTRY:
+    store player+SA3D_ANIMATION_PLAYER_speed, speed as i32
+    !speed
+    !player
+    return
+
+@sa3d_animation_player_set_weight(&player: ptr, weight: i32) -> void:
+L_ENTRY:
+    neg = slt weight, 0
+    br neg -> L_ZERO, L_SET
+
+L_ZERO:
+    store player+SA3D_ANIMATION_PLAYER_weight, 0 as i32
+    !neg
+    !weight
+    !player
+    return
+
+L_SET:
+    store player+SA3D_ANIMATION_PLAYER_weight, weight as i32
+    !neg
+    !weight
+    !player
+    return
+
+@sa3d_animation_player_get_weight(&player: ptr) -> i32:
+L_ENTRY:
+    w = load player+SA3D_ANIMATION_PLAYER_weight as i32
+    !player
+    return w
+
+@sa3d_animation_player_set_clip(&player: ptr, clip: i64) -> void:
+L_ENTRY:
+    store player+SA3D_ANIMATION_PLAYER_clip, clip as i64
+    !clip
+    !player
+    return
+
+@sa3d_animation_player_get_clip(&player: ptr) -> i64:
+L_ENTRY:
+    clip = load player+SA3D_ANIMATION_PLAYER_clip as i64
+    !player
+    return clip
+
+@sa3d_animation_player_seek(&player: ptr, time_ms: i64, duration_ms: i64) -> void:
+L_ENTRY:
+    neg = slt time_ms, 0
+    br neg -> L_ZERO, L_CHECK_DURATION
+
+L_CHECK_DURATION:
+    has_duration = sgt duration_ms, 0
+    br has_duration -> L_CLAMP, L_SET_RAW
+
+L_CLAMP:
+    over = sgt time_ms, duration_ms
+    br over -> L_END, L_SET_CLAMPED
+
+L_ZERO:
+    store player+SA3D_ANIMATION_PLAYER_time_ms, 0 as i64
+    flags = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    clear_finished = xor SA3D_ANIMATION_PLAYER_FLAG_FINISHED, -1
+    next_flags = and flags, clear_finished
+    store player+SA3D_ANIMATION_PLAYER_flags, next_flags as i32
+    !next_flags
+    !clear_finished
+    !flags
+    !neg
+    !duration_ms
+    !time_ms
+    !player
+    return
+
+L_END:
+    store player+SA3D_ANIMATION_PLAYER_time_ms, duration_ms as i64
+    flags_end = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    clear_finished_end = xor SA3D_ANIMATION_PLAYER_FLAG_FINISHED, -1
+    next_flags_end = and flags_end, clear_finished_end
+    store player+SA3D_ANIMATION_PLAYER_flags, next_flags_end as i32
+    !next_flags_end
+    !clear_finished_end
+    !flags_end
+    !over
+    !has_duration
+    !neg
+    !duration_ms
+    !time_ms
+    !player
+    return
+
+L_SET_CLAMPED:
+    store player+SA3D_ANIMATION_PLAYER_time_ms, time_ms as i64
+    flags_clamped = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    clear_finished_clamped = xor SA3D_ANIMATION_PLAYER_FLAG_FINISHED, -1
+    next_flags_clamped = and flags_clamped, clear_finished_clamped
+    store player+SA3D_ANIMATION_PLAYER_flags, next_flags_clamped as i32
+    !next_flags_clamped
+    !clear_finished_clamped
+    !flags_clamped
+    !over
+    !has_duration
+    !neg
+    !duration_ms
+    !time_ms
+    !player
+    return
+
+L_SET_RAW:
+    store player+SA3D_ANIMATION_PLAYER_time_ms, time_ms as i64
+    flags_raw = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    clear_finished_raw = xor SA3D_ANIMATION_PLAYER_FLAG_FINISHED, -1
+    next_flags_raw = and flags_raw, clear_finished_raw
+    store player+SA3D_ANIMATION_PLAYER_flags, next_flags_raw as i32
+    !next_flags_raw
+    !clear_finished_raw
+    !flags_raw
+    !has_duration
+    !neg
+    !duration_ms
+    !time_ms
+    !player
+    return
+
+@sa3d_animation_player_stop(&player: ptr) -> void:
+L_ENTRY:
+    store player+SA3D_ANIMATION_PLAYER_time_ms, 0 as i64
+    store player+SA3D_ANIMATION_PLAYER_flags, 0 as i32
+    !player
+    return
+
+@sa3d_animation_player_tick(&player: ptr, delta_ms: i64) -> void:
+L_ENTRY:
+    time = load player+SA3D_ANIMATION_PLAYER_time_ms as i64
+    speed_bits = load player+SA3D_ANIMATION_PLAYER_speed as i32
+    new_time = add time, delta_ms
+    store player+SA3D_ANIMATION_PLAYER_time_ms, new_time as i64
+    !new_time
+    !speed_bits
+    !time
+    !delta_ms
+    !player
+    return
+
+@sa3d_animation_player_tick_duration(&player: ptr, delta_ms: i64, duration_ms: i64) -> i32:
+L_ENTRY:
+    flags = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    playing_bits = and flags, SA3D_ANIMATION_PLAYER_FLAG_PLAYING
+    paused_bits = and flags, SA3D_ANIMATION_PLAYER_FLAG_PAUSED
+    finished_bits = and flags, SA3D_ANIMATION_PLAYER_FLAG_FINISHED
+    is_playing = ne playing_bits, 0
+    is_paused = ne paused_bits, 0
+    is_finished = ne finished_bits, 0
+    not_paused = eq is_paused, 0
+    active = and is_playing, not_paused
+    active_not = eq active, 0
+    blocked = or active_not, is_finished
+    br blocked -> L_NO_TICK, L_DURATION
+
+L_NO_TICK:
+    !blocked
+    !active_not
+    !active
+    !not_paused
+    !is_finished
+    !is_paused
+    !is_playing
+    !finished_bits
+    !paused_bits
+    !playing_bits
+    !flags
+    !duration_ms
+    !delta_ms
+    !player
+    return 0
+
+L_DURATION:
+    duration_invalid = sle duration_ms, 0
+    br duration_invalid -> L_ZERO_DURATION, L_CALC
+
+L_ZERO_DURATION:
+    next_flags_zero = or flags, SA3D_ANIMATION_PLAYER_FLAG_FINISHED
+    store player+SA3D_ANIMATION_PLAYER_time_ms, 0 as i64
+    store player+SA3D_ANIMATION_PLAYER_flags, next_flags_zero as i32
+    !next_flags_zero
+    !duration_invalid
+    !blocked
+    !active_not
+    !active
+    !not_paused
+    !is_finished
+    !is_paused
+    !is_playing
+    !finished_bits
+    !paused_bits
+    !playing_bits
+    !flags
+    !duration_ms
+    !delta_ms
+    !player
+    return 1
+
+L_CALC:
+    time = load player+SA3D_ANIMATION_PLAYER_time_ms as i64
+    speed = load player+SA3D_ANIMATION_PLAYER_speed as i32
+    speed64 = sext speed as i64
+    scaled = mul delta_ms, speed64
+    step = sdiv scaled, 1000
+    next_time = add time, step
+    under = slt next_time, 0
+    br under -> L_UNDER, L_OVER_CHECK
+
+L_OVER_CHECK:
+    over = sge next_time, duration_ms
+    br over -> L_OVER, L_PROGRESS
+
+L_UNDER:
+    repeat_bits_under = and flags, SA3D_ANIMATION_PLAYER_FLAG_REPEAT
+    repeat_under = ne repeat_bits_under, 0
+    br repeat_under -> L_UNDER_REPEAT, L_UNDER_FINISH
+
+L_UNDER_REPEAT:
+    wrapped_under = add next_time, duration_ms
+    still_under = slt wrapped_under, 0
+    br still_under -> L_UNDER_ZERO, L_UNDER_STORE
+
+L_UNDER_ZERO:
+    store player+SA3D_ANIMATION_PLAYER_time_ms, 0 as i64
+    !still_under
+    !wrapped_under
+    !repeat_under
+    !repeat_bits_under
+    !under
+    !next_time
+    !step
+    !scaled
+    !speed64
+    !speed
+    !time
+    !duration_invalid
+    !blocked
+    !active_not
+    !active
+    !is_finished
+    !is_paused
+    !is_playing
+    !finished_bits
+    !paused_bits
+    !playing_bits
+    !flags
+    !duration_ms
+    !delta_ms
+    !player
+    return 1
+
+L_UNDER_STORE:
+    store player+SA3D_ANIMATION_PLAYER_time_ms, wrapped_under as i64
+    !still_under
+    !wrapped_under
+    !repeat_under
+    !repeat_bits_under
+    !under
+    !next_time
+    !step
+    !scaled
+    !speed64
+    !speed
+    !time
+    !duration_invalid
+    !blocked
+    !active_not
+    !active
+    !is_finished
+    !is_paused
+    !is_playing
+    !finished_bits
+    !paused_bits
+    !playing_bits
+    !flags
+    !duration_ms
+    !delta_ms
+    !player
+    return 1
+
+L_UNDER_FINISH:
+    finish_under_flags = or flags, SA3D_ANIMATION_PLAYER_FLAG_FINISHED
+    store player+SA3D_ANIMATION_PLAYER_time_ms, 0 as i64
+    store player+SA3D_ANIMATION_PLAYER_flags, finish_under_flags as i32
+    !finish_under_flags
+    !repeat_under
+    !repeat_bits_under
+    !under
+    !next_time
+    !step
+    !scaled
+    !speed64
+    !speed
+    !time
+    !duration_invalid
+    !blocked
+    !active_not
+    !active
+    !is_finished
+    !is_paused
+    !is_playing
+    !finished_bits
+    !paused_bits
+    !playing_bits
+    !flags
+    !duration_ms
+    !delta_ms
+    !player
+    return 1
+
+L_OVER:
+    repeat_bits = and flags, SA3D_ANIMATION_PLAYER_FLAG_REPEAT
+    repeat = ne repeat_bits, 0
+    br repeat -> L_OVER_REPEAT, L_OVER_FINISH
+
+L_OVER_REPEAT:
+    wrapped = srem next_time, duration_ms
+    store player+SA3D_ANIMATION_PLAYER_time_ms, wrapped as i64
+    !wrapped
+    !repeat
+    !repeat_bits
+    !over
+    !under
+    !next_time
+    !step
+    !scaled
+    !speed64
+    !speed
+    !time
+    !duration_invalid
+    !blocked
+    !active_not
+    !active
+    !is_finished
+    !is_paused
+    !is_playing
+    !finished_bits
+    !paused_bits
+    !playing_bits
+    !flags
+    !duration_ms
+    !delta_ms
+    !player
+    return 1
+
+L_OVER_FINISH:
+    finish_flags = or flags, SA3D_ANIMATION_PLAYER_FLAG_FINISHED
+    store player+SA3D_ANIMATION_PLAYER_time_ms, duration_ms as i64
+    store player+SA3D_ANIMATION_PLAYER_flags, finish_flags as i32
+    !finish_flags
+    !repeat
+    !repeat_bits
+    !over
+    !under
+    !next_time
+    !step
+    !scaled
+    !speed64
+    !speed
+    !time
+    !duration_invalid
+    !blocked
+    !active_not
+    !active
+    !is_finished
+    !is_paused
+    !is_playing
+    !finished_bits
+    !paused_bits
+    !playing_bits
+    !flags
+    !duration_ms
+    !delta_ms
+    !player
+    return 1
+
+L_PROGRESS:
+    store player+SA3D_ANIMATION_PLAYER_time_ms, next_time as i64
+    !over
+    !under
+    !next_time
+    !step
+    !scaled
+    !speed64
+    !speed
+    !time
+    !duration_invalid
+    !blocked
+    !active_not
+    !active
+    !is_finished
+    !is_paused
+    !is_playing
+    !finished_bits
+    !paused_bits
+    !playing_bits
+    !flags
+    !duration_ms
+    !delta_ms
+    !player
+    return 0
+
+@sa3d_animation_player_play(&player: ptr) -> void:
+L_ENTRY:
+    flags = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    clear_pause = xor SA3D_ANIMATION_PLAYER_FLAG_PAUSED, -1
+    clear_finished = xor SA3D_ANIMATION_PLAYER_FLAG_FINISHED, -1
+    without_pause = and flags, clear_pause
+    without_finished = and without_pause, clear_finished
+    next_flags = or without_finished, SA3D_ANIMATION_PLAYER_FLAG_PLAYING
+    store player+SA3D_ANIMATION_PLAYER_flags, next_flags as i32
+    !next_flags
+    !without_finished
+    !without_pause
+    !clear_finished
+    !clear_pause
+    !flags
+    !player
+    return
+
+@sa3d_animation_player_pause(&player: ptr) -> void:
+L_ENTRY:
+    flags = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    next_flags = or flags, SA3D_ANIMATION_PLAYER_FLAG_PAUSED
+    store player+SA3D_ANIMATION_PLAYER_flags, next_flags as i32
+    !next_flags
+    !flags
+    !player
+    return
+
+@sa3d_animation_player_set_repeat(&player: ptr, repeat: i32) -> void:
+L_ENTRY:
+    flags = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    enabled = ne repeat, 0
+    br enabled -> L_ENABLE, L_DISABLE
+
+L_ENABLE:
+    next_enable = or flags, SA3D_ANIMATION_PLAYER_FLAG_REPEAT
+    store player+SA3D_ANIMATION_PLAYER_flags, next_enable as i32
+    !next_enable
+    !enabled
+    !flags
+    !repeat
+    !player
+    return
+
+L_DISABLE:
+    mask = xor SA3D_ANIMATION_PLAYER_FLAG_REPEAT, -1
+    next_disable = and flags, mask
+    store player+SA3D_ANIMATION_PLAYER_flags, next_disable as i32
+    !next_disable
+    !mask
+    !enabled
+    !flags
+    !repeat
+    !player
+    return
+
+@sa3d_animation_player_is_playing(&player: ptr) -> i32:
+L_ENTRY:
+    flags = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    bits = and flags, SA3D_ANIMATION_PLAYER_FLAG_PLAYING
+    ok = ne bits, 0
+    !bits
+    !flags
+    !player
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_animation_player_is_paused(&player: ptr) -> i32:
+L_ENTRY:
+    flags = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    bits = and flags, SA3D_ANIMATION_PLAYER_FLAG_PAUSED
+    ok = ne bits, 0
+    !bits
+    !flags
+    !player
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_animation_player_is_finished(&player: ptr) -> i32:
+L_ENTRY:
+    flags = load player+SA3D_ANIMATION_PLAYER_flags as i32
+    bits = and flags, SA3D_ANIMATION_PLAYER_FLAG_FINISHED
+    ok = ne bits, 0
+    !bits
+    !flags
+    !player
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    return 1
+
+L_FALSE:
+    !ok
+    return 0
+
+@sa3d_animation_keyframe_index_i64(&times: ptr, len: i64, time_ms: i64) -> i64:
+L_ENTRY:
+    empty = sle len, 0
+    br empty -> L_NONE, L_FIRST
+
+L_NONE:
+    !empty
+    !time_ms
+    !len
+    !times
+    return -1
+
+L_FIRST:
+    first = load times+0 as i64
+    before_first = sle time_ms, first
+    br before_first -> L_ZERO, L_LOOP_INIT
+
+L_ZERO:
+    !before_first
+    !first
+    !empty
+    !time_ms
+    !len
+    !times
+    return 0
+
+L_LOOP_INIT:
+    last_index = sub len, 1
+    at_last = eq last_index, 0
+    br at_last -> L_LAST_ONLY, L_LOOP_SETUP
+
+L_LAST_ONLY:
+    !at_last
+    !last_index
+    !before_first
+    !first
+    !empty
+    !time_ms
+    !len
+    !times
+    return 0
+
+L_LOOP_SETUP:
+    i_slot = stack_alloc 8
+    store i_slot+0, 1 as i64
+    !at_last
+    !before_first
+    !first
+    !empty
+    jmp L_LOOP
+
+L_LOOP:
+    i = load i_slot+0 as i64
+    off = mul i, 8
+    slot = ptr_add times, off
+    t = load slot+0 as i64
+    reached = sle time_ms, t
+    br reached -> L_FOUND, L_NEXT
+
+L_FOUND:
+    idx = sub i, 1
+    !reached
+    !t
+    !slot
+    !off
+    !i
+    !last_index
+    !time_ms
+    !len
+    !times
+    return idx
+
+L_NEXT:
+    next_i = add i, 1
+    done = sge next_i, len
+    store i_slot+0, next_i as i64
+    !reached
+    !t
+    !slot
+    !off
+    !next_i
+    !i
+    br done -> L_LAST, L_CONTINUE
+
+L_CONTINUE:
+    !done
+    jmp L_LOOP
+
+L_LAST:
+    !done
+    !time_ms
+    !len
+    !times
+    return last_index
+
+@sa3d_animation_keyframe_progress_per_mille_i64(&times: ptr, len: i64, index: i64, time_ms: i64) -> i32:
+L_ENTRY:
+    invalid_len = sle len, 1
+    br invalid_len -> L_ZERO, L_INDEX
+
+L_INDEX:
+    neg = slt index, 0
+    br neg -> L_ZERO2, L_RANGE
+
+L_RANGE:
+    next_index = add index, 1
+    out_of_range = sge next_index, len
+    br out_of_range -> L_FULL, L_CALC
+
+L_ZERO:
+    !invalid_len
+    !time_ms
+    !index
+    !len
+    !times
+    return 0
+
+L_ZERO2:
+    !neg
+    !invalid_len
+    !time_ms
+    !index
+    !len
+    !times
+    return 0
+
+L_FULL:
+    !out_of_range
+    !next_index
+    !neg
+    !invalid_len
+    !time_ms
+    !index
+    !len
+    !times
+    return 1000
+
+L_CALC:
+    off0 = mul index, 8
+    off1 = mul next_index, 8
+    slot0 = ptr_add times, off0
+    slot1 = ptr_add times, off1
+    t0 = load slot0+0 as i64
+    t1 = load slot1+0 as i64
+    span = sub t1, t0
+    invalid_span = sle span, 0
+    br invalid_span -> L_FULL2, L_PROGRESS
+
+L_FULL2:
+    !invalid_span
+    !span
+    !t1
+    !t0
+    !slot1
+    !slot0
+    !off1
+    !off0
+    !out_of_range
+    !next_index
+    !neg
+    !invalid_len
+    !time_ms
+    !index
+    !len
+    !times
+    return 1000
+
+L_PROGRESS:
+    local = sub time_ms, t0
+    before = slt local, 0
+    br before -> L_PROGRESS_ZERO, L_PROGRESS_SCALE
+
+L_PROGRESS_ZERO:
+    !before
+    !local
+    !invalid_span
+    !span
+    !t1
+    !t0
+    !slot1
+    !slot0
+    !off1
+    !off0
+    !out_of_range
+    !next_index
+    !neg
+    !invalid_len
+    !time_ms
+    !index
+    !len
+    !times
+    return 0
+
+L_PROGRESS_SCALE:
+    over_local = sgt local, span
+    br over_local -> L_PROGRESS_FULL, L_PROGRESS_VALUE
+
+L_PROGRESS_FULL:
+    !over_local
+    !before
+    !local
+    !invalid_span
+    !span
+    !t1
+    !t0
+    !slot1
+    !slot0
+    !off1
+    !off0
+    !out_of_range
+    !next_index
+    !neg
+    !invalid_len
+    !time_ms
+    !index
+    !len
+    !times
+    return 1000
+
+L_PROGRESS_VALUE:
+    scaled = mul local, 1000
+    progress64 = sdiv scaled, span
+    progress = trunc progress64 as i32
+    !progress64
+    !scaled
+    !over_local
+    !before
+    !local
+    !invalid_span
+    !span
+    !t1
+    !t0
+    !slot1
+    !slot0
+    !off1
+    !off0
+    !out_of_range
+    !next_index
+    !neg
+    !invalid_len
+    !time_ms
+    !index
+    !len
+    !times
+    return progress

@@ -1,0 +1,807 @@
+#def SA3D_CAMERA_CONTROLLER_VERSION_MAJOR = 0
+#def SA3D_CAMERA_CONTROLLER_VERSION_MINOR = 1
+
+#def SA3D_CAMERA_CONTROLLER_ORBIT = 1
+#def SA3D_CAMERA_CONTROLLER_FLY = 2
+#def SA3D_CAMERA_CONTROLLER_FIRST_PERSON = 3
+
+#def SA3D_CAMERA_CONTROLLER_STATE_mode = +0
+#def SA3D_CAMERA_CONTROLLER_STATE_flags = +4
+#def SA3D_CAMERA_CONTROLLER_STATE_camera_handle = +8
+#def SA3D_CAMERA_CONTROLLER_STATE_target = +16
+#def SA3D_CAMERA_CONTROLLER_STATE_yaw = +28
+#def SA3D_CAMERA_CONTROLLER_STATE_pitch = +32
+#def SA3D_CAMERA_CONTROLLER_STATE_distance = +36
+#def SA3D_CAMERA_CONTROLLER_STATE_move_speed = +40
+#def SA3D_CAMERA_CONTROLLER_STATE_look_speed = +44
+#def SA3D_CAMERA_CONTROLLER_STATE_input_bindings = +48
+#def SA3D_CAMERA_CONTROLLER_STATE_input_bindings_len = +56
+#def SA3D_CAMERA_CONTROLLER_STATE_SIZE = 64
+
+#def SA3D_CAMERA_CONTROLLER_MIN_PITCH = -89000
+#def SA3D_CAMERA_CONTROLLER_MAX_PITCH = 89000
+#def SA3D_CAMERA_CONTROLLER_MIN_DISTANCE = 1
+
+#def SA3D_CAMERA_CONTROLLER_INPUT_pan_x = +0
+#def SA3D_CAMERA_CONTROLLER_INPUT_pan_y = +4
+#def SA3D_CAMERA_CONTROLLER_INPUT_orbit_x = +8
+#def SA3D_CAMERA_CONTROLLER_INPUT_orbit_y = +12
+#def SA3D_CAMERA_CONTROLLER_INPUT_zoom = +16
+#def SA3D_CAMERA_CONTROLLER_INPUT_forward = +20
+#def SA3D_CAMERA_CONTROLLER_INPUT_right = +24
+#def SA3D_CAMERA_CONTROLLER_INPUT_up = +28
+#def SA3D_CAMERA_CONTROLLER_INPUT_SIZE = 32
+
+#def SA3D_FREE_CAMERA_sensitivity = +0
+#def SA3D_FREE_CAMERA_walk_speed = +4
+#def SA3D_FREE_CAMERA_run_speed = +8
+#def SA3D_FREE_CAMERA_scroll_factor = +12
+#def SA3D_FREE_CAMERA_friction = +16
+#def SA3D_FREE_CAMERA_rotation_speed = +20
+#def SA3D_FREE_CAMERA_SIZE = 24
+
+#def SA3D_FREE_CAMERA_STATE_enabled = +0
+#def SA3D_FREE_CAMERA_STATE_initialized = +4
+#def SA3D_FREE_CAMERA_STATE_pitch = +8
+#def SA3D_FREE_CAMERA_STATE_yaw = +12
+#def SA3D_FREE_CAMERA_STATE_speed_multiplier = +16
+#def SA3D_FREE_CAMERA_STATE_velocity = +20
+#def SA3D_FREE_CAMERA_STATE_rotation_curve_active = +32
+#def SA3D_FREE_CAMERA_STATE_SIZE = 36
+
+#def SA3D_FREE_CAMERA_INPUT_axis_x = +0
+#def SA3D_FREE_CAMERA_INPUT_axis_y = +4
+#def SA3D_FREE_CAMERA_INPUT_axis_z = +8
+#def SA3D_FREE_CAMERA_INPUT_mouse_dx = +12
+#def SA3D_FREE_CAMERA_INPUT_mouse_dy = +16
+#def SA3D_FREE_CAMERA_INPUT_scroll = +20
+#def SA3D_FREE_CAMERA_INPUT_cursor_grab = +24
+#def SA3D_FREE_CAMERA_INPUT_run = +28
+#def SA3D_FREE_CAMERA_INPUT_SIZE = 32
+
+#def SA3D_FREE_CAMERA_RADIANS_PER_DOT_BITS = 1001786209
+#def SA3D_FREE_CAMERA_PITCH_LIMIT_BITS = 1070141403
+
+@import "../sa_plugin_3d_math/3d_math.sal"
+
+@extern exp(x: f64) -> f64
+
+@sa3d_camera_controller_init_orbit(&state: ptr) -> void:
+L_ENTRY:
+    store state+SA3D_CAMERA_CONTROLLER_STATE_mode, SA3D_CAMERA_CONTROLLER_ORBIT as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_flags, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_camera_handle, 0 as i64
+    store state+SA3D_CAMERA_CONTROLLER_STATE_target, 0 as i32
+    store state+20, 0 as i32
+    store state+24, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_yaw, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_pitch, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_distance, 1082130432 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_move_speed, 1082130432 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_look_speed, 1065353216 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_input_bindings, 0 as i64
+    store state+SA3D_CAMERA_CONTROLLER_STATE_input_bindings_len, 0 as i64
+    !state
+    return
+
+@sa3d_free_camera_default(&config: ptr) -> void:
+L_ENTRY:
+    store config+SA3D_FREE_CAMERA_sensitivity, 0.2 as f32
+    store config+SA3D_FREE_CAMERA_walk_speed, 5.0 as f32
+    store config+SA3D_FREE_CAMERA_run_speed, 15.0 as f32
+    store config+SA3D_FREE_CAMERA_scroll_factor, 0.04879016 as f32
+    store config+SA3D_FREE_CAMERA_friction, 40.0 as f32
+    store config+SA3D_FREE_CAMERA_rotation_speed, 11.78097245 as f32
+    !config
+    return
+
+@sa3d_free_camera_state_default(&state: ptr) -> void:
+L_ENTRY:
+    store state+SA3D_FREE_CAMERA_STATE_enabled, 1 as i32
+    store state+SA3D_FREE_CAMERA_STATE_initialized, 0 as i32
+    store state+SA3D_FREE_CAMERA_STATE_pitch, 0.0 as f32
+    store state+SA3D_FREE_CAMERA_STATE_yaw, 0.0 as f32
+    store state+SA3D_FREE_CAMERA_STATE_speed_multiplier, 1.0 as f32
+    store state+SA3D_FREE_CAMERA_STATE_velocity, 0.0 as f32
+    store state+24, 0.0 as f32
+    store state+28, 0.0 as f32
+    store state+SA3D_FREE_CAMERA_STATE_rotation_curve_active, 0 as i32
+    !state
+    return
+
+@sa3d_free_camera_input_default(&input: ptr) -> void:
+L_ENTRY:
+    store input+SA3D_FREE_CAMERA_INPUT_axis_x, 0.0 as f32
+    store input+SA3D_FREE_CAMERA_INPUT_axis_y, 0.0 as f32
+    store input+SA3D_FREE_CAMERA_INPUT_axis_z, 0.0 as f32
+    store input+SA3D_FREE_CAMERA_INPUT_mouse_dx, 0.0 as f32
+    store input+SA3D_FREE_CAMERA_INPUT_mouse_dy, 0.0 as f32
+    store input+SA3D_FREE_CAMERA_INPUT_scroll, 0.0 as f32
+    store input+SA3D_FREE_CAMERA_INPUT_cursor_grab, 0 as i32
+    store input+SA3D_FREE_CAMERA_INPUT_run, 0 as i32
+    !input
+    return
+
+@sa3d_free_camera_clamp_pitch(pitch: f32) -> f32:
+L_ENTRY:
+    too_low = fcmp_lt pitch, -1.57079632679
+    br too_low -> L_LOW, L_CHECK_HIGH
+
+L_LOW:
+    !too_low
+    !pitch
+    return -1.57079632679
+
+L_CHECK_HIGH:
+    too_high = fcmp_gt pitch, 1.57079632679
+    br too_high -> L_HIGH, L_KEEP
+
+L_HIGH:
+    !too_high
+    !too_low
+    !pitch
+    return 1.57079632679
+
+L_KEEP:
+    !too_high
+    !too_low
+    return pitch
+
+@sa3d_free_camera_apply_scroll(&config: ptr, &state: ptr, scroll: f32) -> void:
+L_ENTRY:
+    scroll_factor = load config+SA3D_FREE_CAMERA_scroll_factor as f32
+    current = load state+SA3D_FREE_CAMERA_STATE_speed_multiplier as f32
+    exponent = fmul scroll_factor, scroll
+    exponent64 = exponent as f64
+    factor64 = call @exp(exponent64)
+    factor = factor64 as f32
+    next_raw = fmul current, factor
+    too_low = fcmp_lt next_raw, 0.00000011920929
+    br too_low -> L_MIN, L_STORE
+
+L_MIN:
+    store state+SA3D_FREE_CAMERA_STATE_speed_multiplier, 0.00000011920929 as f32
+    !too_low
+    !next_raw
+    !factor
+    !current
+    !scroll_factor
+    !scroll
+    !state
+    !config
+    return
+
+L_STORE:
+    store state+SA3D_FREE_CAMERA_STATE_speed_multiplier, next_raw as f32
+    !too_low
+    !next_raw
+    !factor
+    !current
+    !scroll_factor
+    !scroll
+    !state
+    !config
+    return
+
+@sa3d_free_camera_apply_mouse(&config: ptr, &state: ptr, mouse_dx: f32, mouse_dy: f32, cursor_grab: i32) -> i32:
+L_ENTRY:
+    grabbed = ne cursor_grab, 0
+    br grabbed -> L_APPLY, L_FALSE
+
+L_APPLY:
+    sensitivity = load config+SA3D_FREE_CAMERA_sensitivity as f32
+    pitch = load state+SA3D_FREE_CAMERA_STATE_pitch as f32
+    yaw = load state+SA3D_FREE_CAMERA_STATE_yaw as f32
+    dot_scale = fmul 0.00555555555556, sensitivity
+    pitch_delta = fmul mouse_dy, dot_scale
+    yaw_delta = fmul mouse_dx, dot_scale
+    raw_pitch = fsub pitch, pitch_delta
+    new_pitch = call @sa3d_free_camera_clamp_pitch(raw_pitch)
+    new_yaw = fsub yaw, yaw_delta
+    store state+SA3D_FREE_CAMERA_STATE_pitch, new_pitch as f32
+    store state+SA3D_FREE_CAMERA_STATE_yaw, new_yaw as f32
+    !new_yaw
+    !new_pitch
+    !raw_pitch
+    !yaw_delta
+    !pitch_delta
+    !dot_scale
+    !yaw
+    !pitch
+    !sensitivity
+    !grabbed
+    !cursor_grab
+    !mouse_dy
+    !mouse_dx
+    !state
+    !config
+    return 1
+
+L_FALSE:
+    !grabbed
+    !cursor_grab
+    !mouse_dy
+    !mouse_dx
+    !state
+    !config
+    return 0
+
+@sa3d_free_camera_apply_axis(&config: ptr, &state: ptr, axis_x: f32, axis_y: f32, axis_z: f32, run: i32) -> i32:
+L_ENTRY:
+    changed = call @sa3d_free_camera_apply_axis_dt(&config, &state, axis_x, axis_y, axis_z, run, 0.0)
+    !run
+    !axis_z
+    !axis_y
+    !axis_x
+    !state
+    !config
+    return changed
+
+@sa3d_free_camera_apply_axis_dt(&config: ptr, &state: ptr, axis_x: f32, axis_y: f32, axis_z: f32, run: i32, dt: f32) -> i32:
+L_ENTRY:
+    x_zero = fcmp_eq axis_x, 0.0
+    y_zero = fcmp_eq axis_y, 0.0
+    z_zero = fcmp_eq axis_z, 0.0
+    x_nonzero = eq x_zero, 0
+    y_nonzero = eq y_zero, 0
+    z_nonzero = eq z_zero, 0
+    p = or x_nonzero, y_nonzero
+    any = or p, z_nonzero
+    br any -> L_APPLY, L_ZERO
+
+L_APPLY:
+    run_pressed = ne run, 0
+    speed_multiplier = load state+SA3D_FREE_CAMERA_STATE_speed_multiplier as f32
+    br run_pressed -> L_RUN, L_WALK
+
+L_RUN:
+    base_speed = load config+SA3D_FREE_CAMERA_run_speed as f32
+    jmp L_SPEED
+
+L_WALK:
+    base_speed = load config+SA3D_FREE_CAMERA_walk_speed as f32
+    jmp L_SPEED
+
+L_SPEED:
+    max_speed = fmul base_speed, speed_multiplier
+    len_sq_x = fmul axis_x, axis_x
+    len_sq_y = fmul axis_y, axis_y
+    len_sq_z = fmul axis_z, axis_z
+    len_sq_xy = fadd len_sq_x, len_sq_y
+    len_sq = fadd len_sq_xy, len_sq_z
+    len = call @sa3d_f32_sqrt(len_sq)
+    inv_len = fdiv 1.0, len
+    scale = fmul max_speed, inv_len
+    vx = fmul axis_x, scale
+    vy = fmul axis_y, scale
+    vz = fmul axis_z, scale
+    store state+SA3D_FREE_CAMERA_STATE_velocity, vx as f32
+    store state+24, vy as f32
+    store state+28, vz as f32
+    !vz
+    !vy
+    !vx
+    !scale
+    !inv_len
+    !len
+    !len_sq
+    !len_sq_xy
+    !len_sq_z
+    !len_sq_y
+    !len_sq_x
+    !max_speed
+    !base_speed
+    !speed_multiplier
+    !run_pressed
+    !any
+    !p
+    !z_nonzero
+    !y_nonzero
+    !x_nonzero
+    !z_zero
+    !y_zero
+    !x_zero
+    !run
+    !dt
+    !axis_z
+    !axis_y
+    !axis_x
+    !state
+    !config
+    return 1
+
+L_ZERO:
+    vx0 = load state+SA3D_FREE_CAMERA_STATE_velocity as f32
+    vy0 = load state+24 as f32
+    vz0 = load state+28 as f32
+    friction_raw = load config+SA3D_FREE_CAMERA_friction as f32
+    friction_negative = fcmp_lt friction_raw, 0.0
+    br friction_negative -> L_ZERO_NO_DECAY, L_ZERO_DECAY
+
+L_ZERO_NO_DECAY:
+    decay = 1.0
+    jmp L_ZERO_APPLY_DECAY
+
+L_ZERO_DECAY:
+    neg_friction = fsub 0.0, friction_raw
+    exponent = fmul neg_friction, dt
+    exponent64 = exponent as f64
+    decay64 = call @exp(exponent64)
+    decay = decay64 as f32
+    jmp L_ZERO_APPLY_DECAY
+
+L_ZERO_APPLY_DECAY:
+    vx = fmul vx0, decay
+    vy = fmul vy0, decay
+    vz = fmul vz0, decay
+    vx_sq = fmul vx, vx
+    vy_sq = fmul vy, vy
+    vz_sq = fmul vz, vz
+    len_sq_xy = fadd vx_sq, vy_sq
+    len_sq = fadd len_sq_xy, vz_sq
+    tiny = fcmp_lt len_sq, 0.000001
+    br tiny -> L_ZERO_SNAP, L_ZERO_STORE
+
+L_ZERO_SNAP:
+    store state+SA3D_FREE_CAMERA_STATE_velocity, 0.0 as f32
+    store state+24, 0.0 as f32
+    store state+28, 0.0 as f32
+    !tiny
+    !len_sq
+    !len_sq_xy
+    !vz_sq
+    !vy_sq
+    !vx_sq
+    !vz
+    !vy
+    !vx
+    !decay
+    !friction_negative
+    !friction_raw
+    !vz0
+    !vy0
+    !vx0
+    !any
+    !p
+    !z_nonzero
+    !y_nonzero
+    !x_nonzero
+    !z_zero
+    !y_zero
+    !x_zero
+    !run
+    !dt
+    !axis_z
+    !axis_y
+    !axis_x
+    !state
+    !config
+    return 0
+
+L_ZERO_STORE:
+    store state+SA3D_FREE_CAMERA_STATE_velocity, vx as f32
+    store state+24, vy as f32
+    store state+28, vz as f32
+    !tiny
+    !len_sq
+    !len_sq_xy
+    !vz_sq
+    !vy_sq
+    !vx_sq
+    !vz
+    !vy
+    !vx
+    !decay
+    !friction_negative
+    !friction_raw
+    !vz0
+    !vy0
+    !vx0
+    !any
+    !p
+    !z_nonzero
+    !y_nonzero
+    !x_nonzero
+    !z_zero
+    !y_zero
+    !x_zero
+    !run
+    !dt
+    !axis_z
+    !axis_y
+    !axis_x
+    !state
+    !config
+    return 0
+
+@sa3d_camera_controller_init_fly(&state: ptr) -> void:
+L_ENTRY:
+    store state+SA3D_CAMERA_CONTROLLER_STATE_mode, SA3D_CAMERA_CONTROLLER_FLY as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_flags, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_camera_handle, 0 as i64
+    store state+SA3D_CAMERA_CONTROLLER_STATE_target, 0 as i32
+    store state+20, 0 as i32
+    store state+24, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_yaw, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_pitch, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_distance, 0 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_move_speed, 1082130432 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_look_speed, 1065353216 as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_input_bindings, 0 as i64
+    store state+SA3D_CAMERA_CONTROLLER_STATE_input_bindings_len, 0 as i64
+    !state
+    return
+
+@sa3d_camera_controller_mode_is_valid(mode: i32) -> i32:
+L_ENTRY:
+    orbit = eq mode, SA3D_CAMERA_CONTROLLER_ORBIT
+    fly = eq mode, SA3D_CAMERA_CONTROLLER_FLY
+    fp = eq mode, SA3D_CAMERA_CONTROLLER_FIRST_PERSON
+    p = or orbit, fly
+    ok = or p, fp
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p
+    !fp
+    !fly
+    !orbit
+    !mode
+    return 1
+
+L_FALSE:
+    !ok
+    !p
+    !fp
+    !fly
+    !orbit
+    !mode
+    return 0
+
+@sa3d_camera_controller_is_valid(&state: ptr) -> i32:
+L_ENTRY:
+    mode = load state+SA3D_CAMERA_CONTROLLER_STATE_mode as i32
+    mode_ok = call @sa3d_camera_controller_mode_is_valid(mode)
+    br mode_ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !mode_ok
+    !mode
+    !state
+    return 1
+
+L_FALSE:
+    !mode_ok
+    !mode
+    !state
+    return 0
+
+@sa3d_camera_controller_set_camera(&state: ptr, camera_handle: i64) -> void:
+L_ENTRY:
+    store state+SA3D_CAMERA_CONTROLLER_STATE_camera_handle, camera_handle as i64
+    !camera_handle
+    !state
+    return
+
+@sa3d_camera_controller_get_camera(&state: ptr) -> i64:
+L_ENTRY:
+    camera = load state+SA3D_CAMERA_CONTROLLER_STATE_camera_handle as i64
+    !state
+    return camera
+
+@sa3d_camera_controller_set_target(&state: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    store state+SA3D_CAMERA_CONTROLLER_STATE_target, x as i32
+    store state+20, y as i32
+    store state+24, z as i32
+    !z
+    !y
+    !x
+    !state
+    return
+
+@sa3d_camera_controller_get_target_x(&state: ptr) -> i32:
+L_ENTRY:
+    x = load state+SA3D_CAMERA_CONTROLLER_STATE_target as i32
+    !state
+    return x
+
+@sa3d_camera_controller_get_target_y(&state: ptr) -> i32:
+L_ENTRY:
+    y = load state+20 as i32
+    !state
+    return y
+
+@sa3d_camera_controller_get_target_z(&state: ptr) -> i32:
+L_ENTRY:
+    z = load state+24 as i32
+    !state
+    return z
+
+@sa3d_camera_controller_set_speeds(&state: ptr, move_speed: i32, look_speed: i32) -> void:
+L_ENTRY:
+    store state+SA3D_CAMERA_CONTROLLER_STATE_move_speed, move_speed as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_look_speed, look_speed as i32
+    !look_speed
+    !move_speed
+    !state
+    return
+
+@sa3d_camera_controller_set_input_bindings(&state: ptr, bindings: i64, bindings_len: i64) -> void:
+L_ENTRY:
+    store state+SA3D_CAMERA_CONTROLLER_STATE_input_bindings, bindings as i64
+    store state+SA3D_CAMERA_CONTROLLER_STATE_input_bindings_len, bindings_len as i64
+    !bindings_len
+    !bindings
+    !state
+    return
+
+@sa3d_camera_controller_has_input_bindings(&state: ptr) -> i32:
+L_ENTRY:
+    bindings = load state+SA3D_CAMERA_CONTROLLER_STATE_input_bindings as i64
+    len = load state+SA3D_CAMERA_CONTROLLER_STATE_input_bindings_len as i64
+    ptr_ok = ne bindings, 0
+    len_ok = sgt len, 0
+    ok = and ptr_ok, len_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !len
+    !bindings
+    !state
+    return 1
+
+L_FALSE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !len
+    !bindings
+    !state
+    return 0
+
+@sa3d_camera_controller_get_mode(&state: ptr) -> i32:
+L_ENTRY:
+    mode = load state+SA3D_CAMERA_CONTROLLER_STATE_mode as i32
+    !state
+    return mode
+
+@sa3d_camera_controller_get_yaw(&state: ptr) -> i32:
+L_ENTRY:
+    yaw = load state+SA3D_CAMERA_CONTROLLER_STATE_yaw as i32
+    !state
+    return yaw
+
+@sa3d_camera_controller_get_pitch(&state: ptr) -> i32:
+L_ENTRY:
+    pitch = load state+SA3D_CAMERA_CONTROLLER_STATE_pitch as i32
+    !state
+    return pitch
+
+@sa3d_camera_controller_get_distance(&state: ptr) -> i32:
+L_ENTRY:
+    dist = load state+SA3D_CAMERA_CONTROLLER_STATE_distance as i32
+    !state
+    return dist
+
+@sa3d_camera_controller_set_distance(&state: ptr, dist_bits: i32) -> void:
+L_ENTRY:
+    store state+SA3D_CAMERA_CONTROLLER_STATE_distance, dist_bits as i32
+    !dist_bits
+    !state
+    return
+
+@sa3d_camera_controller_clamp_pitch(pitch: i32) -> i32:
+L_ENTRY:
+    too_low = slt pitch, SA3D_CAMERA_CONTROLLER_MIN_PITCH
+    br too_low -> L_LOW, L_CHECK_HIGH
+
+L_LOW:
+    !too_low
+    !pitch
+    return SA3D_CAMERA_CONTROLLER_MIN_PITCH
+
+L_CHECK_HIGH:
+    too_high = sgt pitch, SA3D_CAMERA_CONTROLLER_MAX_PITCH
+    br too_high -> L_HIGH, L_KEEP
+
+L_HIGH:
+    !too_high
+    !too_low
+    !pitch
+    return SA3D_CAMERA_CONTROLLER_MAX_PITCH
+
+L_KEEP:
+    !too_high
+    !too_low
+    return pitch
+
+@sa3d_camera_controller_clamp_distance(distance: i32) -> i32:
+L_ENTRY:
+    too_low = slt distance, SA3D_CAMERA_CONTROLLER_MIN_DISTANCE
+    br too_low -> L_LOW, L_KEEP
+
+L_LOW:
+    !too_low
+    !distance
+    return SA3D_CAMERA_CONTROLLER_MIN_DISTANCE
+
+L_KEEP:
+    !too_low
+    return distance
+
+@sa3d_camera_controller_input_init(&input: ptr) -> void:
+L_ENTRY:
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_pan_x, 0 as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_pan_y, 0 as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_orbit_x, 0 as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_orbit_y, 0 as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_zoom, 0 as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_forward, 0 as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_right, 0 as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_up, 0 as i32
+    !input
+    return
+
+@sa3d_camera_controller_input_set_orbit(&input: ptr, orbit_x: i32, orbit_y: i32, zoom: i32) -> void:
+L_ENTRY:
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_orbit_x, orbit_x as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_orbit_y, orbit_y as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_zoom, zoom as i32
+    !zoom
+    !orbit_y
+    !orbit_x
+    !input
+    return
+
+@sa3d_camera_controller_input_set_pan(&input: ptr, pan_x: i32, pan_y: i32) -> void:
+L_ENTRY:
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_pan_x, pan_x as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_pan_y, pan_y as i32
+    !pan_y
+    !pan_x
+    !input
+    return
+
+@sa3d_camera_controller_input_set_move(&input: ptr, forward: i32, right: i32, up: i32) -> void:
+L_ENTRY:
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_forward, forward as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_right, right as i32
+    store input+SA3D_CAMERA_CONTROLLER_INPUT_up, up as i32
+    !up
+    !right
+    !forward
+    !input
+    return
+
+@sa3d_camera_controller_orbit_update(&state: ptr, &input: ptr) -> void:
+L_ENTRY:
+    orbit_x = load input+SA3D_CAMERA_CONTROLLER_INPUT_orbit_x as i32
+    orbit_y = load input+SA3D_CAMERA_CONTROLLER_INPUT_orbit_y as i32
+    zoom = load input+SA3D_CAMERA_CONTROLLER_INPUT_zoom as i32
+    yaw = load state+SA3D_CAMERA_CONTROLLER_STATE_yaw as i32
+    pitch = load state+SA3D_CAMERA_CONTROLLER_STATE_pitch as i32
+    dist = load state+SA3D_CAMERA_CONTROLLER_STATE_distance as i32
+    new_yaw = add yaw, orbit_x
+    raw_pitch = add pitch, orbit_y
+    new_pitch = call @sa3d_camera_controller_clamp_pitch(raw_pitch)
+    raw_dist = add dist, zoom
+    new_dist = call @sa3d_camera_controller_clamp_distance(raw_dist)
+    store state+SA3D_CAMERA_CONTROLLER_STATE_yaw, new_yaw as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_pitch, new_pitch as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_distance, new_dist as i32
+    !new_dist
+    !raw_dist
+    !new_pitch
+    !raw_pitch
+    !new_yaw
+    !dist
+    !pitch
+    !yaw
+    !zoom
+    !orbit_y
+    !orbit_x
+    !input
+    !state
+    return
+
+@sa3d_camera_controller_fly_update(&state: ptr, &input: ptr) -> void:
+L_ENTRY:
+    fwd = load input+SA3D_CAMERA_CONTROLLER_INPUT_forward as i32
+    right = load input+SA3D_CAMERA_CONTROLLER_INPUT_right as i32
+    up = load input+SA3D_CAMERA_CONTROLLER_INPUT_up as i32
+    yaw = load state+SA3D_CAMERA_CONTROLLER_STATE_yaw as i32
+    pitch = load state+SA3D_CAMERA_CONTROLLER_STATE_pitch as i32
+    target_x = load state+SA3D_CAMERA_CONTROLLER_STATE_target as i32
+    target_y = load state+20 as i32
+    target_z = load state+24 as i32
+    speed = load state+SA3D_CAMERA_CONTROLLER_STATE_move_speed as i32
+    yaw_delta = mul right, speed
+    pitch_delta = mul up, speed
+    forward_delta = mul fwd, speed
+    new_target_x = add target_x, yaw_delta
+    new_target_y = add target_y, pitch_delta
+    new_target_z = add target_z, forward_delta
+    new_yaw = add yaw, yaw_delta
+    raw_pitch = add pitch, pitch_delta
+    new_pitch = call @sa3d_camera_controller_clamp_pitch(raw_pitch)
+    store state+SA3D_CAMERA_CONTROLLER_STATE_target, new_target_x as i32
+    store state+20, new_target_y as i32
+    store state+24, new_target_z as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_yaw, new_yaw as i32
+    store state+SA3D_CAMERA_CONTROLLER_STATE_pitch, new_pitch as i32
+    !new_pitch
+    !raw_pitch
+    !new_yaw
+    !new_target_z
+    !new_target_y
+    !new_target_x
+    !forward_delta
+    !pitch_delta
+    !yaw_delta
+    !speed
+    !target_z
+    !target_y
+    !target_x
+    !pitch
+    !yaw
+    !up
+    !right
+    !fwd
+    !input
+    !state
+    return
+
+@sa3d_camera_controller_update(&state: ptr, &input: ptr) -> i32:
+L_ENTRY:
+    mode = load state+SA3D_CAMERA_CONTROLLER_STATE_mode as i32
+    is_orbit = eq mode, SA3D_CAMERA_CONTROLLER_ORBIT
+    br is_orbit -> L_ORBIT, L_CHECK_FLY
+
+L_ORBIT:
+    call @sa3d_camera_controller_orbit_update(&state, &input)
+    !is_orbit
+    !mode
+    !input
+    !state
+    return 1
+
+L_CHECK_FLY:
+    is_fly = eq mode, SA3D_CAMERA_CONTROLLER_FLY
+    br is_fly -> L_FLY, L_CHECK_FP
+
+L_FLY:
+    call @sa3d_camera_controller_fly_update(&state, &input)
+    !is_fly
+    !is_orbit
+    !mode
+    !input
+    !state
+    return 1
+
+L_CHECK_FP:
+    is_fp = eq mode, SA3D_CAMERA_CONTROLLER_FIRST_PERSON
+    br is_fp -> L_FP, L_INVALID
+
+L_FP:
+    call @sa3d_camera_controller_fly_update(&state, &input)
+    !is_fp
+    !is_fly
+    !is_orbit
+    !mode
+    !input
+    !state
+    return 1
+
+L_INVALID:
+    !is_fp
+    !is_fly
+    !is_orbit
+    !mode
+    !input
+    !state
+    return 0

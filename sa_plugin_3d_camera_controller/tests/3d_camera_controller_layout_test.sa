@@ -1,0 +1,374 @@
+@import "../3d_camera_controller.sal"
+
+@extern sa3d_camera_controller_selftest() -> i32
+
+@test "3d_camera_controller orbit init"():
+L_ENTRY:
+    st = alloc SA3D_CAMERA_CONTROLLER_STATE_SIZE
+    call @sa3d_camera_controller_init_orbit(&st)
+    mode = call @sa3d_camera_controller_get_mode(&st)
+    dist = call @sa3d_camera_controller_get_distance(&st)
+    mode_ok = eq mode, SA3D_CAMERA_CONTROLLER_ORBIT
+    dist_ok = eq dist, 1082130432
+    ok = and mode_ok, dist_ok
+    !st
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3040)
+
+@test "3d_camera_controller fly init"():
+L_ENTRY:
+    st = alloc SA3D_CAMERA_CONTROLLER_STATE_SIZE
+    call @sa3d_camera_controller_init_fly(&st)
+    mode = call @sa3d_camera_controller_get_mode(&st)
+    dist = call @sa3d_camera_controller_get_distance(&st)
+    mode_ok = eq mode, SA3D_CAMERA_CONTROLLER_FLY
+    dist_ok = eq dist, 0
+    ok = and mode_ok, dist_ok
+    !st
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3041)
+
+@test "3d_camera_controller input init zeros"():
+L_ENTRY:
+    inp = stack_alloc SA3D_CAMERA_CONTROLLER_INPUT_SIZE
+    call @sa3d_camera_controller_input_init(&inp)
+    px = load inp+SA3D_CAMERA_CONTROLLER_INPUT_pan_x as i32
+    ok = eq px, 0
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3043)
+
+@test "3d_camera_controller orbit update clamps pitch and distance"():
+L_ENTRY:
+    st = alloc SA3D_CAMERA_CONTROLLER_STATE_SIZE
+    inp = alloc SA3D_CAMERA_CONTROLLER_INPUT_SIZE
+    call @sa3d_camera_controller_init_orbit(&st)
+    call @sa3d_camera_controller_input_init(&inp)
+    call @sa3d_camera_controller_set_camera(&st, 77)
+    call @sa3d_camera_controller_set_target(&st, 1, 2, 3)
+    call @sa3d_camera_controller_input_set_orbit(&inp, 10, 90000, -2000000000)
+    updated = call @sa3d_camera_controller_update(&st, &inp)
+    camera = call @sa3d_camera_controller_get_camera(&st)
+    yaw = call @sa3d_camera_controller_get_yaw(&st)
+    pitch = call @sa3d_camera_controller_get_pitch(&st)
+    dist = call @sa3d_camera_controller_get_distance(&st)
+    tx = call @sa3d_camera_controller_get_target_x(&st)
+    ty = call @sa3d_camera_controller_get_target_y(&st)
+    tz = call @sa3d_camera_controller_get_target_z(&st)
+    valid = call @sa3d_camera_controller_is_valid(&st)
+    updated_ok = eq updated, 1
+    camera_ok = eq camera, 77
+    yaw_ok = eq yaw, 10
+    pitch_ok = eq pitch, SA3D_CAMERA_CONTROLLER_MAX_PITCH
+    dist_ok = eq dist, SA3D_CAMERA_CONTROLLER_MIN_DISTANCE
+    tx_ok = eq tx, 1
+    ty_ok = eq ty, 2
+    tz_ok = eq tz, 3
+    valid_ok = eq valid, 1
+    p1 = and updated_ok, camera_ok
+    p2 = and yaw_ok, pitch_ok
+    p3 = and dist_ok, tx_ok
+    p4 = and ty_ok, tz_ok
+    p5 = and p1, p2
+    p6 = and p3, p4
+    p7 = and p5, p6
+    ok = and p7, valid_ok
+    !inp
+    !st
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3044)
+
+@test "3d_camera_controller fly update moves target"():
+L_ENTRY:
+    st = alloc SA3D_CAMERA_CONTROLLER_STATE_SIZE
+    inp = alloc SA3D_CAMERA_CONTROLLER_INPUT_SIZE
+    call @sa3d_camera_controller_init_fly(&st)
+    call @sa3d_camera_controller_input_init(&inp)
+    call @sa3d_camera_controller_set_speeds(&st, 4, 1)
+    call @sa3d_camera_controller_set_target(&st, 10, 20, 30)
+    call @sa3d_camera_controller_input_set_move(&inp, 2, 3, -4)
+    updated = call @sa3d_camera_controller_update(&st, &inp)
+    yaw = call @sa3d_camera_controller_get_yaw(&st)
+    pitch = call @sa3d_camera_controller_get_pitch(&st)
+    tx = call @sa3d_camera_controller_get_target_x(&st)
+    ty = call @sa3d_camera_controller_get_target_y(&st)
+    tz = call @sa3d_camera_controller_get_target_z(&st)
+    updated_ok = eq updated, 1
+    yaw_ok = eq yaw, 12
+    pitch_ok = eq pitch, -16
+    tx_ok = eq tx, 22
+    ty_ok = eq ty, 4
+    tz_ok = eq tz, 38
+    p1 = and updated_ok, yaw_ok
+    p2 = and pitch_ok, tx_ok
+    p3 = and ty_ok, tz_ok
+    p4 = and p1, p2
+    ok = and p4, p3
+    !inp
+    !st
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3045)
+
+@test "3d_camera_controller mode and bindings validation"():
+L_ENTRY:
+    st = alloc SA3D_CAMERA_CONTROLLER_STATE_SIZE
+    inp = alloc SA3D_CAMERA_CONTROLLER_INPUT_SIZE
+    call @sa3d_camera_controller_init_fly(&st)
+    has0 = call @sa3d_camera_controller_has_input_bindings(&st)
+    call @sa3d_camera_controller_set_input_bindings(&st, 900, 3)
+    has1 = call @sa3d_camera_controller_has_input_bindings(&st)
+    orbit_ok = call @sa3d_camera_controller_mode_is_valid(SA3D_CAMERA_CONTROLLER_ORBIT)
+    fp_ok = call @sa3d_camera_controller_mode_is_valid(SA3D_CAMERA_CONTROLLER_FIRST_PERSON)
+    bad_ok = call @sa3d_camera_controller_mode_is_valid(99)
+    store st+SA3D_CAMERA_CONTROLLER_STATE_mode, 99 as i32
+    valid_bad = call @sa3d_camera_controller_is_valid(&st)
+    call @sa3d_camera_controller_input_init(&inp)
+    updated_bad = call @sa3d_camera_controller_update(&st, &inp)
+    h0 = eq has0, 0
+    h1 = eq has1, 1
+    o = eq orbit_ok, 1
+    fp = eq fp_ok, 1
+    b = eq bad_ok, 0
+    vb = eq valid_bad, 0
+    ub = eq updated_bad, 0
+    p1 = and h0, h1
+    p2 = and o, fp
+    p3 = and b, vb
+    p4 = and p1, p2
+    p5 = and p3, ub
+    ok = and p4, p5
+    !inp
+    !st
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3046)
+
+@test "3d_camera_controller native selftest"():
+L_ENTRY:
+    status = call @sa3d_camera_controller_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3047)
+
+@test "3d_camera_controller Bevy FreeCamera defaults and input math"():
+L_ENTRY:
+    config = alloc SA3D_FREE_CAMERA_SIZE
+    state = alloc SA3D_FREE_CAMERA_STATE_SIZE
+    input = alloc SA3D_FREE_CAMERA_INPUT_SIZE
+    call @sa3d_free_camera_default(&config)
+    call @sa3d_free_camera_state_default(&state)
+    call @sa3d_free_camera_input_default(&input)
+    sensitivity = load config+SA3D_FREE_CAMERA_sensitivity as f32
+    walk_speed = load config+SA3D_FREE_CAMERA_walk_speed as f32
+    run_speed = load config+SA3D_FREE_CAMERA_run_speed as f32
+    scroll_factor = load config+SA3D_FREE_CAMERA_scroll_factor as f32
+    friction = load config+SA3D_FREE_CAMERA_friction as f32
+    rotation_speed = load config+SA3D_FREE_CAMERA_rotation_speed as f32
+    enabled = load state+SA3D_FREE_CAMERA_STATE_enabled as i32
+    initialized = load state+SA3D_FREE_CAMERA_STATE_initialized as i32
+    speed0 = load state+SA3D_FREE_CAMERA_STATE_speed_multiplier as f32
+    call @sa3d_free_camera_apply_scroll(&config, &state, 2.0)
+    speed1 = load state+SA3D_FREE_CAMERA_STATE_speed_multiplier as f32
+    no_mouse = call @sa3d_free_camera_apply_mouse(&config, &state, 10.0, 10.0, 0)
+    mouse = call @sa3d_free_camera_apply_mouse(&config, &state, 1800.0, 2000.0, 1)
+    pitch = load state+SA3D_FREE_CAMERA_STATE_pitch as f32
+    yaw = load state+SA3D_FREE_CAMERA_STATE_yaw as f32
+    axis = call @sa3d_free_camera_apply_axis(&config, &state, 3.0, 0.0, 4.0, 1)
+    vx = load state+SA3D_FREE_CAMERA_STATE_velocity as f32
+    vy = load state+24 as f32
+    vz = load state+28 as f32
+    axis_zero = call @sa3d_free_camera_apply_axis_dt(&config, &state, 0.0, 0.0, 0.0, 0, 0.1)
+    vx_decay = load state+SA3D_FREE_CAMERA_STATE_velocity as f32
+    vz_decay = load state+28 as f32
+    axis_zero2 = call @sa3d_free_camera_apply_axis_dt(&config, &state, 0.0, 0.0, 0.0, 0, 1.0)
+    vx0 = load state+SA3D_FREE_CAMERA_STATE_velocity as f32
+    sensitivity_gt = fcmp_gt sensitivity, 0.199
+    sensitivity_lt = fcmp_lt sensitivity, 0.201
+    sensitivity_ok = and sensitivity_gt, sensitivity_lt
+    walk_ok = fcmp_eq walk_speed, 5.0
+    run_ok = fcmp_eq run_speed, 15.0
+    scroll_ok = fcmp_gt scroll_factor, 0.0487
+    scroll_ok2 = fcmp_lt scroll_factor, 0.0489
+    friction_ok = fcmp_eq friction, 40.0
+    rotation_ok = fcmp_gt rotation_speed, 11.78
+    rotation_ok2 = fcmp_lt rotation_speed, 11.79
+    enabled_ok = eq enabled, 1
+    initialized_ok = eq initialized, 0
+    speed0_ok = fcmp_eq speed0, 1.0
+    speed1_ok = fcmp_gt speed1, 1.102
+    speed1_ok2 = fcmp_lt speed1, 1.103
+    no_mouse_ok = eq no_mouse, 0
+    mouse_ok = eq mouse, 1
+    pitch_ok = fcmp_gt pitch, -1.571
+    pitch_ok2 = fcmp_lt pitch, -1.570
+    yaw_ok = fcmp_gt yaw, -2.001
+    yaw_ok2 = fcmp_lt yaw, -1.999
+    axis_ok = eq axis, 1
+    vx_ok = fcmp_gt vx, 9.91
+    vx_ok2 = fcmp_lt vx, 9.94
+    vy_ok = fcmp_eq vy, 0.0
+    vz_ok = fcmp_gt vz, 13.22
+    vz_ok2 = fcmp_lt vz, 13.25
+    axis_zero_ok = eq axis_zero, 0
+    vx_decay_ok = fcmp_gt vx_decay, 0.18
+    vx_decay_ok2 = fcmp_lt vx_decay, 0.19
+    vz_decay_ok = fcmp_gt vz_decay, 0.24
+    vz_decay_ok2 = fcmp_lt vz_decay, 0.25
+    axis_zero2_ok = eq axis_zero2, 0
+    vx0_ok = fcmp_eq vx0, 0.0
+    br sensitivity_ok -> L_A1, L_ERR1
+L_A1:
+    br walk_ok -> L_A2, L_ERR2
+L_A2:
+    br run_ok -> L_A3, L_ERR3
+L_A3:
+    br scroll_ok -> L_A4, L_ERR4
+L_A4:
+    br scroll_ok2 -> L_A5, L_ERR5
+L_A5:
+    br friction_ok -> L_A6, L_ERR6
+L_A6:
+    br rotation_ok -> L_A7, L_ERR7
+L_A7:
+    br rotation_ok2 -> L_A8, L_ERR8
+L_A8:
+    br enabled_ok -> L_A9, L_ERR9
+L_A9:
+    br initialized_ok -> L_A10, L_ERR10
+L_A10:
+    br speed0_ok -> L_A11, L_ERR11
+L_A11:
+    br speed1_ok -> L_A12, L_ERR12
+L_A12:
+    br speed1_ok2 -> L_A13, L_ERR13
+L_A13:
+    br no_mouse_ok -> L_A14, L_ERR14
+L_A14:
+    br mouse_ok -> L_A15, L_ERR15
+L_A15:
+    br pitch_ok -> L_A16, L_ERR16
+L_A16:
+    br pitch_ok2 -> L_A17, L_ERR17
+L_A17:
+    br yaw_ok -> L_A18, L_ERR18
+L_A18:
+    br yaw_ok2 -> L_A19, L_ERR19
+L_A19:
+    br axis_ok -> L_A20, L_ERR20
+L_A20:
+    br vx_ok -> L_A21, L_ERR21
+L_A21:
+    br vx_ok2 -> L_A22, L_ERR22
+L_A22:
+    br vy_ok -> L_A23, L_ERR23
+L_A23:
+    br vz_ok -> L_A24, L_ERR24
+L_A24:
+    br vz_ok2 -> L_A25, L_ERR25
+L_A25:
+    br axis_zero_ok -> L_A26, L_ERR26
+L_A26:
+    br vx_decay_ok -> L_A27, L_ERR27
+L_A27:
+    br vx_decay_ok2 -> L_A28, L_ERR28
+L_A28:
+    br vz_decay_ok -> L_A29, L_ERR29
+L_A29:
+    br vz_decay_ok2 -> L_A30, L_ERR30
+L_A30:
+    br axis_zero2_ok -> L_A31, L_ERR31
+L_A31:
+    br vx0_ok -> L_OK, L_ERR32
+
+L_OK:
+    !input
+    !state
+    !config
+    return 0
+
+L_ERR1:
+    panic(3101)
+L_ERR2:
+    panic(3102)
+L_ERR3:
+    panic(3103)
+L_ERR4:
+    panic(3104)
+L_ERR5:
+    panic(3105)
+L_ERR6:
+    panic(3106)
+L_ERR7:
+    panic(3107)
+L_ERR8:
+    panic(3108)
+L_ERR9:
+    panic(3109)
+L_ERR10:
+    panic(3110)
+L_ERR11:
+    panic(3111)
+L_ERR12:
+    panic(3112)
+L_ERR13:
+    panic(3113)
+L_ERR14:
+    panic(3114)
+L_ERR15:
+    panic(3115)
+L_ERR16:
+    panic(3116)
+L_ERR17:
+    panic(3117)
+L_ERR18:
+    panic(3118)
+L_ERR19:
+    panic(3119)
+L_ERR20:
+    panic(3120)
+L_ERR21:
+    panic(3121)
+L_ERR22:
+    panic(3122)
+L_ERR23:
+    panic(3123)
+L_ERR24:
+    panic(3124)
+L_ERR25:
+    panic(3125)
+L_ERR26:
+    panic(3126)
+L_ERR27:
+    panic(3127)
+L_ERR28:
+    panic(3128)
+L_ERR29:
+    panic(3129)
+L_ERR30:
+    panic(3130)
+L_ERR31:
+    panic(3131)
+L_ERR32:
+    !input
+    !state
+    !config
+    panic(3132)

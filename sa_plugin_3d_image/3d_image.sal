@@ -1,0 +1,1034 @@
+#def SA3D_IMAGE_VERSION_MAJOR = 0
+#def SA3D_IMAGE_VERSION_MINOR = 1
+
+#def SA3D_IMAGE_DIMENSION_1D = 1
+#def SA3D_IMAGE_DIMENSION_2D = 2
+#def SA3D_IMAGE_DIMENSION_3D = 3
+#def SA3D_IMAGE_DIMENSION_CUBE = 4
+
+#def SA3D_IMAGE_FORMAT_RGBA8_UNORM = 1
+#def SA3D_IMAGE_FORMAT_RGBA8_UNORM_SRGB = 2
+#def SA3D_IMAGE_FORMAT_BGRA8_UNORM = 3
+#def SA3D_IMAGE_FORMAT_RGBA16_FLOAT = 4
+#def SA3D_IMAGE_FORMAT_RGBA32_FLOAT = 5
+#def SA3D_IMAGE_FORMAT_DEPTH24_PLUS = 100
+
+#def SA3D_IMAGE_USAGE_TEXTURE_BINDING = 1
+#def SA3D_IMAGE_USAGE_COPY_DST = 2
+#def SA3D_IMAGE_USAGE_COPY_SRC = 4
+#def SA3D_IMAGE_USAGE_RENDER_ATTACHMENT = 8
+#def SA3D_IMAGE_USAGE_STORAGE_BINDING = 16
+#def SA3D_IMAGE_USAGE_ALL = 31
+
+#def SA3D_IMAGE_COLOR_SPACE_LINEAR = 0
+#def SA3D_IMAGE_COLOR_SPACE_SRGB = 1
+
+#def SA3D_IMAGE_DESC_width = +0
+#def SA3D_IMAGE_DESC_height = +4
+#def SA3D_IMAGE_DESC_depth_or_layers = +8
+#def SA3D_IMAGE_DESC_mip_count = +12
+#def SA3D_IMAGE_DESC_dimension = +16
+#def SA3D_IMAGE_DESC_format = +20
+#def SA3D_IMAGE_DESC_usage = +24
+#def SA3D_IMAGE_DESC_color_space = +28
+#def SA3D_IMAGE_DESC_data_ptr = +32
+#def SA3D_IMAGE_DESC_data_len = +40
+#def SA3D_IMAGE_DESC_row_pitch = +48
+#def SA3D_IMAGE_DESC_SIZE = 56
+
+#def SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE = 0
+#def SA3D_SAMPLER_ADDRESS_REPEAT = 1
+#def SA3D_SAMPLER_ADDRESS_MIRROR_REPEAT = 2
+
+#def SA3D_SAMPLER_FILTER_NEAREST = 0
+#def SA3D_SAMPLER_FILTER_LINEAR = 1
+
+#def SA3D_SAMPLER_DESC_address_u = +0
+#def SA3D_SAMPLER_DESC_address_v = +4
+#def SA3D_SAMPLER_DESC_address_w = +8
+#def SA3D_SAMPLER_DESC_mag_filter = +12
+#def SA3D_SAMPLER_DESC_min_filter = +16
+#def SA3D_SAMPLER_DESC_mipmap_filter = +20
+#def SA3D_SAMPLER_DESC_lod_min = +24
+#def SA3D_SAMPLER_DESC_lod_max = +28
+#def SA3D_SAMPLER_DESC_compare = +32
+#def SA3D_SAMPLER_DESC_SIZE = 40
+
+@sa3d_image_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_IMAGE_DESC_width, 0 as i32
+    store desc+SA3D_IMAGE_DESC_height, 0 as i32
+    store desc+SA3D_IMAGE_DESC_depth_or_layers, 1 as i32
+    store desc+SA3D_IMAGE_DESC_mip_count, 1 as i32
+    store desc+SA3D_IMAGE_DESC_dimension, SA3D_IMAGE_DIMENSION_2D as i32
+    store desc+SA3D_IMAGE_DESC_format, SA3D_IMAGE_FORMAT_RGBA8_UNORM as i32
+    store desc+SA3D_IMAGE_DESC_usage, SA3D_IMAGE_USAGE_TEXTURE_BINDING as i32
+    store desc+SA3D_IMAGE_DESC_color_space, 0 as i32
+    store desc+32, 0 as i64
+    store desc+40, 0 as i64
+    store desc+48, 0 as i64
+    !desc
+    return
+
+@sa3d_image_desc_default_bevy(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_IMAGE_DESC_width, 1 as i32
+    store desc+SA3D_IMAGE_DESC_height, 1 as i32
+    store desc+SA3D_IMAGE_DESC_depth_or_layers, 1 as i32
+    store desc+SA3D_IMAGE_DESC_mip_count, 1 as i32
+    store desc+SA3D_IMAGE_DESC_dimension, SA3D_IMAGE_DIMENSION_2D as i32
+    store desc+SA3D_IMAGE_DESC_format, SA3D_IMAGE_FORMAT_RGBA8_UNORM_SRGB as i32
+    store desc+SA3D_IMAGE_DESC_usage, 7 as i32
+    store desc+SA3D_IMAGE_DESC_color_space, SA3D_IMAGE_COLOR_SPACE_SRGB as i32
+    store desc+SA3D_IMAGE_DESC_data_ptr, 0 as i64
+    store desc+SA3D_IMAGE_DESC_data_len, 4 as i64
+    store desc+SA3D_IMAGE_DESC_row_pitch, 4 as i64
+    !desc
+    return
+
+@sa3d_image_desc_set_size(&desc: ptr, width: i32, height: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_IMAGE_DESC_width, width as i32
+    store desc+SA3D_IMAGE_DESC_height, height as i32
+    !height
+    !width
+    !desc
+    return
+
+@sa3d_image_desc_get_width(&desc: ptr) -> i32:
+L_ENTRY:
+    w = load desc+SA3D_IMAGE_DESC_width as i32
+    !desc
+    return w
+
+@sa3d_image_desc_get_height(&desc: ptr) -> i32:
+L_ENTRY:
+    h = load desc+SA3D_IMAGE_DESC_height as i32
+    !desc
+    return h
+
+@sa3d_image_desc_set_format(&desc: ptr, format: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_IMAGE_DESC_format, format as i32
+    !format
+    !desc
+    return
+
+@sa3d_image_desc_get_format(&desc: ptr) -> i32:
+L_ENTRY:
+    f = load desc+SA3D_IMAGE_DESC_format as i32
+    !desc
+    return f
+
+@sa3d_image_format_is_valid(format: i32) -> i32:
+L_ENTRY:
+    rgba8 = eq format, SA3D_IMAGE_FORMAT_RGBA8_UNORM
+    rgba8s = eq format, SA3D_IMAGE_FORMAT_RGBA8_UNORM_SRGB
+    bgra8 = eq format, SA3D_IMAGE_FORMAT_BGRA8_UNORM
+    rgba16f = eq format, SA3D_IMAGE_FORMAT_RGBA16_FLOAT
+    rgba32f = eq format, SA3D_IMAGE_FORMAT_RGBA32_FLOAT
+    depth = eq format, SA3D_IMAGE_FORMAT_DEPTH24_PLUS
+    p1 = or rgba8, rgba8s
+    p2 = or bgra8, rgba16f
+    p3 = or rgba32f, depth
+    q1 = or p1, p2
+    ok = or q1, p3
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !q1
+    !p3
+    !p2
+    !p1
+    !depth
+    !rgba32f
+    !rgba16f
+    !bgra8
+    !rgba8s
+    !rgba8
+    !format
+    return 1
+
+L_FALSE:
+    !ok
+    !q1
+    !p3
+    !p2
+    !p1
+    !depth
+    !rgba32f
+    !rgba16f
+    !bgra8
+    !rgba8s
+    !rgba8
+    !format
+    return 0
+
+@sa3d_image_dimension_is_valid(dimension: i32) -> i32:
+L_ENTRY:
+    d1 = eq dimension, SA3D_IMAGE_DIMENSION_1D
+    d2 = eq dimension, SA3D_IMAGE_DIMENSION_2D
+    d3 = eq dimension, SA3D_IMAGE_DIMENSION_3D
+    cube = eq dimension, SA3D_IMAGE_DIMENSION_CUBE
+    p1 = or d1, d2
+    p2 = or d3, cube
+    ok = or p1, p2
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p2
+    !p1
+    !cube
+    !d3
+    !d2
+    !d1
+    !dimension
+    return 1
+
+L_FALSE:
+    !ok
+    !p2
+    !p1
+    !cube
+    !d3
+    !d2
+    !d1
+    !dimension
+    return 0
+
+@sa3d_image_format_bytes_per_pixel(format: i32) -> i64:
+L_ENTRY:
+    is_rgba16f = eq format, SA3D_IMAGE_FORMAT_RGBA16_FLOAT
+    br is_rgba16f -> L_RGBA16F, L_CHECK_RGBA32F
+
+L_RGBA16F:
+    !is_rgba16f
+    !format
+    return 8
+
+L_CHECK_RGBA32F:
+    is_rgba32f = eq format, SA3D_IMAGE_FORMAT_RGBA32_FLOAT
+    br is_rgba32f -> L_RGBA32F, L_CHECK_DEPTH
+
+L_RGBA32F:
+    !is_rgba32f
+    !is_rgba16f
+    !format
+    return 16
+
+L_CHECK_DEPTH:
+    is_depth = eq format, SA3D_IMAGE_FORMAT_DEPTH24_PLUS
+    br is_depth -> L_DEPTH, L_CHECK_VALID
+
+L_DEPTH:
+    !is_depth
+    !is_rgba32f
+    !is_rgba16f
+    !format
+    return 4
+
+L_CHECK_VALID:
+    valid = call @sa3d_image_format_is_valid(format)
+    br valid -> L_RGBA8, L_ZERO
+
+L_RGBA8:
+    !valid
+    !is_depth
+    !is_rgba32f
+    !is_rgba16f
+    !format
+    return 4
+
+L_ZERO:
+    !valid
+    !is_depth
+    !is_rgba32f
+    !is_rgba16f
+    !format
+    return 0
+
+@sa3d_image_format_is_srgb(format: i32) -> i32:
+L_ENTRY:
+    srgb = eq format, SA3D_IMAGE_FORMAT_RGBA8_UNORM_SRGB
+    br srgb -> L_TRUE, L_FALSE
+L_TRUE:
+    !srgb
+    !format
+    return 1
+L_FALSE:
+    !srgb
+    !format
+    return 0
+
+@sa3d_image_format_srgb_view(format: i32) -> i32:
+L_ENTRY:
+    rgba8 = eq format, SA3D_IMAGE_FORMAT_RGBA8_UNORM
+    br rgba8 -> L_RGBA8, L_CHECK_BGRA8
+L_RGBA8:
+    !rgba8
+    !format
+    return SA3D_IMAGE_FORMAT_RGBA8_UNORM_SRGB
+L_CHECK_BGRA8:
+    bgra8 = eq format, SA3D_IMAGE_FORMAT_BGRA8_UNORM
+    br bgra8 -> L_BGRA8, L_ZERO
+L_BGRA8:
+    !bgra8
+    !rgba8
+    !format
+    return 0
+L_ZERO:
+    !bgra8
+    !rgba8
+    !format
+    return 0
+
+@sa3d_image_usage_is_valid(usage: i32) -> i32:
+L_ENTRY:
+    nonzero = ne usage, 0
+    masked = and usage, SA3D_IMAGE_USAGE_ALL
+    no_unknown = eq masked, usage
+    ok = and nonzero, no_unknown
+    br ok -> L_TRUE, L_FALSE
+L_TRUE:
+    !ok
+    !no_unknown
+    !masked
+    !nonzero
+    !usage
+    return 1
+L_FALSE:
+    !ok
+    !no_unknown
+    !masked
+    !nonzero
+    !usage
+    return 0
+
+@sa3d_image_desc_set_dimension(&desc: ptr, dimension: i32, depth_or_layers: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_IMAGE_DESC_dimension, dimension as i32
+    store desc+SA3D_IMAGE_DESC_depth_or_layers, depth_or_layers as i32
+    !depth_or_layers
+    !dimension
+    !desc
+    return
+
+@sa3d_image_desc_set_usage(&desc: ptr, usage: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_IMAGE_DESC_usage, usage as i32
+    !usage
+    !desc
+    return
+
+@sa3d_image_desc_add_usage(&desc: ptr, usage: i32) -> void:
+L_ENTRY:
+    current = load desc+SA3D_IMAGE_DESC_usage as i32
+    next = or current, usage
+    store desc+SA3D_IMAGE_DESC_usage, next as i32
+    !next
+    !current
+    !usage
+    !desc
+    return
+
+@sa3d_image_desc_has_usage(&desc: ptr, usage: i32) -> i32:
+L_ENTRY:
+    current = load desc+SA3D_IMAGE_DESC_usage as i32
+    masked = and current, usage
+    ok = ne masked, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !masked
+    !current
+    !usage
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !masked
+    !current
+    !usage
+    !desc
+    return 0
+
+@sa3d_image_desc_set_data(&desc: ptr, data_ptr: i64, data_len: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_IMAGE_DESC_data_ptr, data_ptr as i64
+    store desc+SA3D_IMAGE_DESC_data_len, data_len as i64
+    !data_len
+    !data_ptr
+    !desc
+    return
+
+@sa3d_image_desc_set_mip_count(&desc: ptr, mip_count: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_IMAGE_DESC_mip_count, mip_count as i32
+    !mip_count
+    !desc
+    return
+
+@sa3d_image_desc_compute_row_pitch(&desc: ptr) -> i64:
+L_ENTRY:
+    width = load desc+SA3D_IMAGE_DESC_width as i32
+    format = load desc+SA3D_IMAGE_DESC_format as i32
+    bpp = call @sa3d_image_format_bytes_per_pixel(format)
+    w64 = sext width as i64
+    pitch = mul w64, bpp
+    !w64
+    !bpp
+    !format
+    !width
+    !desc
+    return pitch
+
+@sa3d_image_desc_compute_data_len(&desc: ptr) -> i64:
+L_ENTRY:
+    pitch = call @sa3d_image_desc_compute_row_pitch(&desc)
+    height = load desc+SA3D_IMAGE_DESC_height as i32
+    depth = load desc+SA3D_IMAGE_DESC_depth_or_layers as i32
+    h64 = sext height as i64
+    d64 = sext depth as i64
+    rows = mul h64, d64
+    total = mul pitch, rows
+    !rows
+    !d64
+    !h64
+    !depth
+    !height
+    !pitch
+    !desc
+    return total
+
+@sa3d_image_desc_set_size_3d(&desc: ptr, width: i32, height: i32, depth_or_layers: i32) -> i32:
+L_ENTRY:
+    width_ok = sgt width, 0
+    height_ok = sgt height, 0
+    depth_ok = sgt depth_or_layers, 0
+    a = and width_ok, height_ok
+    ok = and a, depth_ok
+    br ok -> L_SET, L_FALSE
+L_SET:
+    store desc+SA3D_IMAGE_DESC_width, width as i32
+    store desc+SA3D_IMAGE_DESC_height, height as i32
+    store desc+SA3D_IMAGE_DESC_depth_or_layers, depth_or_layers as i32
+    pitch = call @sa3d_image_desc_compute_row_pitch(&desc)
+    store desc+SA3D_IMAGE_DESC_row_pitch, pitch as i64
+    data_len = load desc+SA3D_IMAGE_DESC_data_len as i64
+    has_data_len = ne data_len, 0
+    br has_data_len -> L_UPDATE_DATA_LEN, L_RETURN_TRUE
+L_UPDATE_DATA_LEN:
+    total = call @sa3d_image_desc_compute_data_len(&desc)
+    store desc+SA3D_IMAGE_DESC_data_len, total as i64
+    !total
+    jmp L_RETURN_TRUE
+L_RETURN_TRUE:
+    !has_data_len
+    !data_len
+    !pitch
+    !ok
+    !a
+    !depth_ok
+    !height_ok
+    !width_ok
+    !depth_or_layers
+    !height
+    !width
+    !desc
+    return 1
+L_FALSE:
+    !ok
+    !a
+    !depth_ok
+    !height_ok
+    !width_ok
+    !depth_or_layers
+    !height
+    !width
+    !desc
+    return 0
+
+@sa3d_image_desc_new_uninit(&desc: ptr, width: i32, height: i32, depth_or_layers: i32, dimension: i32, format: i32) -> i32:
+L_ENTRY:
+    dim_ok = call @sa3d_image_dimension_is_valid(dimension)
+    fmt_ok = call @sa3d_image_format_is_valid(format)
+    width_ok = sgt width, 0
+    height_ok = sgt height, 0
+    depth_ok = sgt depth_or_layers, 0
+    a = and dim_ok, fmt_ok
+    b = and width_ok, height_ok
+    c = and b, depth_ok
+    ok = and a, c
+    br ok -> L_SET, L_FALSE
+L_SET:
+    store desc+SA3D_IMAGE_DESC_width, width as i32
+    store desc+SA3D_IMAGE_DESC_height, height as i32
+    store desc+SA3D_IMAGE_DESC_depth_or_layers, depth_or_layers as i32
+    store desc+SA3D_IMAGE_DESC_mip_count, 1 as i32
+    store desc+SA3D_IMAGE_DESC_dimension, dimension as i32
+    store desc+SA3D_IMAGE_DESC_format, format as i32
+    store desc+SA3D_IMAGE_DESC_usage, 7 as i32
+    is_srgb = call @sa3d_image_format_is_srgb(format)
+    store desc+SA3D_IMAGE_DESC_color_space, is_srgb as i32
+    store desc+SA3D_IMAGE_DESC_data_ptr, 0 as i64
+    store desc+SA3D_IMAGE_DESC_data_len, 0 as i64
+    pitch = call @sa3d_image_desc_compute_row_pitch(&desc)
+    store desc+SA3D_IMAGE_DESC_row_pitch, pitch as i64
+    !pitch
+    !is_srgb
+    jmp L_TRUE
+L_TRUE:
+    !ok
+    !c
+    !b
+    !a
+    !depth_ok
+    !height_ok
+    !width_ok
+    !fmt_ok
+    !dim_ok
+    !format
+    !dimension
+    !depth_or_layers
+    !height
+    !width
+    !desc
+    return 1
+L_FALSE:
+    !ok
+    !c
+    !b
+    !a
+    !depth_ok
+    !height_ok
+    !width_ok
+    !fmt_ok
+    !dim_ok
+    !format
+    !dimension
+    !depth_or_layers
+    !height
+    !width
+    !desc
+    return 0
+
+@sa3d_image_desc_new_fill(&desc: ptr, width: i32, height: i32, depth_or_layers: i32, dimension: i32, format: i32, data_ptr: i64, data_len: i64) -> i32:
+L_ENTRY:
+    init_ok = call @sa3d_image_desc_new_uninit(&desc, width, height, depth_or_layers, dimension, format)
+    expected = call @sa3d_image_desc_compute_data_len(&desc)
+    ptr_ok = ne data_ptr, 0
+    len_ok = eq data_len, expected
+    data_ok = and ptr_ok, len_ok
+    ok = and init_ok, data_ok
+    br ok -> L_SET, L_FALSE
+L_SET:
+    store desc+SA3D_IMAGE_DESC_data_ptr, data_ptr as i64
+    store desc+SA3D_IMAGE_DESC_data_len, data_len as i64
+    !ok
+    !data_ok
+    !len_ok
+    !ptr_ok
+    !expected
+    !init_ok
+    !data_len
+    !data_ptr
+    !format
+    !dimension
+    !depth_or_layers
+    !height
+    !width
+    !desc
+    return 1
+L_FALSE:
+    !ok
+    !data_ok
+    !len_ok
+    !ptr_ok
+    !expected
+    !init_ok
+    !data_len
+    !data_ptr
+    !format
+    !dimension
+    !depth_or_layers
+    !height
+    !width
+    !desc
+    return 0
+
+@sa3d_image_desc_new_target_texture(&desc: ptr, width: i32, height: i32, format: i32, srgb_view: i32) -> i32:
+L_ENTRY:
+    init_ok = call @sa3d_image_desc_new_uninit(&desc, width, height, 1, SA3D_IMAGE_DIMENSION_2D, format)
+    br init_ok -> L_SET, L_FALSE
+L_SET:
+    usage = or SA3D_IMAGE_USAGE_TEXTURE_BINDING, SA3D_IMAGE_USAGE_COPY_DST
+    usage2 = or usage, SA3D_IMAGE_USAGE_RENDER_ATTACHMENT
+    store desc+SA3D_IMAGE_DESC_usage, usage2 as i32
+    total = call @sa3d_image_desc_compute_data_len(&desc)
+    store desc+SA3D_IMAGE_DESC_data_len, total as i64
+    srgb_format = call @sa3d_image_format_srgb_view(format)
+    wants_srgb = ne srgb_view, 0
+    has_srgb_view = ne srgb_format, 0
+    srgb_ok = and wants_srgb, has_srgb_view
+    br srgb_ok -> L_MARK_SRGB, L_RETURN_TRUE
+L_MARK_SRGB:
+    store desc+SA3D_IMAGE_DESC_color_space, SA3D_IMAGE_COLOR_SPACE_SRGB as i32
+    jmp L_RETURN_TRUE
+L_RETURN_TRUE:
+    !srgb_ok
+    !has_srgb_view
+    !wants_srgb
+    !srgb_format
+    !total
+    !usage2
+    !usage
+    !init_ok
+    !srgb_view
+    !format
+    !height
+    !width
+    !desc
+    return 1
+L_FALSE:
+    !init_ok
+    !srgb_view
+    !format
+    !height
+    !width
+    !desc
+    return 0
+
+@sa3d_image_desc_reinterpret_size(&desc: ptr, width: i32, height: i32, depth_or_layers: i32) -> i32:
+L_ENTRY:
+    old_w = load desc+SA3D_IMAGE_DESC_width as i32
+    old_h = load desc+SA3D_IMAGE_DESC_height as i32
+    old_d = load desc+SA3D_IMAGE_DESC_depth_or_layers as i32
+    old_w64 = sext old_w as i64
+    old_h64 = sext old_h as i64
+    old_d64 = sext old_d as i64
+    width64 = sext width as i64
+    height64 = sext height as i64
+    depth64 = sext depth_or_layers as i64
+    old_wh = mul old_w64, old_h64
+    old_pixels = mul old_wh, old_d64
+    new_wh = mul width64, height64
+    new_pixels = mul new_wh, depth64
+    same = eq old_pixels, new_pixels
+    width_ok = sgt width, 0
+    height_ok = sgt height, 0
+    depth_ok = sgt depth_or_layers, 0
+    a = and width_ok, height_ok
+    b = and a, depth_ok
+    ok = and same, b
+    br ok -> L_SET, L_FALSE
+L_SET:
+    store desc+SA3D_IMAGE_DESC_width, width as i32
+    store desc+SA3D_IMAGE_DESC_height, height as i32
+    store desc+SA3D_IMAGE_DESC_depth_or_layers, depth_or_layers as i32
+    pitch = call @sa3d_image_desc_compute_row_pitch(&desc)
+    store desc+SA3D_IMAGE_DESC_row_pitch, pitch as i64
+    !pitch
+    jmp L_TRUE
+L_TRUE:
+    !ok
+    !b
+    !a
+    !depth_ok
+    !height_ok
+    !width_ok
+    !same
+    !new_pixels
+    !new_wh
+    !old_pixels
+    !old_wh
+    !depth64
+    !height64
+    !width64
+    !old_d64
+    !old_h64
+    !old_w64
+    !old_d
+    !old_h
+    !old_w
+    !depth_or_layers
+    !height
+    !width
+    !desc
+    return 1
+L_FALSE:
+    !ok
+    !b
+    !a
+    !depth_ok
+    !height_ok
+    !width_ok
+    !same
+    !new_pixels
+    !new_wh
+    !old_pixels
+    !old_wh
+    !depth64
+    !height64
+    !width64
+    !old_d64
+    !old_h64
+    !old_w64
+    !old_d
+    !old_h
+    !old_w
+    !depth_or_layers
+    !height
+    !width
+    !desc
+    return 0
+
+@sa3d_image_desc_update_row_pitch(&desc: ptr) -> i64:
+L_ENTRY:
+    pitch = call @sa3d_image_desc_compute_row_pitch(&desc)
+    store desc+SA3D_IMAGE_DESC_row_pitch, pitch as i64
+    stored = load desc+SA3D_IMAGE_DESC_row_pitch as i64
+    !pitch
+    !desc
+    return stored
+
+@sa3d_image_desc_validate(&desc: ptr) -> i32:
+L_ENTRY:
+    width = load desc+SA3D_IMAGE_DESC_width as i32
+    height = load desc+SA3D_IMAGE_DESC_height as i32
+    depth = load desc+SA3D_IMAGE_DESC_depth_or_layers as i32
+    mips = load desc+SA3D_IMAGE_DESC_mip_count as i32
+    dimension = load desc+SA3D_IMAGE_DESC_dimension as i32
+    format = load desc+SA3D_IMAGE_DESC_format as i32
+    usage = load desc+SA3D_IMAGE_DESC_usage as i32
+    row_pitch = load desc+SA3D_IMAGE_DESC_row_pitch as i64
+    data_len = load desc+SA3D_IMAGE_DESC_data_len as i64
+    width_ok = sgt width, 0
+    height_ok = sgt height, 0
+    depth_ok = sgt depth, 0
+    mips_ok = sgt mips, 0
+    dim_ok = call @sa3d_image_dimension_is_valid(dimension)
+    fmt_ok = call @sa3d_image_format_is_valid(format)
+    usage_ok = call @sa3d_image_usage_is_valid(usage)
+    expected_pitch = call @sa3d_image_desc_compute_row_pitch(&desc)
+    expected_len = call @sa3d_image_desc_compute_data_len(&desc)
+    has_row_pitch = ne row_pitch, 0
+    row_ge = sge row_pitch, expected_pitch
+    row_ok_if_set = and row_ge, has_row_pitch
+    no_row_pitch = eq row_pitch, 0
+    row_ok = or no_row_pitch, row_ok_if_set
+    has_data_len = ne data_len, 0
+    data_ge = sge data_len, expected_len
+    data_ok_if_set = and has_data_len, data_ge
+    no_data_len = eq data_len, 0
+    data_ok = or no_data_len, data_ok_if_set
+    is_cube = eq dimension, SA3D_IMAGE_DIMENSION_CUBE
+    mod6 = srem depth, 6
+    cube_layers_ok = eq mod6, 0
+    not_cube = eq is_cube, 0
+    cube_ok = or not_cube, cube_layers_ok
+    p1 = and width_ok, height_ok
+    p2 = and depth_ok, mips_ok
+    p3 = and dim_ok, fmt_ok
+    p4 = and p1, p2
+    p5 = and p3, usage_ok
+    p6 = and row_ok, data_ok
+    p7 = and p4, p5
+    p8 = and p6, cube_ok
+    ok = and p7, p8
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p8
+    !p7
+    !p6
+    !cube_ok
+    !not_cube
+    !cube_layers_ok
+    !mod6
+    !is_cube
+    !data_ok
+    !no_data_len
+    !data_ok_if_set
+    !data_ge
+    !has_data_len
+    !row_ok
+    !no_row_pitch
+    !row_ok_if_set
+    !row_ge
+    !has_row_pitch
+    !expected_len
+    !expected_pitch
+    !p5
+    !p4
+    !p3
+    !p2
+    !p1
+    !usage_ok
+    !fmt_ok
+    !dim_ok
+    !mips_ok
+    !depth_ok
+    !height_ok
+    !width_ok
+    !usage
+    !data_len
+    !row_pitch
+    !format
+    !dimension
+    !mips
+    !depth
+    !height
+    !width
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !p8
+    !p7
+    !p6
+    !cube_ok
+    !not_cube
+    !cube_layers_ok
+    !mod6
+    !is_cube
+    !data_ok
+    !no_data_len
+    !data_ok_if_set
+    !data_ge
+    !has_data_len
+    !row_ok
+    !no_row_pitch
+    !row_ok_if_set
+    !row_ge
+    !has_row_pitch
+    !expected_len
+    !expected_pitch
+    !p5
+    !p4
+    !p3
+    !p2
+    !p1
+    !usage_ok
+    !fmt_ok
+    !dim_ok
+    !mips_ok
+    !depth_ok
+    !height_ok
+    !width_ok
+    !usage
+    !data_len
+    !row_pitch
+    !format
+    !dimension
+    !mips
+    !depth
+    !height
+    !width
+    !desc
+    return 0
+
+@sa3d_sampler_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_SAMPLER_DESC_address_u, SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE as i32
+    store desc+SA3D_SAMPLER_DESC_address_v, SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE as i32
+    store desc+SA3D_SAMPLER_DESC_address_w, SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE as i32
+    store desc+SA3D_SAMPLER_DESC_mag_filter, SA3D_SAMPLER_FILTER_LINEAR as i32
+    store desc+SA3D_SAMPLER_DESC_min_filter, SA3D_SAMPLER_FILTER_LINEAR as i32
+    store desc+SA3D_SAMPLER_DESC_mipmap_filter, SA3D_SAMPLER_FILTER_LINEAR as i32
+    store desc+SA3D_SAMPLER_DESC_lod_min, 0 as i32
+    store desc+SA3D_SAMPLER_DESC_lod_max, 1000 as i32
+    store desc+SA3D_SAMPLER_DESC_compare, 0 as i32
+    !desc
+    return
+
+@sa3d_sampler_desc_nearest(&desc: ptr) -> void:
+L_ENTRY:
+    call @sa3d_sampler_desc_init(&desc)
+    store desc+SA3D_SAMPLER_DESC_mag_filter, SA3D_SAMPLER_FILTER_NEAREST as i32
+    store desc+SA3D_SAMPLER_DESC_min_filter, SA3D_SAMPLER_FILTER_NEAREST as i32
+    store desc+SA3D_SAMPLER_DESC_mipmap_filter, SA3D_SAMPLER_FILTER_NEAREST as i32
+    store desc+SA3D_SAMPLER_DESC_lod_max, 32 as i32
+    !desc
+    return
+
+@sa3d_sampler_desc_linear(&desc: ptr) -> void:
+L_ENTRY:
+    call @sa3d_sampler_desc_nearest(&desc)
+    store desc+SA3D_SAMPLER_DESC_mag_filter, SA3D_SAMPLER_FILTER_LINEAR as i32
+    store desc+SA3D_SAMPLER_DESC_min_filter, SA3D_SAMPLER_FILTER_LINEAR as i32
+    store desc+SA3D_SAMPLER_DESC_mipmap_filter, SA3D_SAMPLER_FILTER_LINEAR as i32
+    !desc
+    return
+
+@sa3d_sampler_desc_get_mag_filter(&desc: ptr) -> i32:
+L_ENTRY:
+    f = load desc+SA3D_SAMPLER_DESC_mag_filter as i32
+    !desc
+    return f
+
+@sa3d_sampler_desc_set_address_u(&desc: ptr, addr: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_SAMPLER_DESC_address_u, addr as i32
+    !addr
+    !desc
+    return
+
+@sa3d_sampler_address_is_valid(addr: i32) -> i32:
+L_ENTRY:
+    clamp = eq addr, SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE
+    repeat = eq addr, SA3D_SAMPLER_ADDRESS_REPEAT
+    mirror = eq addr, SA3D_SAMPLER_ADDRESS_MIRROR_REPEAT
+    p = or clamp, repeat
+    ok = or p, mirror
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p
+    !mirror
+    !repeat
+    !clamp
+    !addr
+    return 1
+
+L_FALSE:
+    !ok
+    !p
+    !mirror
+    !repeat
+    !clamp
+    !addr
+    return 0
+
+@sa3d_sampler_filter_is_valid(filter: i32) -> i32:
+L_ENTRY:
+    nearest = eq filter, SA3D_SAMPLER_FILTER_NEAREST
+    linear = eq filter, SA3D_SAMPLER_FILTER_LINEAR
+    ok = or nearest, linear
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !linear
+    !nearest
+    !filter
+    return 1
+
+L_FALSE:
+    !ok
+    !linear
+    !nearest
+    !filter
+    return 0
+
+@sa3d_sampler_desc_set_address(&desc: ptr, u: i32, v: i32, w: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_SAMPLER_DESC_address_u, u as i32
+    store desc+SA3D_SAMPLER_DESC_address_v, v as i32
+    store desc+SA3D_SAMPLER_DESC_address_w, w as i32
+    !w
+    !v
+    !u
+    !desc
+    return
+
+@sa3d_sampler_desc_set_filters(&desc: ptr, mag: i32, min: i32, mipmap: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_SAMPLER_DESC_mag_filter, mag as i32
+    store desc+SA3D_SAMPLER_DESC_min_filter, min as i32
+    store desc+SA3D_SAMPLER_DESC_mipmap_filter, mipmap as i32
+    !mipmap
+    !min
+    !mag
+    !desc
+    return
+
+@sa3d_sampler_desc_set_lod(&desc: ptr, lod_min: i32, lod_max: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_SAMPLER_DESC_lod_min, lod_min as i32
+    store desc+SA3D_SAMPLER_DESC_lod_max, lod_max as i32
+    !lod_max
+    !lod_min
+    !desc
+    return
+
+@sa3d_sampler_desc_validate(&desc: ptr) -> i32:
+L_ENTRY:
+    au = load desc+SA3D_SAMPLER_DESC_address_u as i32
+    av = load desc+SA3D_SAMPLER_DESC_address_v as i32
+    aw = load desc+SA3D_SAMPLER_DESC_address_w as i32
+    mag = load desc+SA3D_SAMPLER_DESC_mag_filter as i32
+    min = load desc+SA3D_SAMPLER_DESC_min_filter as i32
+    mip = load desc+SA3D_SAMPLER_DESC_mipmap_filter as i32
+    lod_min = load desc+SA3D_SAMPLER_DESC_lod_min as i32
+    lod_max = load desc+SA3D_SAMPLER_DESC_lod_max as i32
+    au_ok = call @sa3d_sampler_address_is_valid(au)
+    av_ok = call @sa3d_sampler_address_is_valid(av)
+    aw_ok = call @sa3d_sampler_address_is_valid(aw)
+    mag_ok = call @sa3d_sampler_filter_is_valid(mag)
+    min_ok = call @sa3d_sampler_filter_is_valid(min)
+    mip_ok = call @sa3d_sampler_filter_is_valid(mip)
+    lod_ok = sle lod_min, lod_max
+    p1 = and au_ok, av_ok
+    p2 = and aw_ok, mag_ok
+    p3 = and min_ok, mip_ok
+    p4 = and p1, p2
+    p5 = and p3, lod_ok
+    ok = and p4, p5
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p5
+    !p4
+    !p3
+    !p2
+    !p1
+    !lod_ok
+    !mip_ok
+    !min_ok
+    !mag_ok
+    !aw_ok
+    !av_ok
+    !au_ok
+    !lod_max
+    !lod_min
+    !mip
+    !min
+    !mag
+    !aw
+    !av
+    !au
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !p5
+    !p4
+    !p3
+    !p2
+    !p1
+    !lod_ok
+    !mip_ok
+    !min_ok
+    !mag_ok
+    !aw_ok
+    !av_ok
+    !au_ok
+    !lod_max
+    !lod_min
+    !mip
+    !min
+    !mag
+    !aw
+    !av
+    !au
+    !desc
+    return 0

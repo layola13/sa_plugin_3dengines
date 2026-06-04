@@ -1,0 +1,252 @@
+<Component name="Sa3dCube">
+  <state>
+    renderer = 0
+    mesh = 0
+    material_left = 0
+    material_center = 0
+    material_right = 0
+  </state>
+
+  <section class="sa3d-stage">
+    <h1>SA 3D Engine Scene</h1>
+    <p>Three static cubes exercise the generic WebGPU scene submission path.</p>
+    <canvas id="sa3d-canvas" width="1024" height="768" renderer="sa3d"></canvas>
+  </section>
+
+  @ffi_wrapper onMount:
+  L_ENTRY:
+    canvas = call @sax_dom_query(*SA3D_WGPU_CANVAS_SELECTOR, SA3D_WGPU_CANVAS_SELECTOR_LEN)
+    out_renderer = stack_alloc 8
+    rc_renderer = call @sa3d_wgpu_request_renderer(canvas, *out_renderer)
+    renderer_h = load out_renderer+0 as i64
+    store state+Sa3dCube_renderer, renderer_h as i64
+    has_renderer = ne renderer_h, 0
+    br has_renderer -> L_REQUEST_FRAME, L_MOUNT_DONE
+
+  L_REQUEST_FRAME:
+    rc_frame = call @sa3d_wgpu_request_frame(renderer_h, *SA3D_WGPU_FRAME_HANDLER, SA3D_WGPU_FRAME_HANDLER_LEN, ctx)
+    ret
+
+  L_MOUNT_DONE:
+    ret
+
+  @ffi_wrapper onUnmount:
+  L_ENTRY:
+    renderer_h = load state+Sa3dCube_renderer as i64
+    rc_cancel = call @sa3d_wgpu_cancel_frame(renderer_h)
+    ret
+
+  @ffi_wrapper frame:
+  L_ENTRY:
+    renderer_h = load state+Sa3dCube_renderer as i64
+    has_renderer = ne renderer_h, 0
+    br has_renderer -> L_CHECK_MESH, L_DONE
+
+  L_CHECK_MESH:
+    mesh_h = load state+Sa3dCube_mesh as i64
+    has_mesh = ne mesh_h, 0
+    br has_mesh -> L_CHECK_MATERIAL_LEFT, L_INIT_MESH
+
+  L_INIT_MESH:
+    canvas = call @sax_dom_query(*SA3D_WGPU_CANVAS_SELECTOR, SA3D_WGPU_CANVAS_SELECTOR_LEN)
+    target_desc = stack_alloc SA3D_WGPU_RENDER_TARGET_SIZE
+    store target_desc+SA3D_WGPU_RENDER_TARGET_canvas, canvas as i64
+    store target_desc+SA3D_WGPU_RENDER_TARGET_width, 1024 as i32
+    store target_desc+SA3D_WGPU_RENDER_TARGET_height, 768 as i32
+    store target_desc+SA3D_WGPU_RENDER_TARGET_sample_count, 1 as i32
+    rc_config = call @sa3d_wgpu_configure_renderer(renderer_h, *target_desc)
+
+    mesh_desc = stack_alloc SA3D_WGPU_MESH_DESC_SIZE
+    store mesh_desc+SA3D_WGPU_MESH_DESC_vertex_ptr, &SA3D_UNIT_CUBE_P3N3UV2_VERTICES as ptr
+    store mesh_desc+SA3D_WGPU_MESH_DESC_vertex_len, SA3D_UNIT_CUBE_P3N3UV2_VERTEX_BYTES as i64
+    store mesh_desc+SA3D_WGPU_MESH_DESC_vertex_stride, SA3D_WGPU_VERTEX_P3N3UV2_SIZE as i64
+    store mesh_desc+SA3D_WGPU_MESH_DESC_index_ptr, &SA3D_UNIT_CUBE_INDICES as ptr
+    store mesh_desc+SA3D_WGPU_MESH_DESC_index_len, SA3D_UNIT_CUBE_INDEX_BYTES as i64
+    store mesh_desc+SA3D_WGPU_MESH_DESC_index_format, SA3D_WGPU_INDEX_U16 as i32
+    store mesh_desc+SA3D_WGPU_MESH_DESC_primitive, SA3D_WGPU_PRIMITIVE_TRIANGLE_LIST as i32
+    out_mesh = stack_alloc 8
+    rc_mesh = call @sa3d_wgpu_upload_mesh(renderer_h, *mesh_desc, *out_mesh)
+    mesh_h = load out_mesh+0 as i64
+    store state+Sa3dCube_mesh, mesh_h as i64
+    has_mesh_uploaded = ne mesh_h, 0
+    br has_mesh_uploaded -> L_CHECK_MATERIAL_LEFT, L_DONE
+
+  L_CHECK_MATERIAL_LEFT:
+    material_left_h = load state+Sa3dCube_material_left as i64
+    has_material_left = ne material_left_h, 0
+    br has_material_left -> L_CHECK_MATERIAL_CENTER, L_INIT_MATERIAL_LEFT
+
+  L_INIT_MATERIAL_LEFT:
+    material_desc = stack_alloc SA3D_WGPU_MATERIAL_DESC_SIZE
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_model, SA3D_WGPU_MATERIAL_MODEL_UNLIT as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_flags, 0 as i32
+    store material_desc+8, 1065353216 as i32
+    store material_desc+12, 0 as i32
+    store material_desc+16, 0 as i32
+    store material_desc+20, 1065353216 as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_metallic, 0 as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_roughness, 1065353216 as i32
+    out_material = stack_alloc 8
+    rc_material = call @sa3d_wgpu_upload_material(renderer_h, *material_desc, *out_material)
+    material_left_h = load out_material+0 as i64
+    store state+Sa3dCube_material_left, material_left_h as i64
+    has_material_left_uploaded = ne material_left_h, 0
+    br has_material_left_uploaded -> L_CHECK_MATERIAL_CENTER, L_DONE
+
+  L_CHECK_MATERIAL_CENTER:
+    material_center_h = load state+Sa3dCube_material_center as i64
+    has_material_center = ne material_center_h, 0
+    br has_material_center -> L_CHECK_MATERIAL_RIGHT, L_INIT_MATERIAL_CENTER
+
+  L_INIT_MATERIAL_CENTER:
+    material_desc = stack_alloc SA3D_WGPU_MATERIAL_DESC_SIZE
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_model, SA3D_WGPU_MATERIAL_MODEL_UNLIT as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_flags, 0 as i32
+    store material_desc+8, 0 as i32
+    store material_desc+12, 1065353216 as i32
+    store material_desc+16, 0 as i32
+    store material_desc+20, 1065353216 as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_metallic, 0 as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_roughness, 1065353216 as i32
+    out_material = stack_alloc 8
+    rc_material = call @sa3d_wgpu_upload_material(renderer_h, *material_desc, *out_material)
+    material_center_h = load out_material+0 as i64
+    store state+Sa3dCube_material_center, material_center_h as i64
+    has_material_center_uploaded = ne material_center_h, 0
+    br has_material_center_uploaded -> L_CHECK_MATERIAL_RIGHT, L_DONE
+
+  L_CHECK_MATERIAL_RIGHT:
+    material_right_h = load state+Sa3dCube_material_right as i64
+    has_material_right = ne material_right_h, 0
+    br has_material_right -> L_DRAW, L_INIT_MATERIAL_RIGHT
+
+  L_INIT_MATERIAL_RIGHT:
+    material_desc = stack_alloc SA3D_WGPU_MATERIAL_DESC_SIZE
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_model, SA3D_WGPU_MATERIAL_MODEL_UNLIT as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_flags, 0 as i32
+    store material_desc+8, 0 as i32
+    store material_desc+12, 0 as i32
+    store material_desc+16, 1065353216 as i32
+    store material_desc+20, 1065353216 as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_metallic, 0 as i32
+    store material_desc+SA3D_WGPU_MATERIAL_DESC_roughness, 1065353216 as i32
+    out_material = stack_alloc 8
+    rc_material = call @sa3d_wgpu_upload_material(renderer_h, *material_desc, *out_material)
+    material_right_h = load out_material+0 as i64
+    store state+Sa3dCube_material_right, material_right_h as i64
+    has_material_right_uploaded = ne material_right_h, 0
+    br has_material_right_uploaded -> L_DRAW, L_DONE
+
+  L_DRAW:
+    mesh_h = load state+Sa3dCube_mesh as i64
+    material_left_h = load state+Sa3dCube_material_left as i64
+    material_center_h = load state+Sa3dCube_material_center as i64
+    material_right_h = load state+Sa3dCube_material_right as i64
+
+    left_model = stack_alloc 64
+    store left_model+0, 1065353216 as i32
+    store left_model+4, 0 as i32
+    store left_model+8, 0 as i32
+    store left_model+12, 0 as i32
+    store left_model+16, 0 as i32
+    store left_model+20, 1065353216 as i32
+    store left_model+24, 0 as i32
+    store left_model+28, 0 as i32
+    store left_model+32, 0 as i32
+    store left_model+36, 0 as i32
+    store left_model+40, 1065353216 as i32
+    store left_model+44, 0 as i32
+    store left_model+48, -1073741824 as i32
+    store left_model+52, 0 as i32
+    store left_model+56, 0 as i32
+    store left_model+60, 1065353216 as i32
+
+    center_model = stack_alloc 64
+    store center_model+0, 1065353216 as i32
+    store center_model+4, 0 as i32
+    store center_model+8, 0 as i32
+    store center_model+12, 0 as i32
+    store center_model+16, 0 as i32
+    store center_model+20, 1065353216 as i32
+    store center_model+24, 0 as i32
+    store center_model+28, 0 as i32
+    store center_model+32, 0 as i32
+    store center_model+36, 0 as i32
+    store center_model+40, 1065353216 as i32
+    store center_model+44, 0 as i32
+    store center_model+48, 0 as i32
+    store center_model+52, 0 as i32
+    store center_model+56, 0 as i32
+    store center_model+60, 1065353216 as i32
+
+    right_model = stack_alloc 64
+    store right_model+0, 1065353216 as i32
+    store right_model+4, 0 as i32
+    store right_model+8, 0 as i32
+    store right_model+12, 0 as i32
+    store right_model+16, 0 as i32
+    store right_model+20, 1065353216 as i32
+    store right_model+24, 0 as i32
+    store right_model+28, 0 as i32
+    store right_model+32, 0 as i32
+    store right_model+36, 0 as i32
+    store right_model+40, 1065353216 as i32
+    store right_model+44, 0 as i32
+    store right_model+48, 1073741824 as i32
+    store right_model+52, 0 as i32
+    store right_model+56, 0 as i32
+    store right_model+60, 1065353216 as i32
+
+    draw_items = stack_alloc 168
+    draw_item_center = ptr_add draw_items, 56
+    draw_item_right = ptr_add draw_items, 112
+
+    store draw_items+SA3D_WGPU_DRAW_ITEM_mesh, mesh_h as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_submesh, 0 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_material, material_left_h as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_transform, left_model as ptr
+    store draw_items+SA3D_WGPU_DRAW_ITEM_sort_key, 0 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_transform_frame_stride, 64 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_transform_frame_count, 1 as i64
+
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_mesh, mesh_h as i64
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_submesh, 0 as i64
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_material, material_center_h as i64
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_transform, center_model as ptr
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_sort_key, 0 as i64
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_transform_frame_stride, 64 as i64
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_transform_frame_count, 1 as i64
+
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_mesh, mesh_h as i64
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_submesh, 0 as i64
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_material, material_right_h as i64
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_transform, right_model as ptr
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_sort_key, 0 as i64
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_transform_frame_stride, 64 as i64
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_transform_frame_count, 1 as i64
+
+    scene_desc = stack_alloc SA3D_WGPU_RENDER_SCENE_SIZE
+    store scene_desc+SA3D_WGPU_RENDER_SCENE_draw_items_ptr, draw_items as ptr
+    store scene_desc+SA3D_WGPU_RENDER_SCENE_draw_items_len, 3 as i64
+    store scene_desc+SA3D_WGPU_RENDER_SCENE_camera_uniform, &SA3D_UNIT_CUBE_CAMERA_UNIFORM as ptr
+    store scene_desc+SA3D_WGPU_RENDER_SCENE_lights_ptr, 0 as i64
+    store scene_desc+SA3D_WGPU_RENDER_SCENE_lights_len, 0 as i64
+    store scene_desc+40, 0 as i32
+    store scene_desc+44, 0 as i32
+    store scene_desc+48, 0 as i32
+    store scene_desc+52, 0 as i32
+
+    frame_desc = stack_alloc SA3D_WGPU_RENDER_FRAME_SIZE
+    store frame_desc+SA3D_WGPU_RENDER_FRAME_renderer, renderer_h as i64
+    store frame_desc+SA3D_WGPU_RENDER_FRAME_scene, scene_desc as ptr
+    store frame_desc+SA3D_WGPU_RENDER_FRAME_camera, 0 as i64
+    store frame_desc+SA3D_WGPU_RENDER_FRAME_delta_ms, 16 as i64
+    store frame_desc+SA3D_WGPU_RENDER_FRAME_frame_index, 0 as i64
+    rc_render = call @sa3d_wgpu_render_frame(renderer_h, *frame_desc)
+    ret
+
+  L_DONE:
+    ret
+
+  !renderer !mesh !material_left !material_center !material_right
+</Component>

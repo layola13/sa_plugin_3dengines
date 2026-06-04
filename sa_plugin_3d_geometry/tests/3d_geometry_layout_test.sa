@@ -1,0 +1,3617 @@
+@import "../3d_geometry.sal"
+
+@extern sa3d_geometry_selftest() -> i32
+@extern sa3d_geometry_cuboid_selftest() -> i32
+@extern sa3d_geometry_plane_selftest() -> i32
+@extern sa3d_geometry_uv_sphere_selftest() -> i32
+@extern sa3d_geometry_ico_sphere_selftest() -> i32
+@extern sa3d_geometry_cylinder_selftest() -> i32
+@extern sa3d_geometry_conical_frustum_selftest() -> i32
+@extern sa3d_geometry_cone_selftest() -> i32
+@extern sa3d_geometry_capsule_selftest() -> i32
+@extern sa3d_geometry_torus_selftest() -> i32
+@extern sa3d_geometry_triangle_selftest() -> i32
+@extern sa3d_geometry_tetrahedron_selftest() -> i32
+@extern sa3d_geometry_segment_selftest() -> i32
+@extern sa3d_geometry_polyline_selftest() -> i32
+
+@sa3d_geometry_test_f32_between(value: f32, low: f32, high: f32) -> i32:
+L_ENTRY:
+    low_ok = fcmp_gt value, low
+    high_ok = fcmp_lt value, high
+    ok = and low_ok, high_ok
+    !high_ok
+    !low_ok
+    !high
+    !low
+    !value
+    return ok
+
+@test "3d_geometry mesh descriptor layout"():
+L_ENTRY:
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    store mesh+SA3D_MESH_DESC_vertex_ptr, 1000 as i64
+    store mesh+SA3D_MESH_DESC_vertex_len, 24 as i64
+    store mesh+SA3D_MESH_DESC_vertex_stride, SA3D_VERTEX_P3N3UV2_SIZE as i64
+    store mesh+SA3D_MESH_DESC_index_format, SA3D_INDEX_U16 as i32
+    store mesh+SA3D_MESH_DESC_primitive, SA3D_PRIMITIVE_TRIANGLE_LIST as i32
+    stride = load mesh+16 as i64
+    index_format = load mesh+40 as i32
+    primitive = load mesh+44 as i32
+    stride_ok = eq stride, 32
+    index_ok = eq index_format, 1
+    primitive_ok = eq primitive, 0
+    pair = and stride_ok, index_ok
+    ok = and pair, primitive_ok
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh
+    return
+
+L_ERR:
+    !mesh
+    panic(3020)
+
+@test "3d_geometry mesh constructors and bounds"():
+L_ENTRY:
+    vertices = alloc 96
+    indices = alloc 12
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    submesh = alloc SA3D_SUBMESH_SIZE
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v2 = ptr_add vertices, 64
+    call @sa3d_vertex_p3n3uv2_set(&v0, -1082130432, 1065353216, 1073741824, 0, 1065353216, 0, 0, 0)
+    call @sa3d_vertex_p3n3uv2_set(&v1, 1084227584, -1073741824, 1082130432, 0, 1065353216, 0, 1065353216, 0)
+    call @sa3d_vertex_p3n3uv2_set(&v2, 1077936128, 1077936128, -1082130432, 0, 1065353216, 0, 0, 1065353216)
+    store indices+0, 0 as i32
+    store indices+4, 1 as i32
+    store indices+8, 2 as i32
+    call @sa3d_mesh_desc_init(&mesh, &vertices, 3, &indices, 3, SA3D_INDEX_U32, SA3D_PRIMITIVE_TRIANGLE_LIST)
+    call @sa3d_submesh_init(&submesh, 0, 3, 0, 7)
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    vertex_ptr = load mesh+SA3D_MESH_DESC_vertex_ptr as ptr
+    index_ptr = load mesh+SA3D_MESH_DESC_index_ptr as ptr
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    stride = load mesh+SA3D_MESH_DESC_vertex_stride as i64
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    min_y = load min_vec+SA3D_VEC3_y as i32
+    min_z = load min_vec+SA3D_VEC3_z as i32
+    max_x = load max_vec+SA3D_VEC3_x as i32
+    max_y = load max_vec+SA3D_VEC3_y as i32
+    max_z = load max_vec+SA3D_VEC3_z as i32
+    sub_count = load submesh+SA3D_SUBMESH_index_count as i32
+    sub_material = load submesh+SA3D_SUBMESH_material as i64
+    vptr_ok = eq vertex_ptr, vertices
+    iptr_ok = eq index_ptr, indices
+    vlen_ok = eq vertex_len, 3
+    ilen_ok = eq index_len, 3
+    stride_ok = eq stride, SA3D_VERTEX_P3N3UV2_SIZE
+    min_x_ok = eq min_x, -1082130432
+    min_y_ok = eq min_y, -1073741824
+    min_z_ok = eq min_z, -1082130432
+    max_x_ok = eq max_x, 1084227584
+    max_y_ok = eq max_y, 1077936128
+    max_z_ok = eq max_z, 1082130432
+    sub_count_ok = eq sub_count, 3
+    sub_material_ok = eq sub_material, 7
+    p1 = and vptr_ok, iptr_ok
+    p2 = and vlen_ok, ilen_ok
+    p3 = and stride_ok, min_x_ok
+    p4 = and min_y_ok, min_z_ok
+    p5 = and max_x_ok, max_y_ok
+    p6 = and max_z_ok, sub_count_ok
+    p7 = and sub_material_ok, p6
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p7
+    r1 = and q1, q2
+    ok = and r1, q3
+    br ok -> L_BEHAVIOR_OK, L_BEHAVIOR_ERR
+
+L_BEHAVIOR_OK:
+    !submesh
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_BEHAVIOR_ERR:
+    !submesh
+    !mesh
+    !indices
+    !vertices
+    panic(3021)
+
+@test "3d_geometry empty mesh bounds"():
+L_ENTRY:
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    vertices = alloc 32
+    indices = alloc 4
+    call @sa3d_mesh_desc_init(&mesh, &vertices, 0, &indices, 0, SA3D_INDEX_NONE, SA3D_PRIMITIVE_POINT_LIST)
+    computed = call @sa3d_mesh_compute_bounds_p3n3uv2(&mesh)
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    max_z = load max_vec+SA3D_VEC3_z as i32
+    primitive = load mesh+SA3D_MESH_DESC_primitive as i32
+    computed_ok = eq computed, 0
+    min_ok = eq min_x, 0
+    max_ok = eq max_z, 0
+    primitive_ok = eq primitive, SA3D_PRIMITIVE_POINT_LIST
+    p1 = and computed_ok, min_ok
+    p2 = and max_ok, primitive_ok
+    ok = and p1, p2
+    br ok -> L_EMPTY_OK, L_EMPTY_ERR
+
+L_EMPTY_OK:
+    !indices
+    !vertices
+    !mesh
+    return
+
+L_EMPTY_ERR:
+    !indices
+    !vertices
+    !mesh
+    panic(3022)
+
+@test "3d_geometry mesh draw counts and byte sizes"():
+L_ENTRY:
+    vertices = alloc 160
+    indices = alloc 24
+    mesh_indexed = alloc SA3D_MESH_DESC_SIZE
+    mesh_plain = alloc SA3D_MESH_DESC_SIZE
+    submesh = alloc SA3D_SUBMESH_SIZE
+    call @sa3d_mesh_desc_init(&mesh_indexed, &vertices, 5, &indices, 6, SA3D_INDEX_U32, SA3D_PRIMITIVE_TRIANGLE_LIST)
+    call @sa3d_mesh_desc_init(&mesh_plain, &vertices, 5, &indices, 0, SA3D_INDEX_NONE, SA3D_PRIMITIVE_TRIANGLE_STRIP)
+    call @sa3d_submesh_init(&submesh, 4, 9, 2, 77)
+    has_indexed = call @sa3d_mesh_desc_has_indices(&mesh_indexed)
+    has_plain = call @sa3d_mesh_desc_has_indices(&mesh_plain)
+    draw_indexed = call @sa3d_mesh_desc_draw_count(&mesh_indexed)
+    draw_plain = call @sa3d_mesh_desc_draw_count(&mesh_plain)
+    tri_indexed = call @sa3d_mesh_desc_triangle_count(&mesh_indexed)
+    tri_plain = call @sa3d_mesh_desc_triangle_count(&mesh_plain)
+    vertex_bytes = call @sa3d_mesh_desc_vertex_byte_len(&mesh_indexed)
+    index_bytes = call @sa3d_mesh_desc_index_byte_len(&mesh_indexed)
+    stride_none = call @sa3d_mesh_index_stride(SA3D_INDEX_NONE)
+    stride_u16 = call @sa3d_mesh_index_stride(SA3D_INDEX_U16)
+    stride_u32 = call @sa3d_mesh_index_stride(SA3D_INDEX_U32)
+    sub_end = call @sa3d_submesh_end_index(&submesh)
+    has_indexed_ok = eq has_indexed, 1
+    has_plain_ok = eq has_plain, 0
+    draw_indexed_ok = eq draw_indexed, 6
+    draw_plain_ok = eq draw_plain, 5
+    tri_indexed_ok = eq tri_indexed, 2
+    tri_plain_ok = eq tri_plain, 3
+    vertex_bytes_ok = eq vertex_bytes, 160
+    index_bytes_ok = eq index_bytes, 24
+    stride_none_ok = eq stride_none, 0
+    stride_u16_ok = eq stride_u16, 2
+    stride_u32_ok = eq stride_u32, 4
+    sub_end_ok = eq sub_end, 13
+    p1 = and has_indexed_ok, has_plain_ok
+    p2 = and draw_indexed_ok, draw_plain_ok
+    p3 = and tri_indexed_ok, tri_plain_ok
+    p4 = and vertex_bytes_ok, index_bytes_ok
+    p5 = and stride_none_ok, stride_u16_ok
+    p6 = and stride_u32_ok, sub_end_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    r1 = and q1, q2
+    ok = and r1, q3
+    br ok -> L_COUNTS_OK, L_COUNTS_ERR
+
+L_COUNTS_OK:
+    !submesh
+    !mesh_plain
+    !mesh_indexed
+    !indices
+    !vertices
+    return
+
+L_COUNTS_ERR:
+    !submesh
+    !mesh_plain
+    !mesh_indexed
+    !indices
+    !vertices
+    panic(3023)
+
+@test "3d_geometry mesh validation helpers live in SA"():
+L_ENTRY:
+    positions = alloc 96
+    indices_u16 = alloc 8
+    indices_u32 = alloc 12
+    valid_mesh = alloc SA3D_MESH_DESC_SIZE
+    bad_mesh = alloc SA3D_MESH_DESC_SIZE
+    oob_mesh = alloc SA3D_MESH_DESC_SIZE
+    store indices_u16+0, 0 as u16
+    store indices_u16+2, 1 as u16
+    store indices_u16+4, 2 as u16
+    store indices_u32+0, 0 as u32
+    store indices_u32+4, 1 as u32
+    store indices_u32+8, 3 as u32
+    call @sa3d_mesh_desc_init(&valid_mesh, &positions, 3, &indices_u16, 3, SA3D_INDEX_U16, SA3D_PRIMITIVE_TRIANGLE_LIST)
+    call @sa3d_mesh_desc_init(&bad_mesh, &positions, 1, &indices_u32, 1, SA3D_INDEX_U32, SA3D_PRIMITIVE_TRIANGLE_LIST)
+    call @sa3d_mesh_desc_init(&oob_mesh, &positions, 3, &indices_u32, 3, SA3D_INDEX_U32, SA3D_PRIMITIVE_TRIANGLE_LIST)
+    mesh_count = call @sa3d_geometry_mesh_count_vertices(5, 4, 6)
+    valid_ok = call @sa3d_geometry_mesh_validate(&valid_mesh)
+    valid_idx_ok = call @sa3d_geometry_mesh_indices_in_range(&valid_mesh)
+    bad_validate = call @sa3d_geometry_mesh_validate(&bad_mesh)
+    oob_idx = call @sa3d_geometry_mesh_indices_in_range(&oob_mesh)
+    mesh_count_ok = eq mesh_count, 4
+    valid_ok_ok = eq valid_ok, 1
+    valid_idx_ok_ok = eq valid_idx_ok, 1
+    bad_validate_ok = eq bad_validate, 0
+    oob_idx_ok = eq oob_idx, 0
+    p1 = and mesh_count_ok, valid_ok_ok
+    p2 = and valid_idx_ok_ok, bad_validate_ok
+    p3 = and p2, oob_idx_ok
+    ok = and p1, p3
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !oob_idx
+    !bad_validate
+    !valid_idx_ok
+    !valid_ok
+    !mesh_count
+    !oob_mesh
+    !bad_mesh
+    !valid_mesh
+    !indices_u32
+    !indices_u16
+    !positions
+    return
+
+L_ERR:
+    !oob_idx
+    !bad_validate
+    !valid_idx_ok
+    !valid_ok
+    !mesh_count
+    !oob_mesh
+    !bad_mesh
+    !valid_mesh
+    !indices_u32
+    !indices_u16
+    !positions
+    panic(3039)
+
+@test "3d_geometry bounds use f32 numeric ordering"():
+L_ENTRY:
+    vertices = alloc 96
+    indices = alloc 12
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v2 = ptr_add vertices, 64
+    call @sa3d_vertex_p3n3uv2_set_f(&v0, -1.0, -4.0, -2.0, 0.0, 1.0, 0.0, 0.0, 0.0)
+    call @sa3d_vertex_p3n3uv2_set_f(&v1, -4.0, -3.0, -0.5, 0.0, 1.0, 0.0, 1.0, 0.0)
+    call @sa3d_vertex_p3n3uv2_set_f(&v2, -2.0, -2.0, -3.0, 0.0, 1.0, 0.0, 0.0, 1.0)
+    store indices+0, 0 as u32
+    store indices+4, 1 as u32
+    store indices+8, 2 as u32
+    call @sa3d_mesh_desc_init(&mesh, &vertices, 3, &indices, 3, SA3D_INDEX_U32, SA3D_PRIMITIVE_TRIANGLE_LIST)
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    min_y = load min_vec+SA3D_VEC3_y as i32
+    min_z = load min_vec+SA3D_VEC3_z as i32
+    max_x = load max_vec+SA3D_VEC3_x as i32
+    max_y = load max_vec+SA3D_VEC3_y as i32
+    max_z = load max_vec+SA3D_VEC3_z as i32
+    min_x_ok = eq min_x, -1065353216
+    min_y_ok = eq min_y, -1065353216
+    min_z_ok = eq min_z, -1069547520
+    max_x_ok = eq max_x, -1082130432
+    max_y_ok = eq max_y, -1073741824
+    max_z_ok = eq max_z, -1090519040
+    p1 = and min_x_ok, min_y_ok
+    p2 = and min_z_ok, max_x_ok
+    p3 = and max_y_ok, max_z_ok
+    q1 = and p1, p2
+    ok = and q1, p3
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !mesh
+    !indices
+    !vertices
+    panic(3042)
+
+@test "3d_geometry cuboid SA writer matches Bevy cuboid builder"():
+L_ENTRY:
+    vertices = alloc 768
+    indices = alloc 144
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_cuboid_mesh_desc(&mesh, &vertices, &indices, 2.0, 3.0, 4.0)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    index_format = load mesh+SA3D_MESH_DESC_index_format as i32
+    primitive = load mesh+SA3D_MESH_DESC_primitive as i32
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    min_y = load min_vec+SA3D_VEC3_y as i32
+    min_z = load min_vec+SA3D_VEC3_z as i32
+    max_x = load max_vec+SA3D_VEC3_x as i32
+    max_y = load max_vec+SA3D_VEC3_y as i32
+    max_z = load max_vec+SA3D_VEC3_z as i32
+    v0 = ptr_add vertices, 0
+    v4 = ptr_add vertices, 128
+    v16 = ptr_add vertices, 512
+    v23 = ptr_add vertices, 736
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v4_pos = ptr_add v4, SA3D_VERTEX_P3N3UV2_position
+    v4_normal = ptr_add v4, SA3D_VERTEX_P3N3UV2_normal
+    v4_uv = ptr_add v4, SA3D_VERTEX_P3N3UV2_uv
+    v16_pos = ptr_add v16, SA3D_VERTEX_P3N3UV2_position
+    v16_normal = ptr_add v16, SA3D_VERTEX_P3N3UV2_normal
+    v16_uv = ptr_add v16, SA3D_VERTEX_P3N3UV2_uv
+    v23_pos = ptr_add v23, SA3D_VERTEX_P3N3UV2_position
+    v23_normal = ptr_add v23, SA3D_VERTEX_P3N3UV2_normal
+    v23_uv = ptr_add v23, SA3D_VERTEX_P3N3UV2_uv
+    v0_px = load v0_pos+SA3D_VEC3_x as i32
+    v0_py = load v0_pos+SA3D_VEC3_y as i32
+    v0_pz = load v0_pos+SA3D_VEC3_z as i32
+    v0_nz = load v0_normal+SA3D_VEC3_z as i32
+    v0_u = load v0_uv+SA3D_VEC2_x as i32
+    v0_v = load v0_uv+SA3D_VEC2_y as i32
+    v4_px = load v4_pos+SA3D_VEC3_x as i32
+    v4_py = load v4_pos+SA3D_VEC3_y as i32
+    v4_pz = load v4_pos+SA3D_VEC3_z as i32
+    v4_nz = load v4_normal+SA3D_VEC3_z as i32
+    v4_u = load v4_uv+SA3D_VEC2_x as i32
+    v4_v = load v4_uv+SA3D_VEC2_y as i32
+    v16_px = load v16_pos+SA3D_VEC3_x as i32
+    v16_py = load v16_pos+SA3D_VEC3_y as i32
+    v16_pz = load v16_pos+SA3D_VEC3_z as i32
+    v16_ny = load v16_normal+SA3D_VEC3_y as i32
+    v16_u = load v16_uv+SA3D_VEC2_x as i32
+    v16_v = load v16_uv+SA3D_VEC2_y as i32
+    v23_px = load v23_pos+SA3D_VEC3_x as i32
+    v23_py = load v23_pos+SA3D_VEC3_y as i32
+    v23_pz = load v23_pos+SA3D_VEC3_z as i32
+    v23_ny = load v23_normal+SA3D_VEC3_y as i32
+    v23_u = load v23_uv+SA3D_VEC2_x as i32
+    v23_v = load v23_uv+SA3D_VEC2_y as i32
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    i3 = load indices+12 as u32
+    i4 = load indices+16 as u32
+    i5 = load indices+20 as u32
+    i30 = load indices+120 as u32
+    i31 = load indices+124 as u32
+    i32 = load indices+128 as u32
+    i33 = load indices+132 as u32
+    i34 = load indices+136 as u32
+    i35 = load indices+140 as u32
+    wrote_ok = eq wrote, 1
+    valid_ok = eq valid, 1
+    range_ok = eq in_range, 1
+    tri_ok = eq triangles, 12
+    vlen_ok = eq vertex_len, 24
+    ilen_ok = eq index_len, 36
+    fmt_ok = eq index_format, SA3D_INDEX_U32
+    prim_ok = eq primitive, SA3D_PRIMITIVE_TRIANGLE_LIST
+    min_x_ok = eq min_x, -1073741824
+    min_y_ok = eq min_y, -1069547520
+    min_z_ok = eq min_z, -1065353216
+    max_x_ok = eq max_x, 1073741824
+    max_y_ok = eq max_y, 1077936128
+    max_z_ok = eq max_z, 1082130432
+    v0_ok0 = eq v0_px, -1073741824
+    v0_ok1 = eq v0_py, -1069547520
+    v0_ok2 = eq v0_pz, 1082130432
+    v0_ok3 = eq v0_nz, SA3D_F32_ONE_BITS
+    v0_ok4 = eq v0_u, 0
+    v0_ok5 = eq v0_v, 0
+    v4_ok0 = eq v4_px, -1073741824
+    v4_ok1 = eq v4_py, 1077936128
+    v4_ok2 = eq v4_pz, -1065353216
+    v4_ok3 = eq v4_nz, SA3D_F32_NEG_ONE_BITS
+    v4_ok4 = eq v4_u, SA3D_F32_ONE_BITS
+    v4_ok5 = eq v4_v, 0
+    v16_ok0 = eq v16_px, 1073741824
+    v16_ok1 = eq v16_py, 1077936128
+    v16_ok2 = eq v16_pz, -1065353216
+    v16_ok3 = eq v16_ny, SA3D_F32_ONE_BITS
+    v16_ok4 = eq v16_u, SA3D_F32_ONE_BITS
+    v16_ok5 = eq v16_v, 0
+    v23_ok0 = eq v23_px, 1073741824
+    v23_ok1 = eq v23_py, -1069547520
+    v23_ok2 = eq v23_pz, -1065353216
+    v23_ok3 = eq v23_ny, SA3D_F32_NEG_ONE_BITS
+    v23_ok4 = eq v23_u, 0
+    v23_ok5 = eq v23_v, SA3D_F32_ONE_BITS
+    i0_ok = eq i0, 0
+    i1_ok = eq i1, 1
+    i2_ok = eq i2, 2
+    i3_ok = eq i3, 2
+    i4_ok = eq i4, 3
+    i5_ok = eq i5, 0
+    i30_ok = eq i30, 20
+    i31_ok = eq i31, 21
+    i32_ok = eq i32, 22
+    i33_ok = eq i33, 22
+    i34_ok = eq i34, 23
+    i35_ok = eq i35, 20
+    m0 = and wrote_ok, valid_ok
+    m1 = and range_ok, tri_ok
+    m2 = and vlen_ok, ilen_ok
+    m3 = and fmt_ok, prim_ok
+    b0 = and min_x_ok, min_y_ok
+    b1 = and min_z_ok, max_x_ok
+    b2 = and max_y_ok, max_z_ok
+    c0 = and v0_ok0, v0_ok1
+    c1 = and v0_ok2, v0_ok3
+    c2 = and v0_ok4, v0_ok5
+    c3 = and v4_ok0, v4_ok1
+    c4 = and v4_ok2, v4_ok3
+    c5 = and v4_ok4, v4_ok5
+    c6 = and v16_ok0, v16_ok1
+    c7 = and v16_ok2, v16_ok3
+    c8 = and v16_ok4, v16_ok5
+    c9 = and v23_ok0, v23_ok1
+    c10 = and v23_ok2, v23_ok3
+    c11 = and v23_ok4, v23_ok5
+    j0 = and i0_ok, i1_ok
+    j1 = and i2_ok, i3_ok
+    j2 = and i4_ok, i5_ok
+    j3 = and i30_ok, i31_ok
+    j4 = and i32_ok, i33_ok
+    j5 = and i34_ok, i35_ok
+    q0 = and m0, m1
+    q1 = and m2, m3
+    q2 = and b0, b1
+    q3 = and b2, c0
+    q4 = and c1, c2
+    q5 = and c3, c4
+    q6 = and c5, c6
+    q7 = and c7, c8
+    q8 = and c9, c10
+    q9 = and c11, j0
+    q10 = and j1, j2
+    q11 = and j3, j4
+    q12 = and j5, q11
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    r4 = and q8, q9
+    r5 = and q10, q12
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and r4, r5
+    t0 = and s0, s1
+    ok = and t0, s2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !mesh
+    !indices
+    !vertices
+    panic(3043)
+
+@test "3d_geometry plane SA writer matches Bevy plane builder"():
+L_ENTRY:
+    vertices = alloc 384
+    indices = alloc 144
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    rotated_vertices = alloc 128
+    rotated_indices = alloc 24
+    wrote = call @sa3d_geometry_plane_mesh_desc(&mesh, &vertices, &indices, 0.0, 1.0, 0.0, 2.0, 3.0, 1, 2)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    min_y = load min_vec+SA3D_VEC3_y as i32
+    min_z = load min_vec+SA3D_VEC3_z as i32
+    max_x = load max_vec+SA3D_VEC3_x as i32
+    max_y = load max_vec+SA3D_VEC3_y as i32
+    max_z = load max_vec+SA3D_VEC3_z as i32
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v11 = ptr_add vertices, 352
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v1_pos = ptr_add v1, SA3D_VERTEX_P3N3UV2_position
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v11_pos = ptr_add v11, SA3D_VERTEX_P3N3UV2_position
+    v11_uv = ptr_add v11, SA3D_VERTEX_P3N3UV2_uv
+    v0_px = load v0_pos+SA3D_VEC3_x as i32
+    v0_py = load v0_pos+SA3D_VEC3_y as i32
+    v0_pz = load v0_pos+SA3D_VEC3_z as i32
+    v0_ny = load v0_normal+SA3D_VEC3_y as i32
+    v0_u = load v0_uv+SA3D_VEC2_x as i32
+    v0_v = load v0_uv+SA3D_VEC2_y as i32
+    v1_px = load v1_pos+SA3D_VEC3_x as i32
+    v1_pz = load v1_pos+SA3D_VEC3_z as i32
+    v1_u = load v1_uv+SA3D_VEC2_x as i32
+    v1_v = load v1_uv+SA3D_VEC2_y as i32
+    v11_px = load v11_pos+SA3D_VEC3_x as i32
+    v11_py = load v11_pos+SA3D_VEC3_y as i32
+    v11_pz = load v11_pos+SA3D_VEC3_z as i32
+    v11_u = load v11_uv+SA3D_VEC2_x as i32
+    v11_v = load v11_uv+SA3D_VEC2_y as i32
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    i3 = load indices+12 as u32
+    i4 = load indices+16 as u32
+    i5 = load indices+20 as u32
+    i30 = load indices+120 as u32
+    i31 = load indices+124 as u32
+    i32 = load indices+128 as u32
+    i33 = load indices+132 as u32
+    i34 = load indices+136 as u32
+    i35 = load indices+140 as u32
+    rotated = call @sa3d_geometry_plane_write(&rotated_vertices, &rotated_indices, 0.0, 0.0, 1.0, 1.0, 1.0, 0, 0)
+    rv0 = ptr_add rotated_vertices, 0
+    rv3 = ptr_add rotated_vertices, 96
+    rv0_pos = ptr_add rv0, SA3D_VERTEX_P3N3UV2_position
+    rv0_normal = ptr_add rv0, SA3D_VERTEX_P3N3UV2_normal
+    rv3_pos = ptr_add rv3, SA3D_VERTEX_P3N3UV2_position
+    rv0_px = load rv0_pos+SA3D_VEC3_x as f32
+    rv0_py = load rv0_pos+SA3D_VEC3_y as f32
+    rv0_pz = load rv0_pos+SA3D_VEC3_z as f32
+    rv0_nz = load rv0_normal+SA3D_VEC3_z as f32
+    rv3_px = load rv3_pos+SA3D_VEC3_x as f32
+    rv3_py = load rv3_pos+SA3D_VEC3_y as f32
+    rv3_pz = load rv3_pos+SA3D_VEC3_z as f32
+    ri0 = load rotated_indices+0 as u32
+    ri1 = load rotated_indices+4 as u32
+    ri2 = load rotated_indices+8 as u32
+    bad_normal = call @sa3d_geometry_plane_write(&rotated_vertices, &rotated_indices, 0.0, 0.0, 0.0, 1.0, 1.0, 0, 0)
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq triangles, 12
+    c4 = eq vertex_len, 12
+    c5 = eq index_len, 36
+    c6 = eq min_x, -1073741824
+    c7 = eq min_y, 0
+    c8 = eq min_z, -1069547520
+    c9 = eq max_x, 1073741824
+    c10 = eq max_y, 0
+    c11 = eq max_z, 1077936128
+    c12 = eq v0_px, -1073741824
+    c13 = eq v0_py, 0
+    c14 = eq v0_pz, -1069547520
+    c15 = eq v0_ny, SA3D_F32_ONE_BITS
+    c16 = eq v0_u, 0
+    c17 = eq v0_v, 0
+    c18 = eq v1_px, 0
+    c19 = eq v1_pz, -1069547520
+    c20 = eq v1_u, 1056964608
+    c21 = eq v1_v, 0
+    c22 = eq v11_px, 1073741824
+    c23 = eq v11_py, 0
+    c24 = eq v11_pz, 1077936128
+    c25 = eq v11_u, SA3D_F32_ONE_BITS
+    c26 = eq v11_v, SA3D_F32_ONE_BITS
+    c27 = eq i0, 4
+    c28 = eq i1, 1
+    c29 = eq i2, 3
+    c30 = eq i3, 0
+    c31 = eq i4, 3
+    c32 = eq i5, 1
+    c33 = eq i30, 11
+    c34 = eq i31, 8
+    c35 = eq i32, 10
+    c36 = eq i33, 7
+    c37 = eq i34, 10
+    c38 = eq i35, 8
+    c39 = eq rotated, 1
+    rv0_x_low = fcmp_gt rv0_px, -1.001
+    rv0_x_high = fcmp_lt rv0_px, -0.999
+    rv0_y_low = fcmp_gt rv0_py, 0.999
+    rv0_y_high = fcmp_lt rv0_py, 1.001
+    rv0_z_low = fcmp_gt rv0_pz, -0.001
+    rv0_z_high = fcmp_lt rv0_pz, 0.001
+    rv0_nz_low = fcmp_gt rv0_nz, 0.999
+    rv0_nz_high = fcmp_lt rv0_nz, 1.001
+    rv3_x_low = fcmp_gt rv3_px, 0.999
+    rv3_x_high = fcmp_lt rv3_px, 1.001
+    rv3_y_low = fcmp_gt rv3_py, -1.001
+    rv3_y_high = fcmp_lt rv3_py, -0.999
+    rv3_z_low = fcmp_gt rv3_pz, -0.001
+    rv3_z_high = fcmp_lt rv3_pz, 0.001
+    c40 = eq ri0, 3
+    c41 = eq ri1, 1
+    c42 = eq ri2, 2
+    c43 = eq bad_normal, 0
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    p12 = and c24, c25
+    p13 = and c26, c27
+    p14 = and c28, c29
+    p15 = and c30, c31
+    p16 = and c32, c33
+    p17 = and c34, c35
+    p18 = and c36, c37
+    p19 = and c38, c39
+    p20 = and rv0_x_low, rv0_x_high
+    p21 = and rv0_y_low, rv0_y_high
+    p22 = and rv0_z_low, rv0_z_high
+    p23 = and rv0_nz_low, rv0_nz_high
+    p24 = and rv3_x_low, rv3_x_high
+    p25 = and rv3_y_low, rv3_y_high
+    p26 = and rv3_z_low, rv3_z_high
+    p27 = and c40, c41
+    p28 = and c42, c43
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    q8 = and p16, p17
+    q9 = and p18, p19
+    q10 = and p20, p21
+    q11 = and p22, p23
+    q12 = and p24, p25
+    q13 = and p26, p27
+    q14 = and p28, q13
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    r4 = and q8, q9
+    r5 = and q10, q11
+    r6 = and q12, q14
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and r4, r5
+    s3 = and s0, s1
+    s4 = and s2, r6
+    ok = and s3, s4
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !rotated_indices
+    !rotated_vertices
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !rotated_indices
+    !rotated_vertices
+    !mesh
+    !indices
+    !vertices
+    panic(3049)
+
+@test "3d_geometry triangle SA writer matches Bevy triangle builder"():
+L_ENTRY:
+    vertices = alloc 96
+    indices = alloc 12
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    deg_vertices = alloc 96
+    deg_indices = alloc 12
+    wrote = call @sa3d_geometry_triangle_mesh_desc(&mesh, &vertices, &indices, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, -1.0, 1.0, 0.0)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    max_x = load max_vec+SA3D_VEC3_x as i32
+    max_y = load max_vec+SA3D_VEC3_y as i32
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v2 = ptr_add vertices, 64
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v2_uv = ptr_add v2, SA3D_VERTEX_P3N3UV2_uv
+    nz = load v0_normal+SA3D_VEC3_z as f32
+    au = load v0_uv+SA3D_VEC2_x as f32
+    av = load v0_uv+SA3D_VEC2_y as i32
+    bu = load v1_uv+SA3D_VEC2_x as i32
+    bv = load v1_uv+SA3D_VEC2_y as i32
+    cu = load v2_uv+SA3D_VEC2_x as i32
+    cv = load v2_uv+SA3D_VEC2_y as i32
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    deg_wrote = call @sa3d_geometry_triangle_write(&deg_vertices, &deg_indices, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
+    d0 = ptr_add deg_vertices, 0
+    d1 = ptr_add deg_vertices, 32
+    d2 = ptr_add deg_vertices, 64
+    d0_normal = ptr_add d0, SA3D_VERTEX_P3N3UV2_normal
+    d0_uv = ptr_add d0, SA3D_VERTEX_P3N3UV2_uv
+    d1_uv = ptr_add d1, SA3D_VERTEX_P3N3UV2_uv
+    d2_uv = ptr_add d2, SA3D_VERTEX_P3N3UV2_uv
+    dnz = load d0_normal+SA3D_VEC3_z as i32
+    d0u = load d0_uv+SA3D_VEC2_x as i32
+    d0v = load d0_uv+SA3D_VEC2_y as i32
+    d1u = load d1_uv+SA3D_VEC2_x as i32
+    d2v = load d2_uv+SA3D_VEC2_y as i32
+    wrote_ok = eq wrote, 1
+    valid_ok = eq valid, 1
+    range_ok = eq in_range, 1
+    tri_ok = eq triangles, 1
+    min_x_ok = eq min_x, -1082130432
+    max_x_ok = eq max_x, 1073741824
+    max_y_ok = eq max_y, SA3D_F32_ONE_BITS
+    nz_low = fcmp_gt nz, 0.999
+    nz_high = fcmp_lt nz, 1.001
+    au_low = fcmp_gt au, 0.332
+    au_high = fcmp_lt au, 0.334
+    av_ok = eq av, 0
+    bu_ok = eq bu, SA3D_F32_ONE_BITS
+    bv_ok = eq bv, 0
+    cu_ok = eq cu, 0
+    cv_ok = eq cv, SA3D_F32_ONE_BITS
+    i0_ok = eq i0, 0
+    i1_ok = eq i1, 1
+    i2_ok = eq i2, 2
+    deg_wrote_ok = eq deg_wrote, 1
+    dnz_ok = eq dnz, 0
+    d0u_ok = eq d0u, 0
+    d0v_ok = eq d0v, 0
+    d1u_ok = eq d1u, SA3D_F32_ONE_BITS
+    d2v_ok = eq d2v, SA3D_F32_ONE_BITS
+    p0 = and wrote_ok, valid_ok
+    p1 = and range_ok, tri_ok
+    p2 = and min_x_ok, max_x_ok
+    p3 = and max_y_ok, nz_low
+    p4 = and nz_high, au_low
+    p5 = and au_high, av_ok
+    p6 = and bu_ok, bv_ok
+    p7 = and cu_ok, cv_ok
+    p8 = and i0_ok, i1_ok
+    p9 = and i2_ok, deg_wrote_ok
+    p10 = and dnz_ok, d0u_ok
+    p11 = and d0v_ok, d1u_ok
+    p12 = and d2v_ok, p11
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p12
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    ok = and s0, r2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !deg_indices
+    !deg_vertices
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !deg_indices
+    !deg_vertices
+    !mesh
+    !indices
+    !vertices
+    panic(3047)
+
+@test "3d_geometry tetrahedron SA writer matches Bevy tetrahedron builder"():
+L_ENTRY:
+    vertices = alloc 384
+    indices = alloc 48
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    positive_vertices = alloc 384
+    positive_indices = alloc 48
+    wrote = call @sa3d_geometry_tetrahedron_mesh_desc(&mesh, &vertices, &indices, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    min_y = load min_vec+SA3D_VEC3_y as i32
+    min_z = load min_vec+SA3D_VEC3_z as i32
+    max_x = load max_vec+SA3D_VEC3_x as i32
+    max_y = load max_vec+SA3D_VEC3_y as i32
+    max_z = load max_vec+SA3D_VEC3_z as i32
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v2 = ptr_add vertices, 64
+    v3 = ptr_add vertices, 96
+    v6 = ptr_add vertices, 192
+    v9 = ptr_add vertices, 288
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v1_pos = ptr_add v1, SA3D_VERTEX_P3N3UV2_position
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v2_pos = ptr_add v2, SA3D_VERTEX_P3N3UV2_position
+    v2_uv = ptr_add v2, SA3D_VERTEX_P3N3UV2_uv
+    v3_pos = ptr_add v3, SA3D_VERTEX_P3N3UV2_position
+    v3_normal = ptr_add v3, SA3D_VERTEX_P3N3UV2_normal
+    v6_pos = ptr_add v6, SA3D_VERTEX_P3N3UV2_position
+    v6_normal = ptr_add v6, SA3D_VERTEX_P3N3UV2_normal
+    v9_pos = ptr_add v9, SA3D_VERTEX_P3N3UV2_position
+    v9_normal = ptr_add v9, SA3D_VERTEX_P3N3UV2_normal
+    v0_px = load v0_pos+SA3D_VEC3_x as i32
+    v0_py = load v0_pos+SA3D_VEC3_y as i32
+    v0_pz = load v0_pos+SA3D_VEC3_z as i32
+    v0_nx = load v0_normal+SA3D_VEC3_x as f32
+    v0_ny = load v0_normal+SA3D_VEC3_y as f32
+    v0_nz = load v0_normal+SA3D_VEC3_z as f32
+    v0_u = load v0_uv+SA3D_VEC2_x as i32
+    v0_v = load v0_uv+SA3D_VEC2_y as i32
+    v1_px = load v1_pos+SA3D_VEC3_x as i32
+    v1_py = load v1_pos+SA3D_VEC3_y as i32
+    v1_pz = load v1_pos+SA3D_VEC3_z as i32
+    v1_u = load v1_uv+SA3D_VEC2_x as i32
+    v1_v = load v1_uv+SA3D_VEC2_y as i32
+    v2_px = load v2_pos+SA3D_VEC3_x as i32
+    v2_py = load v2_pos+SA3D_VEC3_y as i32
+    v2_pz = load v2_pos+SA3D_VEC3_z as i32
+    v2_u = load v2_uv+SA3D_VEC2_x as f32
+    v2_v = load v2_uv+SA3D_VEC2_y as i32
+    v3_px = load v3_pos+SA3D_VEC3_x as i32
+    v3_nx = load v3_normal+SA3D_VEC3_x as f32
+    v3_ny = load v3_normal+SA3D_VEC3_y as f32
+    v3_nz = load v3_normal+SA3D_VEC3_z as f32
+    v6_px = load v6_pos+SA3D_VEC3_x as i32
+    v6_nx = load v6_normal+SA3D_VEC3_x as f32
+    v6_ny = load v6_normal+SA3D_VEC3_y as f32
+    v6_nz = load v6_normal+SA3D_VEC3_z as f32
+    v9_px = load v9_pos+SA3D_VEC3_x as i32
+    v9_nx = load v9_normal+SA3D_VEC3_x as f32
+    v9_ny = load v9_normal+SA3D_VEC3_y as f32
+    v9_nz = load v9_normal+SA3D_VEC3_z as f32
+    i0 = load indices+0 as u32
+    i11 = load indices+44 as u32
+    positive = call @sa3d_geometry_tetrahedron_write(&positive_vertices, &positive_indices, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5)
+    pv0 = ptr_add positive_vertices, 0
+    pv0_pos = ptr_add pv0, SA3D_VERTEX_P3N3UV2_position
+    pv0_px = load pv0_pos+SA3D_VEC3_x as i32
+    pv0_py = load pv0_pos+SA3D_VEC3_y as i32
+    pv0_pz = load pv0_pos+SA3D_VEC3_z as i32
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq triangles, 4
+    c4 = eq min_x, -1090519040
+    c5 = eq min_y, -1090519040
+    c6 = eq min_z, -1090519040
+    c7 = eq max_x, 1056964608
+    c8 = eq max_y, 1056964608
+    c9 = eq max_z, 1056964608
+    c10 = eq v0_px, 1056964608
+    c11 = eq v0_py, -1090519040
+    c12 = eq v0_pz, -1090519040
+    n0x_low = fcmp_gt v0_nx, -0.578
+    n0x_high = fcmp_lt v0_nx, -0.576
+    n0y_low = fcmp_gt v0_ny, -0.578
+    n0y_high = fcmp_lt v0_ny, -0.576
+    n0z_low = fcmp_gt v0_nz, -0.578
+    n0z_high = fcmp_lt v0_nz, -0.576
+    c13 = eq v0_u, 0
+    c14 = eq v0_v, 0
+    c15 = eq v1_px, -1090519040
+    c16 = eq v1_py, -1090519040
+    c17 = eq v1_pz, 1056964608
+    c18 = eq v1_u, SA3D_F32_ONE_BITS
+    c19 = eq v1_v, 0
+    c20 = eq v2_px, -1090519040
+    c21 = eq v2_py, 1056964608
+    c22 = eq v2_pz, -1090519040
+    v2u_low = fcmp_gt v2_u, 0.499
+    v2u_high = fcmp_lt v2_u, 0.501
+    c23 = eq v2_v, SA3D_F32_ONE_BITS
+    c24 = eq v3_px, 1056964608
+    n3x_low = fcmp_gt v3_nx, 0.576
+    n3x_high = fcmp_lt v3_nx, 0.578
+    n3y_low = fcmp_gt v3_ny, -0.578
+    n3y_high = fcmp_lt v3_ny, -0.576
+    n3z_low = fcmp_gt v3_nz, 0.576
+    n3z_high = fcmp_lt v3_nz, 0.578
+    c25 = eq v6_px, 1056964608
+    n6x_low = fcmp_gt v6_nx, 0.576
+    n6x_high = fcmp_lt v6_nx, 0.578
+    n6y_low = fcmp_gt v6_ny, 0.576
+    n6y_high = fcmp_lt v6_ny, 0.578
+    n6z_low = fcmp_gt v6_nz, -0.578
+    n6z_high = fcmp_lt v6_nz, -0.576
+    c26 = eq v9_px, 1056964608
+    n9x_low = fcmp_gt v9_nx, -0.578
+    n9x_high = fcmp_lt v9_nx, -0.576
+    n9y_low = fcmp_gt v9_ny, 0.576
+    n9y_high = fcmp_lt v9_ny, 0.578
+    n9z_low = fcmp_gt v9_nz, 0.576
+    n9z_high = fcmp_lt v9_nz, 0.578
+    c27 = eq i0, 0
+    c28 = eq i11, 11
+    c29 = eq positive, 1
+    c30 = eq pv0_px, -1090519040
+    c31 = eq pv0_py, -1090519040
+    c32 = eq pv0_pz, 1056964608
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, n0x_low
+    p7 = and n0x_high, n0y_low
+    p8 = and n0y_high, n0z_low
+    p9 = and n0z_high, c13
+    p10 = and c14, c15
+    p11 = and c16, c17
+    p12 = and c18, c19
+    p13 = and c20, c21
+    p14 = and c22, v2u_low
+    p15 = and v2u_high, c23
+    p16 = and c24, n3x_low
+    p17 = and n3x_high, n3y_low
+    p18 = and n3y_high, n3z_low
+    p19 = and n3z_high, c25
+    p20 = and n6x_low, n6x_high
+    p21 = and n6y_low, n6y_high
+    p22 = and n6z_low, n6z_high
+    p23 = and c26, n9x_low
+    p24 = and n9x_high, n9y_low
+    p25 = and n9y_high, n9z_low
+    p26 = and n9z_high, c27
+    p27 = and c28, c29
+    p28 = and c30, c31
+    p29 = and c32, p28
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    q8 = and p16, p17
+    q9 = and p18, p19
+    q10 = and p20, p21
+    q11 = and p22, p23
+    q12 = and p24, p25
+    q13 = and p26, p27
+    q14 = and p29, q13
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    r4 = and q8, q9
+    r5 = and q10, q11
+    r6 = and q12, q14
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and r4, r5
+    s3 = and s0, s1
+    s4 = and s2, r6
+    ok = and s3, s4
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !positive_indices
+    !positive_vertices
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !positive_indices
+    !positive_vertices
+    !mesh
+    !indices
+    !vertices
+    panic(3050)
+
+@test "3d_geometry segment SA writer matches Bevy segment builder"():
+L_ENTRY:
+    vertices = alloc 64
+    indices = alloc 8
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_segment_mesh_desc(&mesh, &vertices, &indices, -1.0, 2.0, -3.0, 4.0, -5.0, 6.0)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    draw = call @sa3d_mesh_desc_draw_count(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    primitive = load mesh+SA3D_MESH_DESC_primitive as i32
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    min_y = load min_vec+SA3D_VEC3_y as i32
+    min_z = load min_vec+SA3D_VEC3_z as i32
+    max_x = load max_vec+SA3D_VEC3_x as i32
+    max_y = load max_vec+SA3D_VEC3_y as i32
+    max_z = load max_vec+SA3D_VEC3_z as i32
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v1_pos = ptr_add v1, SA3D_VERTEX_P3N3UV2_position
+    v1_normal = ptr_add v1, SA3D_VERTEX_P3N3UV2_normal
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v0_px = load v0_pos+SA3D_VEC3_x as i32
+    v0_py = load v0_pos+SA3D_VEC3_y as i32
+    v0_pz = load v0_pos+SA3D_VEC3_z as i32
+    v0_nx = load v0_normal+SA3D_VEC3_x as i32
+    v0_u = load v0_uv+SA3D_VEC2_x as i32
+    v1_px = load v1_pos+SA3D_VEC3_x as i32
+    v1_py = load v1_pos+SA3D_VEC3_y as i32
+    v1_pz = load v1_pos+SA3D_VEC3_z as i32
+    v1_nz = load v1_normal+SA3D_VEC3_z as i32
+    v1_v = load v1_uv+SA3D_VEC2_y as i32
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq draw, 2
+    c4 = eq triangles, 0
+    c5 = eq primitive, SA3D_PRIMITIVE_LINE_LIST
+    c6 = eq min_x, -1082130432
+    c7 = eq min_y, -1063256064
+    c8 = eq min_z, -1069547520
+    c9 = eq max_x, 1082130432
+    c10 = eq max_y, 1073741824
+    c11 = eq max_z, 1086324736
+    c12 = eq v0_px, -1082130432
+    c13 = eq v0_py, 1073741824
+    c14 = eq v0_pz, -1069547520
+    c15 = eq v0_nx, 0
+    c16 = eq v0_u, 0
+    c17 = eq v1_px, 1082130432
+    c18 = eq v1_py, -1063256064
+    c19 = eq v1_pz, 1086324736
+    c20 = eq v1_nz, 0
+    c21 = eq v1_v, 0
+    c22 = eq i0, 0
+    c23 = eq i1, 1
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    ok = and s0, r2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !mesh
+    !indices
+    !vertices
+    panic(3044)
+
+@test "3d_geometry polyline SA writer matches Bevy polyline builder"():
+L_ENTRY:
+    positions = alloc 48
+    vertices = alloc 128
+    indices = alloc 24
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    store positions+0, -1.0 as f32
+    store positions+4, 0.0 as f32
+    store positions+8, 2.0 as f32
+    store positions+12, 0.0 as f32
+    store positions+16, 1.0 as f32
+    store positions+20, 3.0 as f32
+    store positions+24, 4.0 as f32
+    store positions+28, -2.0 as f32
+    store positions+32, -5.0 as f32
+    store positions+36, 8.0 as f32
+    store positions+40, 0.5 as f32
+    store positions+44, 1.0 as f32
+    wrote = call @sa3d_geometry_polyline_mesh_desc(&mesh, &vertices, &indices, &positions, 4)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    draw = call @sa3d_mesh_desc_draw_count(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    primitive = load mesh+SA3D_MESH_DESC_primitive as i32
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    bounds = ptr_add mesh, SA3D_MESH_DESC_bounds
+    min_vec = ptr_add bounds, SA3D_AABB_min
+    max_vec = ptr_add bounds, SA3D_AABB_max
+    min_x = load min_vec+SA3D_VEC3_x as i32
+    min_y = load min_vec+SA3D_VEC3_y as i32
+    min_z = load min_vec+SA3D_VEC3_z as i32
+    max_x = load max_vec+SA3D_VEC3_x as i32
+    max_y = load max_vec+SA3D_VEC3_y as i32
+    max_z = load max_vec+SA3D_VEC3_z as i32
+    v0 = ptr_add vertices, 0
+    v2 = ptr_add vertices, 64
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v2_pos = ptr_add v2, SA3D_VERTEX_P3N3UV2_position
+    v2_uv = ptr_add v2, SA3D_VERTEX_P3N3UV2_uv
+    v0_px = load v0_pos+SA3D_VEC3_x as i32
+    v0_py = load v0_pos+SA3D_VEC3_y as i32
+    v0_pz = load v0_pos+SA3D_VEC3_z as i32
+    v0_nx = load v0_normal+SA3D_VEC3_x as i32
+    v2_px = load v2_pos+SA3D_VEC3_x as i32
+    v2_py = load v2_pos+SA3D_VEC3_y as i32
+    v2_pz = load v2_pos+SA3D_VEC3_z as i32
+    v2_u = load v2_uv+SA3D_VEC2_x as i32
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    i3 = load indices+12 as u32
+    i4 = load indices+16 as u32
+    i5 = load indices+20 as u32
+    bad_short = call @sa3d_geometry_polyline_write(&vertices, &indices, &positions, 1)
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq draw, 6
+    c4 = eq triangles, 0
+    c5 = eq primitive, SA3D_PRIMITIVE_LINE_LIST
+    c6 = eq vertex_len, 4
+    c7 = eq index_len, 6
+    c8 = eq min_x, -1082130432
+    c9 = eq min_y, -1073741824
+    c10 = eq min_z, -1063256064
+    c11 = eq max_x, 1090519040
+    c12 = eq max_y, SA3D_F32_ONE_BITS
+    c13 = eq max_z, 1077936128
+    c14 = eq v0_px, -1082130432
+    c15 = eq v0_py, 0
+    c16 = eq v0_pz, 1073741824
+    c17 = eq v0_nx, 0
+    c18 = eq v2_px, 1082130432
+    c19 = eq v2_py, -1073741824
+    c20 = eq v2_pz, -1063256064
+    c21 = eq v2_u, 0
+    c22 = eq i0, 0
+    c23 = eq i1, 1
+    c24 = eq i2, 1
+    c25 = eq i3, 2
+    c26 = eq i4, 2
+    c27 = eq i5, 3
+    c28 = eq bad_short, 0
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    p12 = and c24, c25
+    p13 = and c26, c27
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, c28
+    s0 = and r0, r1
+    s1 = and r2, r3
+    ok = and s0, s1
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh
+    !indices
+    !vertices
+    !positions
+    return
+
+L_ERR:
+    !mesh
+    !indices
+    !vertices
+    !positions
+    panic(3045)
+
+@test "3d_geometry checked count helpers live in SA"():
+L_ENTRY:
+    plane_v = call @sa3d_geometry_checked_plane_vertex_count(1, 2)
+    plane_i = call @sa3d_geometry_checked_plane_index_count(1, 2)
+    uv_v = call @sa3d_geometry_checked_uv_sphere_vertex_count(4, 3)
+    uv_i = call @sa3d_geometry_checked_uv_sphere_index_count(4, 3)
+    ico_v = call @sa3d_geometry_checked_ico_sphere_vertex_count(79)
+    ico_i = call @sa3d_geometry_checked_ico_sphere_index_count(80)
+    cyl_v = call @sa3d_geometry_checked_cylinder_vertex_count(4, 2, 1)
+    cyl_i = call @sa3d_geometry_checked_cylinder_index_count(4, 2, 1)
+    cone_v = call @sa3d_geometry_checked_cone_vertex_count(4)
+    cone_i = call @sa3d_geometry_checked_cone_index_count(4)
+    torus_v = call @sa3d_geometry_checked_torus_vertex_count(4, 4)
+    torus_i = call @sa3d_geometry_checked_torus_index_count(4, 4)
+    frustum_v = call @sa3d_geometry_checked_conical_frustum_vertex_count(4, 2)
+    frustum_i = call @sa3d_geometry_checked_conical_frustum_index_count(4, 2)
+    poly_i = call @sa3d_geometry_checked_polyline_index_count(4)
+    poly_short_i = call @sa3d_geometry_checked_polyline_index_count(1)
+    c1 = eq plane_v, 12
+    c2 = eq plane_i, 36
+    c3 = eq uv_v, 20
+    c4 = eq uv_i, 48
+    c5 = eq ico_v, 64002
+    c6 = eq ico_i, 0
+    c7 = eq cyl_v, 23
+    c8 = eq cyl_i, 60
+    c9 = eq cone_v, 9
+    c10 = eq cone_i, 18
+    c11 = eq torus_v, 25
+    c12 = eq torus_i, 96
+    c13 = eq frustum_v, 23
+    c14 = eq frustum_i, 60
+    c15 = eq poly_i, 6
+    c16 = eq poly_short_i, 0
+    p1 = and c1, c2
+    p2 = and c3, c4
+    p3 = and c5, c6
+    p4 = and c7, c8
+    p5 = and c9, c10
+    p6 = and c11, c12
+    p7 = and c13, c14
+    p8 = and c15, c16
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    r1 = and q1, q2
+    r2 = and q3, q4
+    ok = and r1, r2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !poly_short_i
+    !poly_i
+    !frustum_i
+    !frustum_v
+    !torus_i
+    !torus_v
+    !cone_i
+    !cone_v
+    !cyl_i
+    !cyl_v
+    !ico_i
+    !ico_v
+    !uv_i
+    !uv_v
+    !plane_i
+    !plane_v
+    return
+
+L_ERR:
+    !poly_short_i
+    !poly_i
+    !frustum_i
+    !frustum_v
+    !torus_i
+    !torus_v
+    !cone_i
+    !cone_v
+    !cyl_i
+    !cyl_v
+    !ico_i
+    !ico_v
+    !uv_i
+    !uv_v
+    !plane_i
+    !plane_v
+    panic(3040)
+
+@test "3d_geometry primitive count formulas in SA match Bevy builders"():
+L_ENTRY:
+    cuboid_v = call @sa3d_geometry_cuboid_vertex_count()
+    cuboid_i = call @sa3d_geometry_cuboid_index_count()
+    plane_v = call @sa3d_geometry_plane_vertex_count(1, 2)
+    plane_i = call @sa3d_geometry_plane_index_count(1, 2)
+    uv_v = call @sa3d_geometry_uv_sphere_vertex_count(4, 3)
+    uv_i = call @sa3d_geometry_uv_sphere_index_count(4, 3)
+    ico0_v = call @sa3d_geometry_ico_sphere_vertex_count(0)
+    ico1_i = call @sa3d_geometry_ico_sphere_index_count(1)
+    ico79_v = call @sa3d_geometry_ico_sphere_vertex_count(79)
+    ico80_i = call @sa3d_geometry_ico_sphere_index_count(80)
+    cyl_v = call @sa3d_geometry_cylinder_vertex_count(4, 2, 1)
+    cyl_i = call @sa3d_geometry_cylinder_index_count(4, 2, 1)
+    tube_v = call @sa3d_geometry_cylinder_vertex_count(4, 2, 0)
+    tube_i = call @sa3d_geometry_cylinder_index_count(4, 2, 0)
+    cone_v = call @sa3d_geometry_cone_vertex_count(4)
+    cone_i = call @sa3d_geometry_cone_index_count(4)
+    capsule_v = call @sa3d_geometry_capsule_vertex_count(4, 4, 1)
+    capsule_i = call @sa3d_geometry_capsule_index_count(4, 4, 1)
+    capsule_bad = call @sa3d_geometry_capsule_vertex_count(0, 4, 0)
+    torus_v = call @sa3d_geometry_torus_vertex_count(4, 4)
+    torus_i = call @sa3d_geometry_torus_index_count(4, 4)
+    frustum_v = call @sa3d_geometry_conical_frustum_vertex_count(4, 2)
+    frustum_i = call @sa3d_geometry_conical_frustum_index_count(4, 2)
+    tri_v = call @sa3d_geometry_triangle_vertex_count()
+    tri_i = call @sa3d_geometry_triangle_index_count()
+    tetra_v = call @sa3d_geometry_tetrahedron_vertex_count()
+    tetra_i = call @sa3d_geometry_tetrahedron_index_count()
+    seg_v = call @sa3d_geometry_segment_vertex_count()
+    seg_i = call @sa3d_geometry_segment_index_count()
+    poly_v = call @sa3d_geometry_polyline_vertex_count(4)
+    poly_i = call @sa3d_geometry_polyline_index_count(4)
+    poly_short_i = call @sa3d_geometry_polyline_index_count(1)
+    c1 = eq cuboid_v, 24
+    c2 = eq cuboid_i, 36
+    c3 = eq plane_v, 12
+    c4 = eq plane_i, 36
+    c5 = eq uv_v, 20
+    c6 = eq uv_i, 48
+    c7 = eq ico0_v, 12
+    c8 = eq ico1_i, 240
+    c9 = eq ico79_v, 64002
+    c10 = eq ico80_i, 0
+    c11 = eq cyl_v, 23
+    c12 = eq cyl_i, 60
+    c13 = eq tube_v, 15
+    c14 = eq tube_i, 48
+    c15 = eq cone_v, 9
+    c16 = eq cone_i, 18
+    c17 = eq capsule_v, 33
+    c18 = eq capsule_i, 120
+    c19 = eq capsule_bad, 0
+    c20 = eq torus_v, 25
+    c21 = eq torus_i, 96
+    c22 = eq frustum_v, 23
+    c23 = eq frustum_i, 60
+    c24 = eq tri_v, 3
+    c25 = eq tri_i, 3
+    c26 = eq tetra_v, 12
+    c27 = eq tetra_i, 12
+    c28 = eq seg_v, 2
+    c29 = eq seg_i, 2
+    c30 = eq poly_v, 4
+    c31 = eq poly_i, 6
+    c32 = eq poly_short_i, 0
+    p1 = and c1, c2
+    p2 = and c3, c4
+    p3 = and c5, c6
+    p4 = and c7, c8
+    p5 = and c9, c10
+    p6 = and c11, c12
+    p7 = and c13, c14
+    p8 = and c15, c16
+    p9 = and c17, c18
+    p10 = and c19, c20
+    p11 = and c21, c22
+    p12 = and c23, c24
+    p13 = and c25, c26
+    p14 = and c27, c28
+    p15 = and c29, c30
+    p16 = and c31, c32
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    q8 = and p15, p16
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and q7, q8
+    s1 = and r1, r2
+    s2 = and r3, r4
+    ok = and s1, s2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return
+
+L_ERR:
+    panic(3038)
+
+@test "3d_geometry cylinder SA writer matches Bevy cylinder builder"():
+L_ENTRY:
+    vertices = alloc 736
+    indices = alloc 240
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_cylinder_mesh_desc(&mesh, &vertices, &indices, 2.0, 6.0, 4, 2, 1, SA3D_CYLINDER_ANCHOR_MIDPOINT)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v5 = ptr_add vertices, 160
+    v10 = ptr_add vertices, 320
+    v15 = ptr_add vertices, 480
+    v19 = ptr_add vertices, 608
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v1_pos = ptr_add v1, SA3D_VERTEX_P3N3UV2_position
+    v1_normal = ptr_add v1, SA3D_VERTEX_P3N3UV2_normal
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v5_pos = ptr_add v5, SA3D_VERTEX_P3N3UV2_position
+    v5_uv = ptr_add v5, SA3D_VERTEX_P3N3UV2_uv
+    v10_pos = ptr_add v10, SA3D_VERTEX_P3N3UV2_position
+    v10_uv = ptr_add v10, SA3D_VERTEX_P3N3UV2_uv
+    v15_pos = ptr_add v15, SA3D_VERTEX_P3N3UV2_position
+    v15_normal = ptr_add v15, SA3D_VERTEX_P3N3UV2_normal
+    v15_uv = ptr_add v15, SA3D_VERTEX_P3N3UV2_uv
+    v19_pos = ptr_add v19, SA3D_VERTEX_P3N3UV2_position
+    v19_normal = ptr_add v19, SA3D_VERTEX_P3N3UV2_normal
+    v19_uv = ptr_add v19, SA3D_VERTEX_P3N3UV2_uv
+    v0_px = load v0_pos+SA3D_VEC3_x as f32
+    v0_py = load v0_pos+SA3D_VEC3_y as f32
+    v0_pz = load v0_pos+SA3D_VEC3_z as f32
+    v0_nx = load v0_normal+SA3D_VEC3_x as f32
+    v0_u = load v0_uv+SA3D_VEC2_x as f32
+    v0_v = load v0_uv+SA3D_VEC2_y as f32
+    v1_px = load v1_pos+SA3D_VEC3_x as f32
+    v1_py = load v1_pos+SA3D_VEC3_y as f32
+    v1_pz = load v1_pos+SA3D_VEC3_z as f32
+    v1_nz = load v1_normal+SA3D_VEC3_z as f32
+    v1_u = load v1_uv+SA3D_VEC2_x as f32
+    v5_py = load v5_pos+SA3D_VEC3_y as f32
+    v5_v = load v5_uv+SA3D_VEC2_y as f32
+    v10_py = load v10_pos+SA3D_VEC3_y as f32
+    v10_v = load v10_uv+SA3D_VEC2_y as f32
+    v15_px = load v15_pos+SA3D_VEC3_x as f32
+    v15_py = load v15_pos+SA3D_VEC3_y as f32
+    v15_ny = load v15_normal+SA3D_VEC3_y as f32
+    v15_u = load v15_uv+SA3D_VEC2_x as f32
+    v15_v = load v15_uv+SA3D_VEC2_y as f32
+    v19_px = load v19_pos+SA3D_VEC3_x as f32
+    v19_py = load v19_pos+SA3D_VEC3_y as f32
+    v19_ny = load v19_normal+SA3D_VEC3_y as f32
+    v19_u = load v19_uv+SA3D_VEC2_x as f32
+    v19_v = load v19_uv+SA3D_VEC2_y as f32
+    i0 = load indices+0 as i32
+    i1 = load indices+4 as i32
+    i2 = load indices+8 as i32
+    i48 = load indices+192 as i32
+    i49 = load indices+196 as i32
+    i50 = load indices+200 as i32
+    i54 = load indices+216 as i32
+    i55 = load indices+220 as i32
+    i56 = load indices+224 as i32
+    wrote_ok = eq wrote, 1
+    valid_ok = eq valid, 1
+    range_ok = eq in_range, 1
+    tri_ok = eq triangles, 20
+    vertex_len_ok = eq vertex_len, 23
+    index_len_ok = eq index_len, 60
+    v0_px_ok = call @sa3d_geometry_test_f32_between(v0_px, 1.999, 2.001)
+    v0_py_ok = call @sa3d_geometry_test_f32_between(v0_py, -3.001, -2.999)
+    v0_pz_ok = call @sa3d_geometry_test_f32_between(v0_pz, -0.001, 0.001)
+    v0_nx_ok = call @sa3d_geometry_test_f32_between(v0_nx, 0.999, 1.001)
+    v0_u_ok = call @sa3d_geometry_test_f32_between(v0_u, -0.001, 0.001)
+    v0_v_ok = call @sa3d_geometry_test_f32_between(v0_v, -0.001, 0.001)
+    v1_px_ok = call @sa3d_geometry_test_f32_between(v1_px, -0.001, 0.001)
+    v1_py_ok = call @sa3d_geometry_test_f32_between(v1_py, -3.001, -2.999)
+    v1_pz_ok = call @sa3d_geometry_test_f32_between(v1_pz, 1.999, 2.001)
+    v1_nz_ok = call @sa3d_geometry_test_f32_between(v1_nz, 0.999, 1.001)
+    v1_u_ok = call @sa3d_geometry_test_f32_between(v1_u, 0.249, 0.251)
+    v5_py_ok = call @sa3d_geometry_test_f32_between(v5_py, -0.001, 0.001)
+    v5_v_ok = call @sa3d_geometry_test_f32_between(v5_v, 0.499, 0.501)
+    v10_py_ok = call @sa3d_geometry_test_f32_between(v10_py, 2.999, 3.001)
+    v10_v_ok = call @sa3d_geometry_test_f32_between(v10_v, 0.999, 1.001)
+    v15_px_ok = call @sa3d_geometry_test_f32_between(v15_px, 1.999, 2.001)
+    v15_py_ok = call @sa3d_geometry_test_f32_between(v15_py, 2.999, 3.001)
+    v15_ny_ok = call @sa3d_geometry_test_f32_between(v15_ny, 0.999, 1.001)
+    v15_u_ok = call @sa3d_geometry_test_f32_between(v15_u, 0.999, 1.001)
+    v15_v_ok = call @sa3d_geometry_test_f32_between(v15_v, 0.499, 0.501)
+    v19_px_ok = call @sa3d_geometry_test_f32_between(v19_px, 1.999, 2.001)
+    v19_py_ok = call @sa3d_geometry_test_f32_between(v19_py, -3.001, -2.999)
+    v19_ny_ok = call @sa3d_geometry_test_f32_between(v19_ny, -1.001, -0.999)
+    v19_u_ok = call @sa3d_geometry_test_f32_between(v19_u, 0.999, 1.001)
+    v19_v_ok = call @sa3d_geometry_test_f32_between(v19_v, 0.499, 0.501)
+    i0_ok = eq i0, 0
+    i1_ok = eq i1, 5
+    i2_ok = eq i2, 1
+    i48_ok = eq i48, 15
+    i49_ok = eq i49, 17
+    i50_ok = eq i50, 16
+    i54_ok = eq i54, 19
+    i55_ok = eq i55, 20
+    i56_ok = eq i56, 21
+    tube_vertices = alloc 480
+    tube_indices = alloc 192
+    tube_mesh = alloc SA3D_MESH_DESC_SIZE
+    tube_wrote = call @sa3d_geometry_cylinder_mesh_desc(&tube_mesh, &tube_vertices, &tube_indices, 2.0, 6.0, 4, 2, 0, SA3D_CYLINDER_ANCHOR_TOP)
+    tube_v0 = ptr_add tube_vertices, 0
+    tube_v10 = ptr_add tube_vertices, 320
+    tube_v0_pos = ptr_add tube_v0, SA3D_VERTEX_P3N3UV2_position
+    tube_v10_pos = ptr_add tube_v10, SA3D_VERTEX_P3N3UV2_position
+    tube_v0_y = load tube_v0_pos+SA3D_VEC3_y as f32
+    tube_v10_y = load tube_v10_pos+SA3D_VEC3_y as f32
+    tube_triangles = call @sa3d_mesh_desc_triangle_count(&tube_mesh)
+    tube_wrote_ok = eq tube_wrote, 1
+    tube_tri_ok = eq tube_triangles, 16
+    tube_v0_y_ok = call @sa3d_geometry_test_f32_between(tube_v0_y, -6.001, -5.999)
+    tube_v10_y_ok = call @sa3d_geometry_test_f32_between(tube_v10_y, -0.001, 0.001)
+    bad_res = call @sa3d_geometry_cylinder_write(&vertices, &indices, 1.0, 1.0, 2, 1, 1, SA3D_CYLINDER_ANCHOR_MIDPOINT)
+    bad_seg = call @sa3d_geometry_cylinder_write(&vertices, &indices, 1.0, 1.0, 3, 0, 1, SA3D_CYLINDER_ANCHOR_MIDPOINT)
+    bad_anchor = call @sa3d_geometry_cylinder_write(&vertices, &indices, 1.0, 1.0, 3, 1, 1, 99)
+    bad_res_ok = eq bad_res, 0
+    bad_seg_ok = eq bad_seg, 0
+    bad_anchor_ok = eq bad_anchor, 0
+    p1 = and wrote_ok, valid_ok
+    p2 = and range_ok, tri_ok
+    p3 = and vertex_len_ok, index_len_ok
+    p4 = and v0_px_ok, v0_py_ok
+    p5 = and v0_pz_ok, v0_nx_ok
+    p6 = and v0_u_ok, v0_v_ok
+    p7 = and v1_px_ok, v1_py_ok
+    p8 = and v1_pz_ok, v1_nz_ok
+    p9 = and v1_u_ok, v5_py_ok
+    p10 = and v5_v_ok, v10_py_ok
+    p11 = and v10_v_ok, v15_px_ok
+    p12 = and v15_py_ok, v15_ny_ok
+    p13 = and v15_u_ok, v15_v_ok
+    p14 = and v19_px_ok, v19_py_ok
+    p15 = and v19_ny_ok, v19_u_ok
+    p16 = and v19_v_ok, i0_ok
+    p17 = and i1_ok, i2_ok
+    p18 = and i48_ok, i49_ok
+    p19 = and i50_ok, i54_ok
+    p20 = and i55_ok, i56_ok
+    p21 = and tube_wrote_ok, tube_tri_ok
+    p22 = and tube_v0_y_ok, tube_v10_y_ok
+    p23 = and bad_res_ok, bad_seg_ok
+    p24 = and bad_anchor_ok, p23
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    q8 = and p15, p16
+    q9 = and p17, p18
+    q10 = and p19, p20
+    q11 = and p21, p22
+    q12 = and p24, q11
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and q7, q8
+    r5 = and q9, q10
+    r6 = and q12, r5
+    s1 = and r1, r2
+    s2 = and r3, r4
+    s3 = and r6, s2
+    ok = and s1, s3
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !tube_mesh
+    !tube_indices
+    !tube_vertices
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !tube_mesh
+    !tube_indices
+    !tube_vertices
+    !mesh
+    !indices
+    !vertices
+    panic(3049)
+
+@test "3d_geometry cone SA writer matches Bevy cone builder"():
+L_ENTRY:
+    vertices = alloc 288
+    indices = alloc 72
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_cone_mesh_desc(&mesh, &vertices, &indices, 0.5, 1.0, 4, SA3D_CONE_ANCHOR_MIDPOINT)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v2 = ptr_add vertices, 64
+    v5 = ptr_add vertices, 160
+    v8 = ptr_add vertices, 256
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v1_pos = ptr_add v1, SA3D_VERTEX_P3N3UV2_position
+    v1_normal = ptr_add v1, SA3D_VERTEX_P3N3UV2_normal
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v2_pos = ptr_add v2, SA3D_VERTEX_P3N3UV2_position
+    v2_normal = ptr_add v2, SA3D_VERTEX_P3N3UV2_normal
+    v2_uv = ptr_add v2, SA3D_VERTEX_P3N3UV2_uv
+    v5_pos = ptr_add v5, SA3D_VERTEX_P3N3UV2_position
+    v5_normal = ptr_add v5, SA3D_VERTEX_P3N3UV2_normal
+    v5_uv = ptr_add v5, SA3D_VERTEX_P3N3UV2_uv
+    v8_pos = ptr_add v8, SA3D_VERTEX_P3N3UV2_position
+    v8_normal = ptr_add v8, SA3D_VERTEX_P3N3UV2_normal
+    v8_uv = ptr_add v8, SA3D_VERTEX_P3N3UV2_uv
+    v0_py = load v0_pos+SA3D_VEC3_y as f32
+    v0_nx = load v0_normal+SA3D_VEC3_x as f32
+    v0_u = load v0_uv+SA3D_VEC2_x as f32
+    v0_v = load v0_uv+SA3D_VEC2_y as f32
+    v1_px = load v1_pos+SA3D_VEC3_x as f32
+    v1_py = load v1_pos+SA3D_VEC3_y as f32
+    v1_nx = load v1_normal+SA3D_VEC3_x as f32
+    v1_ny = load v1_normal+SA3D_VEC3_y as f32
+    v1_u = load v1_uv+SA3D_VEC2_x as f32
+    v1_v = load v1_uv+SA3D_VEC2_y as f32
+    v2_pz = load v2_pos+SA3D_VEC3_z as f32
+    v2_ny = load v2_normal+SA3D_VEC3_y as f32
+    v2_nz = load v2_normal+SA3D_VEC3_z as f32
+    v2_u = load v2_uv+SA3D_VEC2_x as f32
+    v2_v = load v2_uv+SA3D_VEC2_y as f32
+    v5_px = load v5_pos+SA3D_VEC3_x as f32
+    v5_py = load v5_pos+SA3D_VEC3_y as f32
+    v5_ny = load v5_normal+SA3D_VEC3_y as f32
+    v5_u = load v5_uv+SA3D_VEC2_x as f32
+    v5_v = load v5_uv+SA3D_VEC2_y as f32
+    v8_pz = load v8_pos+SA3D_VEC3_z as f32
+    v8_ny = load v8_normal+SA3D_VEC3_y as f32
+    v8_u = load v8_uv+SA3D_VEC2_x as f32
+    v8_v = load v8_uv+SA3D_VEC2_y as f32
+    i0 = load indices+0 as i32
+    i1 = load indices+4 as i32
+    i2 = load indices+8 as i32
+    i9 = load indices+36 as i32
+    i10 = load indices+40 as i32
+    i11 = load indices+44 as i32
+    i12 = load indices+48 as i32
+    i13 = load indices+52 as i32
+    i14 = load indices+56 as i32
+    wrote_ok = eq wrote, 1
+    valid_ok = eq valid, 1
+    range_ok = eq in_range, 1
+    tri_ok = eq triangles, 6
+    vertex_len_ok = eq vertex_len, 9
+    index_len_ok = eq index_len, 18
+    v0_py_ok = call @sa3d_geometry_test_f32_between(v0_py, 0.499, 0.501)
+    v0_nx_ok = call @sa3d_geometry_test_f32_between(v0_nx, -0.001, 0.001)
+    v0_u_ok = call @sa3d_geometry_test_f32_between(v0_u, 0.499, 0.501)
+    v0_v_ok = call @sa3d_geometry_test_f32_between(v0_v, 0.499, 0.501)
+    v1_px_ok = call @sa3d_geometry_test_f32_between(v1_px, 0.499, 0.501)
+    v1_py_ok = call @sa3d_geometry_test_f32_between(v1_py, -0.501, -0.499)
+    v1_nx_ok = call @sa3d_geometry_test_f32_between(v1_nx, 0.893, 0.896)
+    v1_ny_ok = call @sa3d_geometry_test_f32_between(v1_ny, 0.446, 0.448)
+    v1_u_ok = call @sa3d_geometry_test_f32_between(v1_u, 0.999, 1.001)
+    v1_v_ok = call @sa3d_geometry_test_f32_between(v1_v, 0.499, 0.501)
+    v2_pz_ok = call @sa3d_geometry_test_f32_between(v2_pz, 0.499, 0.501)
+    v2_ny_ok = call @sa3d_geometry_test_f32_between(v2_ny, 0.446, 0.448)
+    v2_nz_ok = call @sa3d_geometry_test_f32_between(v2_nz, 0.893, 0.896)
+    v2_u_ok = call @sa3d_geometry_test_f32_between(v2_u, 0.499, 0.501)
+    v2_v_ok = call @sa3d_geometry_test_f32_between(v2_v, 0.999, 1.001)
+    v5_px_ok = call @sa3d_geometry_test_f32_between(v5_px, 0.499, 0.501)
+    v5_py_ok = call @sa3d_geometry_test_f32_between(v5_py, -0.501, -0.499)
+    v5_ny_ok = call @sa3d_geometry_test_f32_between(v5_ny, -1.001, -0.999)
+    v5_u_ok = call @sa3d_geometry_test_f32_between(v5_u, 0.999, 1.001)
+    v5_v_ok = call @sa3d_geometry_test_f32_between(v5_v, 0.499, 0.501)
+    v8_pz_ok = call @sa3d_geometry_test_f32_between(v8_pz, -0.501, -0.499)
+    v8_ny_ok = call @sa3d_geometry_test_f32_between(v8_ny, -1.001, -0.999)
+    v8_u_ok = call @sa3d_geometry_test_f32_between(v8_u, 0.499, 0.501)
+    v8_v_ok = call @sa3d_geometry_test_f32_between(v8_v, 0.999, 1.001)
+    i0_ok = eq i0, 0
+    i1_ok = eq i1, 2
+    i2_ok = eq i2, 1
+    i9_ok = eq i9, 0
+    i10_ok = eq i10, 1
+    i11_ok = eq i11, 4
+    i12_ok = eq i12, 5
+    i13_ok = eq i13, 6
+    i14_ok = eq i14, 7
+    tip_vertices = alloc 288
+    tip_indices = alloc 72
+    tip_mesh = alloc SA3D_MESH_DESC_SIZE
+    tip_wrote = call @sa3d_geometry_cone_mesh_desc(&tip_mesh, &tip_vertices, &tip_indices, 0.5, 1.0, 4, SA3D_CONE_ANCHOR_TIP)
+    tip_v0 = ptr_add tip_vertices, 0
+    tip_v1 = ptr_add tip_vertices, 32
+    tip_v0_pos = ptr_add tip_v0, SA3D_VERTEX_P3N3UV2_position
+    tip_v1_pos = ptr_add tip_v1, SA3D_VERTEX_P3N3UV2_position
+    tip_y0 = load tip_v0_pos+SA3D_VEC3_y as f32
+    tip_y1 = load tip_v1_pos+SA3D_VEC3_y as f32
+    tip_ok = eq tip_wrote, 1
+    tip_y0_ok = call @sa3d_geometry_test_f32_between(tip_y0, -0.001, 0.001)
+    tip_y1_ok = call @sa3d_geometry_test_f32_between(tip_y1, -1.001, -0.999)
+    base_vertices = alloc 288
+    base_indices = alloc 72
+    base_mesh = alloc SA3D_MESH_DESC_SIZE
+    base_wrote = call @sa3d_geometry_cone_mesh_desc(&base_mesh, &base_vertices, &base_indices, 0.5, 1.0, 4, SA3D_CONE_ANCHOR_BASE)
+    base_v0 = ptr_add base_vertices, 0
+    base_v1 = ptr_add base_vertices, 32
+    base_v0_pos = ptr_add base_v0, SA3D_VERTEX_P3N3UV2_position
+    base_v1_pos = ptr_add base_v1, SA3D_VERTEX_P3N3UV2_position
+    base_y0 = load base_v0_pos+SA3D_VEC3_y as f32
+    base_y1 = load base_v1_pos+SA3D_VEC3_y as f32
+    base_ok = eq base_wrote, 1
+    base_y0_ok = call @sa3d_geometry_test_f32_between(base_y0, 0.999, 1.001)
+    base_y1_ok = call @sa3d_geometry_test_f32_between(base_y1, -0.001, 0.001)
+    bad_res = call @sa3d_geometry_cone_write(&vertices, &indices, 0.5, 1.0, 2, SA3D_CONE_ANCHOR_MIDPOINT)
+    bad_anchor = call @sa3d_geometry_cone_write(&vertices, &indices, 0.5, 1.0, 4, 99)
+    bad_res_ok = eq bad_res, 0
+    bad_anchor_ok = eq bad_anchor, 0
+    p1 = and wrote_ok, valid_ok
+    p2 = and range_ok, tri_ok
+    p3 = and vertex_len_ok, index_len_ok
+    p4 = and v0_py_ok, v0_nx_ok
+    p5 = and v0_u_ok, v0_v_ok
+    p6 = and v1_px_ok, v1_py_ok
+    p7 = and v1_nx_ok, v1_ny_ok
+    p8 = and v1_u_ok, v1_v_ok
+    p9 = and v2_pz_ok, v2_ny_ok
+    p10 = and v2_nz_ok, v2_u_ok
+    p11 = and v2_v_ok, v5_px_ok
+    p12 = and v5_py_ok, v5_ny_ok
+    p13 = and v5_u_ok, v5_v_ok
+    p14 = and v8_pz_ok, v8_ny_ok
+    p15 = and v8_u_ok, v8_v_ok
+    p16 = and i0_ok, i1_ok
+    p17 = and i2_ok, i9_ok
+    p18 = and i10_ok, i11_ok
+    p19 = and i12_ok, i13_ok
+    p20 = and i14_ok, tip_ok
+    p21 = and tip_y0_ok, tip_y1_ok
+    p22 = and base_ok, base_y0_ok
+    p23 = and base_y1_ok, bad_res_ok
+    p24 = and bad_anchor_ok, p23
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    q8 = and p15, p16
+    q9 = and p17, p18
+    q10 = and p19, p20
+    q11 = and p21, p22
+    q12 = and p24, q11
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and q7, q8
+    r5 = and q9, q10
+    r6 = and q12, r5
+    s1 = and r1, r2
+    s2 = and r3, r4
+    s3 = and r6, s2
+    ok = and s1, s3
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !base_mesh
+    !base_indices
+    !base_vertices
+    !tip_mesh
+    !tip_indices
+    !tip_vertices
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !base_mesh
+    !base_indices
+    !base_vertices
+    !tip_mesh
+    !tip_indices
+    !tip_vertices
+    !mesh
+    !indices
+    !vertices
+    panic(3050)
+
+@test "3d_geometry conical frustum SA writer matches Bevy builder"():
+L_ENTRY:
+    vertices = alloc 736
+    indices = alloc 240
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_conical_frustum_mesh_desc(&mesh, &vertices, &indices, 1.0, 2.0, 6.0, 4, 2)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v5 = ptr_add vertices, 160
+    v10 = ptr_add vertices, 320
+    v15 = ptr_add vertices, 480
+    v19 = ptr_add vertices, 608
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v1_pos = ptr_add v1, SA3D_VERTEX_P3N3UV2_position
+    v1_normal = ptr_add v1, SA3D_VERTEX_P3N3UV2_normal
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v5_pos = ptr_add v5, SA3D_VERTEX_P3N3UV2_position
+    v5_normal = ptr_add v5, SA3D_VERTEX_P3N3UV2_normal
+    v5_uv = ptr_add v5, SA3D_VERTEX_P3N3UV2_uv
+    v10_pos = ptr_add v10, SA3D_VERTEX_P3N3UV2_position
+    v10_normal = ptr_add v10, SA3D_VERTEX_P3N3UV2_normal
+    v10_uv = ptr_add v10, SA3D_VERTEX_P3N3UV2_uv
+    v15_pos = ptr_add v15, SA3D_VERTEX_P3N3UV2_position
+    v15_normal = ptr_add v15, SA3D_VERTEX_P3N3UV2_normal
+    v15_uv = ptr_add v15, SA3D_VERTEX_P3N3UV2_uv
+    v19_pos = ptr_add v19, SA3D_VERTEX_P3N3UV2_position
+    v19_normal = ptr_add v19, SA3D_VERTEX_P3N3UV2_normal
+    v19_uv = ptr_add v19, SA3D_VERTEX_P3N3UV2_uv
+    v0_px = load v0_pos+SA3D_VEC3_x as f32
+    v0_py = load v0_pos+SA3D_VEC3_y as f32
+    v0_nx = load v0_normal+SA3D_VEC3_x as f32
+    v0_ny = load v0_normal+SA3D_VEC3_y as f32
+    v1_pz = load v1_pos+SA3D_VEC3_z as f32
+    v1_nz = load v1_normal+SA3D_VEC3_z as f32
+    v1_u = load v1_uv+SA3D_VEC2_x as f32
+    v5_px = load v5_pos+SA3D_VEC3_x as f32
+    v5_py = load v5_pos+SA3D_VEC3_y as f32
+    v5_nx = load v5_normal+SA3D_VEC3_x as f32
+    v5_v = load v5_uv+SA3D_VEC2_y as f32
+    v10_px = load v10_pos+SA3D_VEC3_x as f32
+    v10_py = load v10_pos+SA3D_VEC3_y as f32
+    v10_nx = load v10_normal+SA3D_VEC3_x as f32
+    v10_v = load v10_uv+SA3D_VEC2_y as f32
+    v15_px = load v15_pos+SA3D_VEC3_x as f32
+    v15_py = load v15_pos+SA3D_VEC3_y as f32
+    v15_ny = load v15_normal+SA3D_VEC3_y as f32
+    v15_u = load v15_uv+SA3D_VEC2_x as f32
+    v15_v = load v15_uv+SA3D_VEC2_y as f32
+    v19_px = load v19_pos+SA3D_VEC3_x as f32
+    v19_py = load v19_pos+SA3D_VEC3_y as f32
+    v19_ny = load v19_normal+SA3D_VEC3_y as f32
+    v19_u = load v19_uv+SA3D_VEC2_x as f32
+    v19_v = load v19_uv+SA3D_VEC2_y as f32
+    i0 = load indices+0 as i32
+    i1 = load indices+4 as i32
+    i2 = load indices+8 as i32
+    i48 = load indices+192 as i32
+    i49 = load indices+196 as i32
+    i50 = load indices+200 as i32
+    i54 = load indices+216 as i32
+    i55 = load indices+220 as i32
+    i56 = load indices+224 as i32
+    wrote_ok = eq wrote, 1
+    valid_ok = eq valid, 1
+    range_ok = eq in_range, 1
+    tri_ok = eq triangles, 20
+    vertex_len_ok = eq vertex_len, 23
+    index_len_ok = eq index_len, 60
+    v0_px_ok = call @sa3d_geometry_test_f32_between(v0_px, 1.999, 2.001)
+    v0_py_ok = call @sa3d_geometry_test_f32_between(v0_py, -3.001, -2.999)
+    v0_nx_ok = call @sa3d_geometry_test_f32_between(v0_nx, 0.985, 0.988)
+    v0_ny_ok = call @sa3d_geometry_test_f32_between(v0_ny, 0.163, 0.166)
+    v1_pz_ok = call @sa3d_geometry_test_f32_between(v1_pz, 1.999, 2.001)
+    v1_nz_ok = call @sa3d_geometry_test_f32_between(v1_nz, 0.985, 0.988)
+    v1_u_ok = call @sa3d_geometry_test_f32_between(v1_u, 0.249, 0.251)
+    v5_px_ok = call @sa3d_geometry_test_f32_between(v5_px, 1.499, 1.501)
+    v5_py_ok = call @sa3d_geometry_test_f32_between(v5_py, -0.001, 0.001)
+    v5_nx_ok = call @sa3d_geometry_test_f32_between(v5_nx, 0.985, 0.988)
+    v5_v_ok = call @sa3d_geometry_test_f32_between(v5_v, 0.499, 0.501)
+    v10_px_ok = call @sa3d_geometry_test_f32_between(v10_px, 0.999, 1.001)
+    v10_py_ok = call @sa3d_geometry_test_f32_between(v10_py, 2.999, 3.001)
+    v10_nx_ok = call @sa3d_geometry_test_f32_between(v10_nx, 0.985, 0.988)
+    v10_v_ok = call @sa3d_geometry_test_f32_between(v10_v, 0.999, 1.001)
+    v15_px_ok = call @sa3d_geometry_test_f32_between(v15_px, 0.999, 1.001)
+    v15_py_ok = call @sa3d_geometry_test_f32_between(v15_py, 2.999, 3.001)
+    v15_ny_ok = call @sa3d_geometry_test_f32_between(v15_ny, 0.999, 1.001)
+    v15_u_ok = call @sa3d_geometry_test_f32_between(v15_u, 0.999, 1.001)
+    v15_v_ok = call @sa3d_geometry_test_f32_between(v15_v, 0.499, 0.501)
+    v19_px_ok = call @sa3d_geometry_test_f32_between(v19_px, 1.999, 2.001)
+    v19_py_ok = call @sa3d_geometry_test_f32_between(v19_py, -3.001, -2.999)
+    v19_ny_ok = call @sa3d_geometry_test_f32_between(v19_ny, -1.001, -0.999)
+    v19_u_ok = call @sa3d_geometry_test_f32_between(v19_u, 0.999, 1.001)
+    v19_v_ok = call @sa3d_geometry_test_f32_between(v19_v, 0.499, 0.501)
+    i0_ok = eq i0, 0
+    i1_ok = eq i1, 5
+    i2_ok = eq i2, 1
+    i48_ok = eq i48, 15
+    i49_ok = eq i49, 17
+    i50_ok = eq i50, 16
+    i54_ok = eq i54, 19
+    i55_ok = eq i55, 20
+    i56_ok = eq i56, 21
+    cyl_vertices = alloc 576
+    cyl_indices = alloc 144
+    cyl_mesh = alloc SA3D_MESH_DESC_SIZE
+    cyl_wrote = call @sa3d_geometry_conical_frustum_mesh_desc(&cyl_mesh, &cyl_vertices, &cyl_indices, 2.0, 2.0, 4.0, 4, 1)
+    cyl_v0 = ptr_add cyl_vertices, 0
+    cyl_v5 = ptr_add cyl_vertices, 160
+    cyl_v0_pos = ptr_add cyl_v0, SA3D_VERTEX_P3N3UV2_position
+    cyl_v0_normal = ptr_add cyl_v0, SA3D_VERTEX_P3N3UV2_normal
+    cyl_v5_pos = ptr_add cyl_v5, SA3D_VERTEX_P3N3UV2_position
+    cyl_v5_normal = ptr_add cyl_v5, SA3D_VERTEX_P3N3UV2_normal
+    cyl_v0_px = load cyl_v0_pos+SA3D_VEC3_x as f32
+    cyl_v0_py = load cyl_v0_pos+SA3D_VEC3_y as f32
+    cyl_v0_nx = load cyl_v0_normal+SA3D_VEC3_x as f32
+    cyl_v0_ny = load cyl_v0_normal+SA3D_VEC3_y as f32
+    cyl_v5_px = load cyl_v5_pos+SA3D_VEC3_x as f32
+    cyl_v5_py = load cyl_v5_pos+SA3D_VEC3_y as f32
+    cyl_v5_nx = load cyl_v5_normal+SA3D_VEC3_x as f32
+    cyl_v5_ny = load cyl_v5_normal+SA3D_VEC3_y as f32
+    cyl_wrote_ok = eq cyl_wrote, 1
+    cyl_v0_px_ok = call @sa3d_geometry_test_f32_between(cyl_v0_px, 1.999, 2.001)
+    cyl_v0_py_ok = call @sa3d_geometry_test_f32_between(cyl_v0_py, -2.001, -1.999)
+    cyl_v0_nx_ok = call @sa3d_geometry_test_f32_between(cyl_v0_nx, 0.999, 1.001)
+    cyl_v0_ny_ok = call @sa3d_geometry_test_f32_between(cyl_v0_ny, -0.001, 0.001)
+    cyl_v5_px_ok = call @sa3d_geometry_test_f32_between(cyl_v5_px, 1.999, 2.001)
+    cyl_v5_py_ok = call @sa3d_geometry_test_f32_between(cyl_v5_py, 1.999, 2.001)
+    cyl_v5_nx_ok = call @sa3d_geometry_test_f32_between(cyl_v5_nx, 0.999, 1.001)
+    cyl_v5_ny_ok = call @sa3d_geometry_test_f32_between(cyl_v5_ny, -0.001, 0.001)
+    bad_res = call @sa3d_geometry_conical_frustum_write(&vertices, &indices, 1.0, 2.0, 6.0, 2, 2)
+    bad_seg = call @sa3d_geometry_conical_frustum_write(&vertices, &indices, 1.0, 2.0, 6.0, 4, 0)
+    bad_res_ok = eq bad_res, 0
+    bad_seg_ok = eq bad_seg, 0
+    p1 = and wrote_ok, valid_ok
+    p2 = and range_ok, tri_ok
+    p3 = and vertex_len_ok, index_len_ok
+    p4 = and v0_px_ok, v0_py_ok
+    p5 = and v0_nx_ok, v0_ny_ok
+    p6 = and v1_pz_ok, v1_nz_ok
+    p7 = and v1_u_ok, v5_px_ok
+    p8 = and v5_py_ok, v5_nx_ok
+    p9 = and v5_v_ok, v10_px_ok
+    p10 = and v10_py_ok, v10_nx_ok
+    p11 = and v10_v_ok, v15_px_ok
+    p12 = and v15_py_ok, v15_ny_ok
+    p13 = and v15_u_ok, v15_v_ok
+    p14 = and v19_px_ok, v19_py_ok
+    p15 = and v19_ny_ok, v19_u_ok
+    p16 = and v19_v_ok, i0_ok
+    p17 = and i1_ok, i2_ok
+    p18 = and i48_ok, i49_ok
+    p19 = and i50_ok, i54_ok
+    p20 = and i55_ok, i56_ok
+    p21 = and cyl_wrote_ok, cyl_v0_px_ok
+    p22 = and cyl_v0_py_ok, cyl_v0_nx_ok
+    p23 = and cyl_v0_ny_ok, cyl_v5_px_ok
+    p24 = and cyl_v5_py_ok, cyl_v5_nx_ok
+    p25 = and cyl_v5_ny_ok, bad_res_ok
+    p26 = and bad_seg_ok, p25
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    q8 = and p15, p16
+    q9 = and p17, p18
+    q10 = and p19, p20
+    q11 = and p21, p22
+    q12 = and p23, p24
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and q7, q8
+    r5 = and q9, q10
+    r6 = and q11, q12
+    r7 = and p26, r6
+    s1 = and r1, r2
+    s2 = and r3, r4
+    s3 = and r5, r7
+    t1 = and s1, s2
+    ok = and t1, s3
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !cyl_mesh
+    !cyl_indices
+    !cyl_vertices
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !cyl_mesh
+    !cyl_indices
+    !cyl_vertices
+    !mesh
+    !indices
+    !vertices
+    panic(3051)
+
+@test "3d_geometry uv sphere SA writer matches Bevy sphere uv builder"():
+L_ENTRY:
+    vertices = alloc 640
+    indices = alloc 192
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_uv_sphere_mesh_desc(&mesh, &vertices, &indices, 2.0, 4, 3)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v0 = ptr_add vertices, 0
+    v5 = ptr_add vertices, 160
+    v6 = ptr_add vertices, 192
+    v19 = ptr_add vertices, 608
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v5_pos = ptr_add v5, SA3D_VERTEX_P3N3UV2_position
+    v5_normal = ptr_add v5, SA3D_VERTEX_P3N3UV2_normal
+    v5_uv = ptr_add v5, SA3D_VERTEX_P3N3UV2_uv
+    v6_pos = ptr_add v6, SA3D_VERTEX_P3N3UV2_position
+    v6_normal = ptr_add v6, SA3D_VERTEX_P3N3UV2_normal
+    v6_uv = ptr_add v6, SA3D_VERTEX_P3N3UV2_uv
+    v19_pos = ptr_add v19, SA3D_VERTEX_P3N3UV2_position
+    v19_normal = ptr_add v19, SA3D_VERTEX_P3N3UV2_normal
+    v19_uv = ptr_add v19, SA3D_VERTEX_P3N3UV2_uv
+    v0_px = load v0_pos+SA3D_VEC3_x as f32
+    v0_py = load v0_pos+SA3D_VEC3_y as f32
+    v0_pz = load v0_pos+SA3D_VEC3_z as f32
+    v0_nz = load v0_normal+SA3D_VEC3_z as f32
+    v0_u = load v0_uv+SA3D_VEC2_x as f32
+    v0_v = load v0_uv+SA3D_VEC2_y as f32
+    v5_px = load v5_pos+SA3D_VEC3_x as f32
+    v5_py = load v5_pos+SA3D_VEC3_y as f32
+    v5_pz = load v5_pos+SA3D_VEC3_z as f32
+    v5_nx = load v5_normal+SA3D_VEC3_x as f32
+    v5_nz = load v5_normal+SA3D_VEC3_z as f32
+    v5_u = load v5_uv+SA3D_VEC2_x as f32
+    v5_v = load v5_uv+SA3D_VEC2_y as f32
+    v6_px = load v6_pos+SA3D_VEC3_x as f32
+    v6_py = load v6_pos+SA3D_VEC3_y as f32
+    v6_pz = load v6_pos+SA3D_VEC3_z as f32
+    v6_ny = load v6_normal+SA3D_VEC3_y as f32
+    v6_nz = load v6_normal+SA3D_VEC3_z as f32
+    v6_u = load v6_uv+SA3D_VEC2_x as f32
+    v6_v = load v6_uv+SA3D_VEC2_y as f32
+    v19_px = load v19_pos+SA3D_VEC3_x as f32
+    v19_py = load v19_pos+SA3D_VEC3_y as f32
+    v19_pz = load v19_pos+SA3D_VEC3_z as f32
+    v19_nz = load v19_normal+SA3D_VEC3_z as f32
+    v19_u = load v19_uv+SA3D_VEC2_x as f32
+    v19_v = load v19_uv+SA3D_VEC2_y as f32
+    i0 = load indices+0 as i32
+    i1 = load indices+4 as i32
+    i2 = load indices+8 as i32
+    i3 = load indices+12 as i32
+    i4 = load indices+16 as i32
+    i5 = load indices+20 as i32
+    i42 = load indices+168 as i32
+    i43 = load indices+172 as i32
+    i44 = load indices+176 as i32
+    i45 = load indices+180 as i32
+    i46 = load indices+184 as i32
+    i47 = load indices+188 as i32
+    wrote_ok = eq wrote, 1
+    valid_ok = eq valid, 1
+    range_ok = eq in_range, 1
+    tri_ok = eq triangles, 16
+    vertex_len_ok = eq vertex_len, 20
+    index_len_ok = eq index_len, 48
+    v0_px_ok = call @sa3d_geometry_test_f32_between(v0_px, -0.001, 0.001)
+    v0_py_ok = call @sa3d_geometry_test_f32_between(v0_py, -0.001, 0.001)
+    v0_pz_ok = call @sa3d_geometry_test_f32_between(v0_pz, 1.999, 2.001)
+    v0_nz_ok = call @sa3d_geometry_test_f32_between(v0_nz, 0.999, 1.001)
+    v0_u_ok = call @sa3d_geometry_test_f32_between(v0_u, -0.001, 0.001)
+    v0_v_ok = call @sa3d_geometry_test_f32_between(v0_v, -0.001, 0.001)
+    v5_px_ok = call @sa3d_geometry_test_f32_between(v5_px, 1.731, 1.733)
+    v5_py_ok = call @sa3d_geometry_test_f32_between(v5_py, -0.001, 0.001)
+    v5_pz_ok = call @sa3d_geometry_test_f32_between(v5_pz, 0.999, 1.001)
+    v5_nx_ok = call @sa3d_geometry_test_f32_between(v5_nx, 0.865, 0.867)
+    v5_nz_ok = call @sa3d_geometry_test_f32_between(v5_nz, 0.499, 0.501)
+    v5_u_ok = call @sa3d_geometry_test_f32_between(v5_u, -0.001, 0.001)
+    v5_v_ok = call @sa3d_geometry_test_f32_between(v5_v, 0.332, 0.334)
+    v6_px_ok = call @sa3d_geometry_test_f32_between(v6_px, -0.001, 0.001)
+    v6_py_ok = call @sa3d_geometry_test_f32_between(v6_py, 1.731, 1.733)
+    v6_pz_ok = call @sa3d_geometry_test_f32_between(v6_pz, 0.999, 1.001)
+    v6_ny_ok = call @sa3d_geometry_test_f32_between(v6_ny, 0.865, 0.867)
+    v6_nz_ok = call @sa3d_geometry_test_f32_between(v6_nz, 0.499, 0.501)
+    v6_u_ok = call @sa3d_geometry_test_f32_between(v6_u, 0.249, 0.251)
+    v6_v_ok = call @sa3d_geometry_test_f32_between(v6_v, 0.332, 0.334)
+    v19_px_ok = call @sa3d_geometry_test_f32_between(v19_px, -0.001, 0.001)
+    v19_py_ok = call @sa3d_geometry_test_f32_between(v19_py, -0.001, 0.001)
+    v19_pz_ok = call @sa3d_geometry_test_f32_between(v19_pz, -2.001, -1.999)
+    v19_nz_ok = call @sa3d_geometry_test_f32_between(v19_nz, -1.001, -0.999)
+    v19_u_ok = call @sa3d_geometry_test_f32_between(v19_u, 0.999, 1.001)
+    v19_v_ok = call @sa3d_geometry_test_f32_between(v19_v, 0.999, 1.001)
+    i0_ok = eq i0, 1
+    i1_ok = eq i1, 5
+    i2_ok = eq i2, 6
+    i3_ok = eq i3, 2
+    i4_ok = eq i4, 6
+    i5_ok = eq i5, 7
+    i42_ok = eq i42, 12
+    i43_ok = eq i43, 17
+    i44_ok = eq i44, 13
+    i45_ok = eq i45, 13
+    i46_ok = eq i46, 18
+    i47_ok = eq i47, 14
+    bad_sec = call @sa3d_geometry_uv_sphere_write(&vertices, &indices, 2.0, 0, 3)
+    bad_stack = call @sa3d_geometry_uv_sphere_write(&vertices, &indices, 2.0, 4, 0)
+    bad_sec_ok = eq bad_sec, 0
+    bad_stack_ok = eq bad_stack, 0
+    p1 = and wrote_ok, valid_ok
+    p2 = and range_ok, tri_ok
+    p3 = and vertex_len_ok, index_len_ok
+    p4 = and v0_px_ok, v0_py_ok
+    p5 = and v0_pz_ok, v0_nz_ok
+    p6 = and v0_u_ok, v0_v_ok
+    p7 = and v5_px_ok, v5_py_ok
+    p8 = and v5_pz_ok, v5_nx_ok
+    p9 = and v5_nz_ok, v5_u_ok
+    p10 = and v5_v_ok, v6_px_ok
+    p11 = and v6_py_ok, v6_pz_ok
+    p12 = and v6_ny_ok, v6_nz_ok
+    p13 = and v6_u_ok, v6_v_ok
+    p14 = and v19_px_ok, v19_py_ok
+    p15 = and v19_pz_ok, v19_nz_ok
+    p16 = and v19_u_ok, v19_v_ok
+    p17 = and i0_ok, i1_ok
+    p18 = and i2_ok, i3_ok
+    p19 = and i4_ok, i5_ok
+    p20 = and i42_ok, i43_ok
+    p21 = and i44_ok, i45_ok
+    p22 = and i46_ok, i47_ok
+    p23 = and bad_sec_ok, bad_stack_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    q8 = and p15, p16
+    q9 = and p17, p18
+    q10 = and p19, p20
+    q11 = and p21, p22
+    q12 = and p23, q11
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and q7, q8
+    r5 = and q9, q10
+    r6 = and q12, r5
+    s1 = and r1, r2
+    s2 = and r3, r4
+    s3 = and r6, s2
+    ok = and s1, s3
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !mesh
+    !indices
+    !vertices
+    panic(3052)
+
+@test "3d_geometry torus SA writer matches Bevy torus builder"():
+L_ENTRY:
+    vertices = alloc 800
+    indices = alloc 384
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_torus_mesh_desc(&mesh, &vertices, &indices, 1.0, 3.0, 4, 4, 0.0, 6.28318531)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v5 = ptr_add vertices, 160
+    v24 = ptr_add vertices, 768
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v1_pos = ptr_add v1, SA3D_VERTEX_P3N3UV2_position
+    v1_normal = ptr_add v1, SA3D_VERTEX_P3N3UV2_normal
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v5_pos = ptr_add v5, SA3D_VERTEX_P3N3UV2_position
+    v5_normal = ptr_add v5, SA3D_VERTEX_P3N3UV2_normal
+    v5_uv = ptr_add v5, SA3D_VERTEX_P3N3UV2_uv
+    v24_pos = ptr_add v24, SA3D_VERTEX_P3N3UV2_position
+    v24_normal = ptr_add v24, SA3D_VERTEX_P3N3UV2_normal
+    v24_uv = ptr_add v24, SA3D_VERTEX_P3N3UV2_uv
+    v0_px = load v0_pos+SA3D_VEC3_x as f32
+    v0_py = load v0_pos+SA3D_VEC3_y as f32
+    v0_pz = load v0_pos+SA3D_VEC3_z as f32
+    v0_nx = load v0_normal+SA3D_VEC3_x as f32
+    v0_u = load v0_uv+SA3D_VEC2_x as f32
+    v0_v = load v0_uv+SA3D_VEC2_y as f32
+    v1_px = load v1_pos+SA3D_VEC3_x as f32
+    v1_py = load v1_pos+SA3D_VEC3_y as f32
+    v1_pz = load v1_pos+SA3D_VEC3_z as f32
+    v1_ny = load v1_normal+SA3D_VEC3_y as f32
+    v1_u = load v1_uv+SA3D_VEC2_x as f32
+    v1_v = load v1_uv+SA3D_VEC2_y as f32
+    v5_py = load v5_pos+SA3D_VEC3_y as f32
+    v5_pz = load v5_pos+SA3D_VEC3_z as f32
+    v5_nz = load v5_normal+SA3D_VEC3_z as f32
+    v5_u = load v5_uv+SA3D_VEC2_x as f32
+    v5_v = load v5_uv+SA3D_VEC2_y as f32
+    v24_px = load v24_pos+SA3D_VEC3_x as f32
+    v24_py = load v24_pos+SA3D_VEC3_y as f32
+    v24_pz = load v24_pos+SA3D_VEC3_z as f32
+    v24_nx = load v24_normal+SA3D_VEC3_x as f32
+    v24_u = load v24_uv+SA3D_VEC2_x as f32
+    v24_v = load v24_uv+SA3D_VEC2_y as f32
+    i0 = load indices+0 as i32
+    i1 = load indices+4 as i32
+    i2 = load indices+8 as i32
+    i3 = load indices+12 as i32
+    i4 = load indices+16 as i32
+    i5 = load indices+20 as i32
+    i18 = load indices+72 as i32
+    i19 = load indices+76 as i32
+    i20 = load indices+80 as i32
+    i21 = load indices+84 as i32
+    i22 = load indices+88 as i32
+    i23 = load indices+92 as i32
+    wrote_ok = eq wrote, 1
+    valid_ok = eq valid, 1
+    range_ok = eq in_range, 1
+    tri_ok = eq triangles, 32
+    vertex_len_ok = eq vertex_len, 25
+    index_len_ok = eq index_len, 96
+    v0_px_ok = call @sa3d_geometry_test_f32_between(v0_px, 2.999, 3.001)
+    v0_py_ok = call @sa3d_geometry_test_f32_between(v0_py, -0.001, 0.001)
+    v0_pz_ok = call @sa3d_geometry_test_f32_between(v0_pz, -0.001, 0.001)
+    v0_nx_ok = call @sa3d_geometry_test_f32_between(v0_nx, 0.999, 1.001)
+    v0_u_ok = call @sa3d_geometry_test_f32_between(v0_u, -0.001, 0.001)
+    v0_v_ok = call @sa3d_geometry_test_f32_between(v0_v, -0.001, 0.001)
+    v1_px_ok = call @sa3d_geometry_test_f32_between(v1_px, 1.999, 2.001)
+    v1_py_ok = call @sa3d_geometry_test_f32_between(v1_py, 0.999, 1.001)
+    v1_pz_ok = call @sa3d_geometry_test_f32_between(v1_pz, -0.001, 0.001)
+    v1_ny_ok = call @sa3d_geometry_test_f32_between(v1_ny, 0.999, 1.001)
+    v1_u_ok = call @sa3d_geometry_test_f32_between(v1_u, -0.001, 0.001)
+    v1_v_ok = call @sa3d_geometry_test_f32_between(v1_v, 0.249, 0.251)
+    v5_py_ok = call @sa3d_geometry_test_f32_between(v5_py, -0.001, 0.001)
+    v5_pz_ok = call @sa3d_geometry_test_f32_between(v5_pz, 2.999, 3.001)
+    v5_nz_ok = call @sa3d_geometry_test_f32_between(v5_nz, 0.999, 1.001)
+    v5_u_ok = call @sa3d_geometry_test_f32_between(v5_u, 0.249, 0.251)
+    v5_v_ok = call @sa3d_geometry_test_f32_between(v5_v, -0.001, 0.001)
+    v24_px_ok = call @sa3d_geometry_test_f32_between(v24_px, 2.999, 3.001)
+    v24_py_ok = call @sa3d_geometry_test_f32_between(v24_py, -0.001, 0.001)
+    v24_pz_ok = call @sa3d_geometry_test_f32_between(v24_pz, -0.001, 0.001)
+    v24_nx_ok = call @sa3d_geometry_test_f32_between(v24_nx, 0.999, 1.001)
+    v24_u_ok = call @sa3d_geometry_test_f32_between(v24_u, 0.999, 1.001)
+    v24_v_ok = call @sa3d_geometry_test_f32_between(v24_v, 0.999, 1.001)
+    i0_ok = eq i0, 0
+    i1_ok = eq i1, 1
+    i2_ok = eq i2, 5
+    i3_ok = eq i3, 1
+    i4_ok = eq i4, 6
+    i5_ok = eq i5, 5
+    i18_ok = eq i18, 3
+    i19_ok = eq i19, 4
+    i20_ok = eq i20, 8
+    i21_ok = eq i21, 4
+    i22_ok = eq i22, 9
+    i23_ok = eq i23, 8
+    partial_vertices = alloc 480
+    partial_indices = alloc 192
+    partial_mesh = alloc SA3D_MESH_DESC_SIZE
+    partial_wrote = call @sa3d_geometry_torus_mesh_desc(&partial_mesh, &partial_vertices, &partial_indices, 1.0, 3.0, 2, 4, 0.0, 3.14159265)
+    pv0 = ptr_add partial_vertices, 0
+    pv5 = ptr_add partial_vertices, 160
+    pv10 = ptr_add partial_vertices, 320
+    pv0_pos = ptr_add pv0, SA3D_VERTEX_P3N3UV2_position
+    pv5_pos = ptr_add pv5, SA3D_VERTEX_P3N3UV2_position
+    pv10_pos = ptr_add pv10, SA3D_VERTEX_P3N3UV2_position
+    pv0_px = load pv0_pos+SA3D_VEC3_x as f32
+    pv5_pz = load pv5_pos+SA3D_VEC3_z as f32
+    pv10_px = load pv10_pos+SA3D_VEC3_x as f32
+    partial_triangles = call @sa3d_mesh_desc_triangle_count(&partial_mesh)
+    partial_wrote_ok = eq partial_wrote, 1
+    partial_tri_ok = eq partial_triangles, 16
+    pv0_px_ok = call @sa3d_geometry_test_f32_between(pv0_px, 2.999, 3.001)
+    pv5_pz_ok = call @sa3d_geometry_test_f32_between(pv5_pz, 2.999, 3.001)
+    pv10_px_ok = call @sa3d_geometry_test_f32_between(pv10_px, -3.001, -2.999)
+    bad_major = call @sa3d_geometry_torus_write(&partial_vertices, &partial_indices, 1.0, 3.0, 0, 4, 0.0, 3.14159265)
+    bad_minor = call @sa3d_geometry_torus_write(&partial_vertices, &partial_indices, 1.0, 3.0, 4, 0, 0.0, 3.14159265)
+    bad_major_ok = eq bad_major, 0
+    bad_minor_ok = eq bad_minor, 0
+    p1 = and wrote_ok, valid_ok
+    p2 = and range_ok, tri_ok
+    p3 = and vertex_len_ok, index_len_ok
+    p4 = and v0_px_ok, v0_py_ok
+    p5 = and v0_pz_ok, v0_nx_ok
+    p6 = and v0_u_ok, v0_v_ok
+    p7 = and v1_px_ok, v1_py_ok
+    p8 = and v1_pz_ok, v1_ny_ok
+    p9 = and v1_u_ok, v1_v_ok
+    p10 = and v5_py_ok, v5_pz_ok
+    p11 = and v5_nz_ok, v5_u_ok
+    p12 = and v5_v_ok, v24_px_ok
+    p13 = and v24_py_ok, v24_pz_ok
+    p14 = and v24_nx_ok, v24_u_ok
+    p15 = and v24_v_ok, i0_ok
+    p16 = and i1_ok, i2_ok
+    p17 = and i3_ok, i4_ok
+    p18 = and i5_ok, i18_ok
+    p19 = and i19_ok, i20_ok
+    p20 = and i21_ok, i22_ok
+    p21 = and i23_ok, partial_wrote_ok
+    p22 = and partial_tri_ok, pv0_px_ok
+    p23 = and pv5_pz_ok, pv10_px_ok
+    p24 = and bad_major_ok, bad_minor_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    q8 = and p15, p16
+    q9 = and p17, p18
+    q10 = and p19, p20
+    q11 = and p21, p22
+    q12 = and p23, p24
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and q7, q8
+    r5 = and q9, q10
+    r6 = and q11, q12
+    s1 = and r1, r2
+    s2 = and r3, r4
+    s3 = and r5, r6
+    t1 = and s1, s2
+    ok = and t1, s3
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !partial_mesh
+    !partial_indices
+    !partial_vertices
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !partial_mesh
+    !partial_indices
+    !partial_vertices
+    !mesh
+    !indices
+    !vertices
+    panic(3053)
+
+@test "3d_geometry bevy backed native selftest"():
+L_ENTRY:
+    status = call @sa3d_geometry_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3024)
+
+@test "3d_geometry cuboid matches bevy cuboid builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_cuboid_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3025)
+
+@test "3d_geometry plane matches bevy plane builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_plane_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3026)
+
+@test "3d_geometry uv sphere matches bevy sphere uv builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_uv_sphere_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3027)
+
+@test "3d_geometry ico sphere base SA writer matches Bevy ico builder"():
+L_ENTRY:
+    vertices = alloc 384
+    indices = alloc 240
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    bits = alloc 4
+    wrote = call @sa3d_geometry_ico_sphere_base_mesh_desc(&mesh, &vertices, &indices, 2.0)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v0 = ptr_add vertices, 0
+    v1 = ptr_add vertices, 32
+    v2 = ptr_add vertices, 64
+    v11 = ptr_add vertices, 352
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v1_pos = ptr_add v1, SA3D_VERTEX_P3N3UV2_position
+    v1_normal = ptr_add v1, SA3D_VERTEX_P3N3UV2_normal
+    v1_uv = ptr_add v1, SA3D_VERTEX_P3N3UV2_uv
+    v2_pos = ptr_add v2, SA3D_VERTEX_P3N3UV2_position
+    v2_normal = ptr_add v2, SA3D_VERTEX_P3N3UV2_normal
+    v2_uv = ptr_add v2, SA3D_VERTEX_P3N3UV2_uv
+    v11_pos = ptr_add v11, SA3D_VERTEX_P3N3UV2_position
+    v11_normal = ptr_add v11, SA3D_VERTEX_P3N3UV2_normal
+    v11_uv = ptr_add v11, SA3D_VERTEX_P3N3UV2_uv
+    v0_y = load v0_pos+SA3D_VEC3_y as f32
+    v0_ny = load v0_normal+SA3D_VEC3_y as f32
+    v0_u = load v0_uv+SA3D_VEC2_x as f32
+    v0_v = load v0_uv+SA3D_VEC2_y as f32
+    v1_x = load v1_pos+SA3D_VEC3_x as f32
+    v1_y = load v1_pos+SA3D_VEC3_y as f32
+    v1_nx = load v1_normal+SA3D_VEC3_x as f32
+    v1_ny = load v1_normal+SA3D_VEC3_y as f32
+    v1_u = load v1_uv+SA3D_VEC2_x as f32
+    v1_v = load v1_uv+SA3D_VEC2_y as f32
+    v2_x = load v2_pos+SA3D_VEC3_x as f32
+    v2_z = load v2_pos+SA3D_VEC3_z as f32
+    v2_nz = load v2_normal+SA3D_VEC3_z as f32
+    v2_u = load v2_uv+SA3D_VEC2_x as f32
+    v2_v = load v2_uv+SA3D_VEC2_y as f32
+    v11_y = load v11_pos+SA3D_VEC3_y as f32
+    v11_ny = load v11_normal+SA3D_VEC3_y as f32
+    v11_u = load v11_uv+SA3D_VEC2_x as f32
+    v11_v = load v11_uv+SA3D_VEC2_y as f32
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    i3 = load indices+12 as u32
+    i4 = load indices+16 as u32
+    i5 = load indices+20 as u32
+    i21 = load indices+84 as u32
+    i22 = load indices+88 as u32
+    i23 = load indices+92 as u32
+    store bits+0, 2139095040 as i32
+    inf = load bits+0 as f32
+    bad_radius = call @sa3d_geometry_ico_sphere_write_base(&vertices, &indices, inf)
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq triangles, 20
+    c4 = eq vertex_len, 12
+    c5 = eq index_len, 60
+    c6 = call @sa3d_geometry_test_f32_between(v0_y, 1.999, 2.001)
+    c7 = call @sa3d_geometry_test_f32_between(v0_ny, 0.999, 1.001)
+    c8 = call @sa3d_geometry_test_f32_between(v0_u, 0.499, 0.501)
+    c9 = call @sa3d_geometry_test_f32_between(v0_v, -0.001, 0.001)
+    c10 = call @sa3d_geometry_test_f32_between(v1_x, 1.788, 1.790)
+    c11 = call @sa3d_geometry_test_f32_between(v1_y, 0.893, 0.895)
+    c12 = call @sa3d_geometry_test_f32_between(v1_nx, 0.893, 0.895)
+    c13 = call @sa3d_geometry_test_f32_between(v1_ny, 0.446, 0.449)
+    c14 = call @sa3d_geometry_test_f32_between(v1_u, 0.499, 0.501)
+    c15 = call @sa3d_geometry_test_f32_between(v1_v, 0.349, 0.356)
+    c16 = call @sa3d_geometry_test_f32_between(v2_x, 0.551, 0.554)
+    c17 = call @sa3d_geometry_test_f32_between(v2_z, 1.700, 1.702)
+    c18 = call @sa3d_geometry_test_f32_between(v2_nz, 0.849, 0.852)
+    c19 = call @sa3d_geometry_test_f32_between(v2_u, 0.299, 0.302)
+    c20 = call @sa3d_geometry_test_f32_between(v2_v, 0.349, 0.356)
+    c21 = call @sa3d_geometry_test_f32_between(v11_y, -2.001, -1.999)
+    c22 = call @sa3d_geometry_test_f32_between(v11_ny, -1.001, -0.999)
+    c23 = call @sa3d_geometry_test_f32_between(v11_u, 0.499, 0.501)
+    c24 = call @sa3d_geometry_test_f32_between(v11_v, 0.999, 1.001)
+    c25 = eq i0, 0
+    c26 = eq i1, 2
+    c27 = eq i2, 1
+    c28 = eq i3, 0
+    c29 = eq i4, 3
+    c30 = eq i5, 2
+    c31 = eq i21, 2
+    c32 = eq i22, 3
+    c33 = eq i23, 8
+    c34 = eq bad_radius, 0
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    p12 = and c24, c25
+    p13 = and c26, c27
+    p14 = and c28, c29
+    p15 = and c30, c31
+    p16 = and c32, c33
+    p17 = and c34, p16
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and s1, p17
+    ok = and s0, s2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !bits
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !bits
+    !mesh
+    !indices
+    !vertices
+    panic(3053)
+
+@test "3d_geometry ico sphere subdiv1 SA writer matches Bevy ico builder"():
+L_ENTRY:
+    vertices = alloc 1344
+    indices = alloc 960
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_ico_sphere_subdiv1_mesh_desc(&mesh, &vertices, &indices, 2.0)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v12 = ptr_add vertices, 384
+    v12_pos = ptr_add v12, SA3D_VERTEX_P3N3UV2_position
+    v12_normal = ptr_add v12, SA3D_VERTEX_P3N3UV2_normal
+    v12_uv = ptr_add v12, SA3D_VERTEX_P3N3UV2_uv
+    v12_px = load v12_pos+SA3D_VEC3_x as f32
+    v12_py = load v12_pos+SA3D_VEC3_y as f32
+    v12_pz = load v12_pos+SA3D_VEC3_z as f32
+    v12_u = load v12_uv+SA3D_VEC2_x as f32
+    v12_v = load v12_uv+SA3D_VEC2_y as f32
+    normal_len = call @sa3d_vec3_length_f(&v12_normal)
+    position_len = call @sa3d_vec3_length_f(&v12_pos)
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    i3 = load indices+12 as u32
+    i4 = load indices+16 as u32
+    i5 = load indices+20 as u32
+    i6 = load indices+24 as u32
+    i7 = load indices+28 as u32
+    i8 = load indices+32 as u32
+    i9 = load indices+36 as u32
+    i10 = load indices+40 as u32
+    i11 = load indices+44 as u32
+    bad_sub1 = call @sa3d_geometry_ico_sphere_write_subdiv1(&vertices, &indices, 2.0)
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq triangles, 80
+    c4 = eq vertex_len, 42
+    c5 = eq index_len, 240
+    c6 = call @sa3d_geometry_test_f32_between(v12_px, 0.324, 0.326)
+    c7 = call @sa3d_geometry_test_f32_between(v12_py, 1.700, 1.702)
+    c8 = call @sa3d_geometry_test_f32_between(v12_pz, 0.999, 1.001)
+    c9 = call @sa3d_geometry_test_f32_between(v12_u, 0.299, 0.302)
+    c10 = call @sa3d_geometry_test_f32_between(v12_v, 0.174, 0.178)
+    c11 = call @sa3d_geometry_test_f32_between(normal_len, 0.999, 1.001)
+    c12 = call @sa3d_geometry_test_f32_between(position_len, 1.999, 2.001)
+    c13 = eq i0, 0
+    c14 = eq i1, 12
+    c15 = eq i2, 16
+    c16 = eq i3, 2
+    c17 = eq i4, 17
+    c18 = eq i5, 12
+    c19 = eq i6, 1
+    c20 = eq i7, 16
+    c21 = eq i8, 17
+    c22 = eq i9, 12
+    c23 = eq i10, 17
+    c24 = eq i11, 16
+    c25 = eq bad_sub1, 1
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    p12 = and c24, c25
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    s1 = and r2, p12
+    ok = and s0, s1
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !mesh
+    !indices
+    !vertices
+    panic(3054)
+
+@test "3d_geometry ico sphere subdiv2 SA writer matches Bevy ico builder"():
+L_ENTRY:
+    vertices = alloc 2944
+    indices = alloc 2160
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    wrote = call @sa3d_geometry_ico_sphere_subdiv2_mesh_desc(&mesh, &vertices, &indices, 2.0)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v72 = ptr_add vertices, 2304
+    v72_pos = ptr_add v72, SA3D_VERTEX_P3N3UV2_position
+    v72_normal = ptr_add v72, SA3D_VERTEX_P3N3UV2_normal
+    normal_len = call @sa3d_vec3_length_f(&v72_normal)
+    position_len = call @sa3d_vec3_length_f(&v72_pos)
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    i3 = load indices+12 as u32
+    i4 = load indices+16 as u32
+    i5 = load indices+20 as u32
+    i6 = load indices+24 as u32
+    i7 = load indices+28 as u32
+    i8 = load indices+32 as u32
+    i9 = load indices+36 as u32
+    i10 = load indices+40 as u32
+    i11 = load indices+44 as u32
+    i12 = load indices+48 as u32
+    i13 = load indices+52 as u32
+    i14 = load indices+56 as u32
+    i15 = load indices+60 as u32
+    i16 = load indices+64 as u32
+    i17 = load indices+68 as u32
+    i18 = load indices+72 as u32
+    i19 = load indices+76 as u32
+    i20 = load indices+80 as u32
+    i21 = load indices+84 as u32
+    i22 = load indices+88 as u32
+    i23 = load indices+92 as u32
+    i24 = load indices+96 as u32
+    i25 = load indices+100 as u32
+    i26 = load indices+104 as u32
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq triangles, 180
+    c4 = eq vertex_len, 92
+    c5 = eq index_len, 540
+    c6 = call @sa3d_geometry_test_f32_between(normal_len, 0.999, 1.001)
+    c7 = call @sa3d_geometry_test_f32_between(position_len, 1.999, 2.001)
+    c8 = eq i0, 0
+    c9 = eq i1, 12
+    c10 = eq i2, 21
+    c11 = eq i3, 2
+    c12 = eq i4, 22
+    c13 = eq i5, 13
+    c14 = eq i6, 1
+    c15 = eq i7, 20
+    c16 = eq i8, 23
+    c17 = eq i9, 13
+    c18 = eq i10, 72
+    c19 = eq i11, 12
+    c20 = eq i12, 23
+    c21 = eq i13, 72
+    c22 = eq i14, 22
+    c23 = eq i15, 21
+    c24 = eq i16, 72
+    c25 = eq i17, 20
+    c26 = eq i18, 12
+    c27 = eq i19, 72
+    c28 = eq i20, 21
+    c29 = eq i21, 22
+    c30 = eq i22, 72
+    c31 = eq i23, 13
+    c32 = eq i24, 20
+    c33 = eq i25, 72
+    c34 = eq i26, 23
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    p12 = and c24, c25
+    p13 = and c26, c27
+    p14 = and c28, c29
+    p15 = and c30, c31
+    p16 = and c32, c33
+    p17 = and c34, p16
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and s1, p17
+    ok = and s0, s2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !mesh
+    !indices
+    !vertices
+    panic(3055)
+
+@test "3d_geometry ico sphere subdiv3 SA writer matches Bevy ico builder"():
+L_ENTRY:
+    vertices = alloc 5184
+    indices = alloc 3840
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    bits = alloc 4
+    wrote = call @sa3d_geometry_ico_sphere_subdiv3_mesh_desc(&mesh, &vertices, &indices, 2.0)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v102 = ptr_add vertices, 3264
+    v102_pos = ptr_add v102, SA3D_VERTEX_P3N3UV2_position
+    v102_normal = ptr_add v102, SA3D_VERTEX_P3N3UV2_normal
+    normal_len = call @sa3d_vec3_length_f(&v102_normal)
+    position_len = call @sa3d_vec3_length_f(&v102_pos)
+    store bits+0, 2139095040 as i32
+    inf = load bits+0 as f32
+    bad = call @sa3d_geometry_ico_sphere_write_subdiv3(&vertices, &indices, inf)
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    i3 = load indices+12 as u32
+    i4 = load indices+16 as u32
+    i5 = load indices+20 as u32
+    i6 = load indices+24 as u32
+    i7 = load indices+28 as u32
+    i8 = load indices+32 as u32
+    i9 = load indices+36 as u32
+    i10 = load indices+40 as u32
+    i11 = load indices+44 as u32
+    i12 = load indices+48 as u32
+    i13 = load indices+52 as u32
+    i14 = load indices+56 as u32
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq triangles, 320
+    c4 = eq vertex_len, 162
+    c5 = eq index_len, 960
+    c6 = call @sa3d_geometry_test_f32_between(normal_len, 0.999, 1.001)
+    c7 = call @sa3d_geometry_test_f32_between(position_len, 1.999, 2.001)
+    c8 = eq bad, 0
+    c9 = eq i0, 0
+    c10 = eq i1, 12
+    c11 = eq i2, 26
+    c12 = eq i3, 2
+    c13 = eq i4, 27
+    c14 = eq i5, 14
+    c15 = eq i6, 1
+    c16 = eq i7, 24
+    c17 = eq i8, 29
+    c18 = eq i9, 12
+    c19 = eq i10, 102
+    c20 = eq i11, 26
+    c21 = eq i12, 27
+    c22 = eq i13, 103
+    c23 = eq i14, 14
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    ok0 = and r0, r1
+    ok = and ok0, r2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !bits
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !bits
+    !mesh
+    !indices
+    !vertices
+    panic(3056)
+
+@test "3d_geometry ico sphere public API dispatches SA and native fallback"():
+L_ENTRY:
+    vertices0 = alloc 384
+    indices0 = alloc 240
+    vertices2 = alloc 2944
+    indices2 = alloc 2160
+    vertices3 = alloc 5184
+    indices3 = alloc 3840
+    vertices4 = alloc 8064
+    indices4 = alloc 6000
+    mesh2 = alloc SA3D_MESH_DESC_SIZE
+    mesh3 = alloc SA3D_MESH_DESC_SIZE
+    mesh4 = alloc SA3D_MESH_DESC_SIZE
+    wrote0 = call @sa3d_geometry_ico_sphere_write(&vertices0, &indices0, 2.0, 0)
+    wrote2 = call @sa3d_geometry_ico_sphere_mesh_desc(&mesh2, &vertices2, &indices2, 2.0, 2)
+    wrote3 = call @sa3d_geometry_ico_sphere_mesh_desc(&mesh3, &vertices3, &indices3, 2.0, 3)
+    wrote4 = call @sa3d_geometry_ico_sphere_mesh_desc(&mesh4, &vertices4, &indices4, 2.0, 4)
+    invalid = call @sa3d_geometry_ico_sphere_write(&vertices0, &indices0, 2.0, 80)
+    mesh2_valid = call @sa3d_geometry_mesh_validate(&mesh2)
+    mesh2_range = call @sa3d_geometry_mesh_indices_in_range(&mesh2)
+    mesh3_valid = call @sa3d_geometry_mesh_validate(&mesh3)
+    mesh3_range = call @sa3d_geometry_mesh_indices_in_range(&mesh3)
+    mesh4_valid = call @sa3d_geometry_mesh_validate(&mesh4)
+    mesh4_range = call @sa3d_geometry_mesh_indices_in_range(&mesh4)
+    mesh2_vlen = load mesh2+SA3D_MESH_DESC_vertex_len as i64
+    mesh2_ilen = load mesh2+SA3D_MESH_DESC_index_len as i64
+    mesh3_vlen = load mesh3+SA3D_MESH_DESC_vertex_len as i64
+    mesh3_ilen = load mesh3+SA3D_MESH_DESC_index_len as i64
+    mesh4_vlen = load mesh4+SA3D_MESH_DESC_vertex_len as i64
+    mesh4_ilen = load mesh4+SA3D_MESH_DESC_index_len as i64
+    i0 = load indices0+0 as u32
+    i1 = load indices0+4 as u32
+    i2 = load indices0+8 as u32
+    i2_0 = load indices2+0 as u32
+    i2_1 = load indices2+4 as u32
+    i2_2 = load indices2+8 as u32
+    i2_9 = load indices2+36 as u32
+    i2_10 = load indices2+40 as u32
+    i2_11 = load indices2+44 as u32
+    c0 = eq wrote0, 1
+    c1 = eq wrote2, 1
+    c2 = eq wrote3, 1
+    c3 = eq wrote4, 1
+    c4 = eq invalid, 0
+    c5 = eq mesh2_valid, 1
+    c6 = eq mesh2_range, 1
+    c7 = eq mesh3_valid, 1
+    c8 = eq mesh3_range, 1
+    c9 = eq mesh4_valid, 1
+    c10 = eq mesh4_range, 1
+    c11 = eq mesh2_vlen, 92
+    c12 = eq mesh2_ilen, 540
+    c13 = eq mesh3_vlen, 162
+    c14 = eq mesh3_ilen, 960
+    c15 = eq mesh4_vlen, 252
+    c16 = eq mesh4_ilen, 1500
+    c17 = eq i0, 0
+    c18 = eq i1, 2
+    c19 = eq i2, 1
+    c20 = eq i2_0, 0
+    c21 = eq i2_1, 12
+    c22 = eq i2_2, 21
+    c23 = eq i2_9, 13
+    c24 = eq i2_10, 72
+    c25 = eq i2_11, 12
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    p12 = and c24, c25
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    s1 = and r2, p12
+    ok = and s0, s1
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mesh4
+    !mesh3
+    !mesh2
+    !indices4
+    !vertices4
+    !indices3
+    !vertices3
+    !indices2
+    !vertices2
+    !indices0
+    !vertices0
+    return
+
+L_ERR:
+    !mesh4
+    !mesh3
+    !mesh2
+    !indices4
+    !vertices4
+    !indices3
+    !vertices3
+    !indices2
+    !vertices2
+    !indices0
+    !vertices0
+    br c0 -> L_D1, L_E0
+L_E0:
+    panic(3060)
+L_D1:
+    br c1 -> L_D2, L_E1
+L_E1:
+    panic(3061)
+L_D2:
+    br c2 -> L_D3, L_E2
+L_E2:
+    panic(3062)
+L_D3:
+    br c3 -> L_D4, L_E3
+L_E3:
+    panic(3063)
+L_D4:
+    br c4 -> L_D5, L_E4
+L_E4:
+    panic(3064)
+L_D5:
+    br c5 -> L_D6, L_E5
+L_E5:
+    panic(3065)
+L_D6:
+    br c6 -> L_D7, L_E6
+L_E6:
+    panic(3066)
+L_D7:
+    br c7 -> L_D8, L_E7
+L_E7:
+    panic(3067)
+L_D8:
+    br c8 -> L_D9, L_E8
+L_E8:
+    panic(3068)
+L_D9:
+    br c9 -> L_D10, L_E9
+L_E9:
+    panic(3069)
+L_D10:
+    br c10 -> L_D11, L_E10
+L_E10:
+    panic(3070)
+L_D11:
+    br c11 -> L_D12, L_E11
+L_E11:
+    panic(3071)
+L_D12:
+    br c12 -> L_D13, L_E12
+L_E12:
+    panic(3072)
+L_D13:
+    br c13 -> L_D14, L_E13
+L_E13:
+    panic(3073)
+L_D14:
+    br c14 -> L_D15, L_E14
+L_E14:
+    panic(3074)
+L_D15:
+    br c15 -> L_D16, L_E15
+L_E15:
+    panic(3075)
+L_D16:
+    br c16 -> L_D17, L_E16
+L_E16:
+    panic(3076)
+L_D17:
+    br c17 -> L_D18, L_E17
+L_E17:
+    panic(3077)
+L_D18:
+    br c18 -> L_D19, L_E18
+L_E18:
+    panic(3078)
+L_D19:
+    br c19 -> L_D20, L_E19
+L_E19:
+    panic(3079)
+L_D20:
+    br c20 -> L_E_UNKNOWN, L_E20
+L_E20:
+    panic(3080)
+L_E_UNKNOWN:
+    panic(3081)
+
+@test "3d_geometry ico sphere matches bevy sphere ico builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_ico_sphere_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3037)
+
+@test "3d_geometry cylinder matches bevy cylinder builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_cylinder_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3028)
+
+@test "3d_geometry cone matches bevy cone builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_cone_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3029)
+
+@test "3d_geometry capsule SA writer matches Bevy capsule builder"():
+L_ENTRY:
+    vertices = alloc 1056
+    indices = alloc 480
+    mesh = alloc SA3D_MESH_DESC_SIZE
+    fixed_vertices = alloc 896
+    fixed_indices = alloc 384
+    wrote = call @sa3d_geometry_capsule_mesh_desc(&mesh, &vertices, &indices, 1.0, 2.0, 4, 4, 0, SA3D_CAPSULE_UV_PROFILE_ASPECT)
+    valid = call @sa3d_geometry_mesh_validate(&mesh)
+    in_range = call @sa3d_geometry_mesh_indices_in_range(&mesh)
+    triangles = call @sa3d_mesh_desc_triangle_count(&mesh)
+    vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    v0 = ptr_add vertices, 0
+    v4 = ptr_add vertices, 128
+    v9 = ptr_add vertices, 288
+    v14 = ptr_add vertices, 448
+    v19 = ptr_add vertices, 608
+    v24 = ptr_add vertices, 768
+    v0_pos = ptr_add v0, SA3D_VERTEX_P3N3UV2_position
+    v0_normal = ptr_add v0, SA3D_VERTEX_P3N3UV2_normal
+    v0_uv = ptr_add v0, SA3D_VERTEX_P3N3UV2_uv
+    v4_pos = ptr_add v4, SA3D_VERTEX_P3N3UV2_position
+    v4_normal = ptr_add v4, SA3D_VERTEX_P3N3UV2_normal
+    v4_uv = ptr_add v4, SA3D_VERTEX_P3N3UV2_uv
+    v9_pos = ptr_add v9, SA3D_VERTEX_P3N3UV2_position
+    v9_normal = ptr_add v9, SA3D_VERTEX_P3N3UV2_normal
+    v9_uv = ptr_add v9, SA3D_VERTEX_P3N3UV2_uv
+    v14_pos = ptr_add v14, SA3D_VERTEX_P3N3UV2_position
+    v14_uv = ptr_add v14, SA3D_VERTEX_P3N3UV2_uv
+    v19_pos = ptr_add v19, SA3D_VERTEX_P3N3UV2_position
+    v19_normal = ptr_add v19, SA3D_VERTEX_P3N3UV2_normal
+    v19_uv = ptr_add v19, SA3D_VERTEX_P3N3UV2_uv
+    v24_pos = ptr_add v24, SA3D_VERTEX_P3N3UV2_position
+    v24_normal = ptr_add v24, SA3D_VERTEX_P3N3UV2_normal
+    v24_uv = ptr_add v24, SA3D_VERTEX_P3N3UV2_uv
+    v0_y = load v0_pos+SA3D_VEC3_y as f32
+    v0_ny = load v0_normal+SA3D_VEC3_y as f32
+    v0_u = load v0_uv+SA3D_VEC2_x as f32
+    v0_v = load v0_uv+SA3D_VEC2_y as f32
+    v4_x = load v4_pos+SA3D_VEC3_x as f32
+    v4_y = load v4_pos+SA3D_VEC3_y as f32
+    v4_nx = load v4_normal+SA3D_VEC3_x as f32
+    v4_ny = load v4_normal+SA3D_VEC3_y as f32
+    v4_u = load v4_uv+SA3D_VEC2_x as f32
+    v4_v = load v4_uv+SA3D_VEC2_y as f32
+    v9_x = load v9_pos+SA3D_VEC3_x as f32
+    v9_y = load v9_pos+SA3D_VEC3_y as f32
+    v9_nx = load v9_normal+SA3D_VEC3_x as f32
+    v9_u = load v9_uv+SA3D_VEC2_x as f32
+    v9_v = load v9_uv+SA3D_VEC2_y as f32
+    v14_x = load v14_pos+SA3D_VEC3_x as f32
+    v14_y = load v14_pos+SA3D_VEC3_y as f32
+    v14_v = load v14_uv+SA3D_VEC2_y as f32
+    v19_x = load v19_pos+SA3D_VEC3_x as f32
+    v19_y = load v19_pos+SA3D_VEC3_y as f32
+    v19_nx = load v19_normal+SA3D_VEC3_x as f32
+    v19_ny = load v19_normal+SA3D_VEC3_y as f32
+    v19_v = load v19_uv+SA3D_VEC2_y as f32
+    v24_y = load v24_pos+SA3D_VEC3_y as f32
+    v24_ny = load v24_normal+SA3D_VEC3_y as f32
+    v24_u = load v24_uv+SA3D_VEC2_x as f32
+    v24_v = load v24_uv+SA3D_VEC2_y as f32
+    i0 = load indices+0 as u32
+    i1 = load indices+4 as u32
+    i2 = load indices+8 as u32
+    i3 = load indices+12 as u32
+    i4 = load indices+16 as u32
+    i5 = load indices+20 as u32
+    i12 = load indices+48 as u32
+    i13 = load indices+52 as u32
+    i14 = load indices+56 as u32
+    i15 = load indices+60 as u32
+    i16 = load indices+64 as u32
+    i17 = load indices+68 as u32
+    i84 = load indices+336 as u32
+    i85 = load indices+340 as u32
+    i86 = load indices+344 as u32
+    i87 = load indices+348 as u32
+    i88 = load indices+352 as u32
+    i89 = load indices+356 as u32
+    i90 = load indices+360 as u32
+    i91 = load indices+364 as u32
+    i92 = load indices+368 as u32
+    i93 = load indices+372 as u32
+    i94 = load indices+376 as u32
+    i95 = load indices+380 as u32
+    rings_wrote = call @sa3d_geometry_capsule_mesh_desc(&mesh, &vertices, &indices, 1.0, 2.0, 4, 4, 1, SA3D_CAPSULE_UV_PROFILE_UNIFORM)
+    rings_vertex_len = load mesh+SA3D_MESH_DESC_vertex_len as i64
+    rings_index_len = load mesh+SA3D_MESH_DESC_index_len as i64
+    rv14 = ptr_add vertices, 448
+    rv19 = ptr_add vertices, 608
+    rv14_pos = ptr_add rv14, SA3D_VERTEX_P3N3UV2_position
+    rv14_uv = ptr_add rv14, SA3D_VERTEX_P3N3UV2_uv
+    rv19_pos = ptr_add rv19, SA3D_VERTEX_P3N3UV2_position
+    rv19_uv = ptr_add rv19, SA3D_VERTEX_P3N3UV2_uv
+    rv14_y = load rv14_pos+SA3D_VEC3_y as f32
+    rv14_v = load rv14_uv+SA3D_VEC2_y as f32
+    rv19_y = load rv19_pos+SA3D_VEC3_y as f32
+    rv19_v = load rv19_uv+SA3D_VEC2_y as f32
+    fixed_wrote = call @sa3d_geometry_capsule_write(&fixed_vertices, &fixed_indices, 1.0, 2.0, 4, 4, 0, SA3D_CAPSULE_UV_PROFILE_FIXED)
+    fv9 = ptr_add fixed_vertices, 288
+    fv14 = ptr_add fixed_vertices, 448
+    fv9_uv = ptr_add fv9, SA3D_VERTEX_P3N3UV2_uv
+    fv14_uv = ptr_add fv14, SA3D_VERTEX_P3N3UV2_uv
+    fv9_v = load fv9_uv+SA3D_VEC2_y as f32
+    fv14_v = load fv14_uv+SA3D_VEC2_y as f32
+    bad_lon = call @sa3d_geometry_capsule_write(&fixed_vertices, &fixed_indices, 1.0, 2.0, 0, 4, 0, SA3D_CAPSULE_UV_PROFILE_ASPECT)
+    bad_lat = call @sa3d_geometry_capsule_write(&fixed_vertices, &fixed_indices, 1.0, 2.0, 4, 2, 0, SA3D_CAPSULE_UV_PROFILE_ASPECT)
+    bad_uv = call @sa3d_geometry_capsule_write(&fixed_vertices, &fixed_indices, 1.0, 2.0, 4, 4, 0, 99)
+    c0 = eq wrote, 1
+    c1 = eq valid, 1
+    c2 = eq in_range, 1
+    c3 = eq triangles, 32
+    c4 = eq vertex_len, 28
+    c5 = eq index_len, 96
+    c6 = call @sa3d_geometry_test_f32_between(v0_y, 1.999, 2.001)
+    c7 = call @sa3d_geometry_test_f32_between(v0_ny, 0.999, 1.001)
+    c8 = call @sa3d_geometry_test_f32_between(v0_u, 0.874, 0.876)
+    c9 = call @sa3d_geometry_test_f32_between(v0_v, 0.999, 1.001)
+    c10 = call @sa3d_geometry_test_f32_between(v4_x, 0.70, 0.72)
+    c11 = call @sa3d_geometry_test_f32_between(v4_y, 1.70, 1.72)
+    c12 = call @sa3d_geometry_test_f32_between(v4_nx, 0.70, 0.72)
+    c13 = call @sa3d_geometry_test_f32_between(v4_ny, 0.70, 0.72)
+    c14 = call @sa3d_geometry_test_f32_between(v4_u, 0.999, 1.001)
+    c15 = call @sa3d_geometry_test_f32_between(v4_v, 0.874, 0.876)
+    c16 = call @sa3d_geometry_test_f32_between(v9_x, 0.999, 1.001)
+    c17 = call @sa3d_geometry_test_f32_between(v9_y, 0.999, 1.001)
+    c18 = call @sa3d_geometry_test_f32_between(v9_nx, 0.999, 1.001)
+    c19 = call @sa3d_geometry_test_f32_between(v9_u, 0.999, 1.001)
+    c20 = call @sa3d_geometry_test_f32_between(v9_v, 0.749, 0.751)
+    c21 = call @sa3d_geometry_test_f32_between(v14_x, 0.999, 1.001)
+    c22 = call @sa3d_geometry_test_f32_between(v14_y, -1.001, -0.999)
+    c23 = call @sa3d_geometry_test_f32_between(v14_v, 0.249, 0.251)
+    c24 = call @sa3d_geometry_test_f32_between(v19_x, 0.70, 0.72)
+    c25 = call @sa3d_geometry_test_f32_between(v19_y, -1.72, -1.70)
+    c26 = call @sa3d_geometry_test_f32_between(v19_nx, 0.70, 0.72)
+    c27 = call @sa3d_geometry_test_f32_between(v19_ny, -0.72, -0.70)
+    c28 = call @sa3d_geometry_test_f32_between(v19_v, 0.124, 0.126)
+    c29 = call @sa3d_geometry_test_f32_between(v24_y, -2.001, -1.999)
+    c30 = call @sa3d_geometry_test_f32_between(v24_ny, -1.001, -0.999)
+    c31 = call @sa3d_geometry_test_f32_between(v24_u, 0.874, 0.876)
+    c32 = call @sa3d_geometry_test_f32_between(v24_v, -0.001, 0.001)
+    c33 = eq i0, 0
+    c34 = eq i1, 4
+    c35 = eq i2, 5
+    c36 = eq i3, 1
+    c37 = eq i4, 5
+    c38 = eq i5, 6
+    c39 = eq i12, 4
+    c40 = eq i13, 10
+    c41 = eq i14, 5
+    c42 = eq i15, 4
+    c43 = eq i16, 9
+    c44 = eq i17, 10
+    c45 = eq i84, 24
+    c46 = eq i85, 20
+    c47 = eq i86, 19
+    c48 = eq i87, 25
+    c49 = eq i88, 21
+    c50 = eq i89, 20
+    c51 = eq i90, 26
+    c52 = eq i91, 22
+    c53 = eq i92, 21
+    c54 = eq i93, 27
+    c55 = eq i94, 23
+    c56 = eq i95, 22
+    c57 = eq rings_wrote, 1
+    c58 = eq rings_vertex_len, 33
+    c59 = eq rings_index_len, 120
+    c60 = call @sa3d_geometry_test_f32_between(rv14_y, -0.001, 0.001)
+    c61 = call @sa3d_geometry_test_f32_between(rv14_v, 0.499, 0.501)
+    c62 = call @sa3d_geometry_test_f32_between(rv19_y, -1.001, -0.999)
+    c63 = call @sa3d_geometry_test_f32_between(rv19_v, 0.332, 0.334)
+    c64 = eq fixed_wrote, 1
+    c65 = call @sa3d_geometry_test_f32_between(fv9_v, 0.665, 0.668)
+    c66 = call @sa3d_geometry_test_f32_between(fv14_v, 0.332, 0.334)
+    c67 = eq bad_lon, 0
+    c68 = eq bad_lat, 0
+    c69 = eq bad_uv, 0
+    p0 = and c0, c1
+    p1 = and c2, c3
+    p2 = and c4, c5
+    p3 = and c6, c7
+    p4 = and c8, c9
+    p5 = and c10, c11
+    p6 = and c12, c13
+    p7 = and c14, c15
+    p8 = and c16, c17
+    p9 = and c18, c19
+    p10 = and c20, c21
+    p11 = and c22, c23
+    p12 = and c24, c25
+    p13 = and c26, c27
+    p14 = and c28, c29
+    p15 = and c30, c31
+    p16 = and c32, c33
+    p17 = and c34, c35
+    p18 = and c36, c37
+    p19 = and c38, c39
+    p20 = and c40, c41
+    p21 = and c42, c43
+    p22 = and c44, c45
+    p23 = and c46, c47
+    p24 = and c48, c49
+    p25 = and c50, c51
+    p26 = and c52, c53
+    p27 = and c54, c55
+    p28 = and c56, c57
+    p29 = and c58, c59
+    p30 = and c60, c61
+    p31 = and c62, c63
+    p32 = and c64, c65
+    p33 = and c66, c67
+    p34 = and c68, c69
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    q8 = and p16, p17
+    q9 = and p18, p19
+    q10 = and p20, p21
+    q11 = and p22, p23
+    q12 = and p24, p25
+    q13 = and p26, p27
+    q14 = and p28, p29
+    q15 = and p30, p31
+    q16 = and p32, p33
+    q17 = and p34, q16
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    r4 = and q8, q9
+    r5 = and q10, q11
+    r6 = and q12, q13
+    r7 = and q14, q15
+    r8 = and q17, r7
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and r4, r5
+    s3 = and r6, r8
+    t0 = and s0, s1
+    t1 = and s2, s3
+    ok = and t0, t1
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !fixed_indices
+    !fixed_vertices
+    !mesh
+    !indices
+    !vertices
+    return
+
+L_ERR:
+    !fixed_indices
+    !fixed_vertices
+    !mesh
+    !indices
+    !vertices
+    panic(3049)
+
+@test "3d_geometry capsule matches bevy capsule builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_capsule_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3030)
+
+@test "3d_geometry torus matches bevy torus builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_torus_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3031)
+
+@test "3d_geometry triangle matches bevy triangle builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_triangle_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3032)
+
+@test "3d_geometry tetrahedron matches bevy tetrahedron builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_tetrahedron_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3033)
+
+@test "3d_geometry conical frustum matches bevy conical frustum builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_conical_frustum_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3034)
+
+@test "3d_geometry segment matches bevy segment builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_segment_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3035)
+
+@test "3d_geometry polyline matches bevy polyline builder"():
+L_ENTRY:
+    status = call @sa3d_geometry_polyline_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3036)

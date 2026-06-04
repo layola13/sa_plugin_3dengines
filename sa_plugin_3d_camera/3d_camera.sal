@@ -1,0 +1,2017 @@
+#def SA3D_CAMERA_VERSION_MAJOR = 0
+#def SA3D_CAMERA_VERSION_MINOR = 1
+
+#def SA3D_CAMERA_PROJECTION_PERSPECTIVE = 0
+#def SA3D_CAMERA_PROJECTION_ORTHOGRAPHIC = 1
+
+#def SA3D_CAMERA_DESC_projection = +0
+#def SA3D_CAMERA_DESC_fovy_radians = +4
+#def SA3D_CAMERA_DESC_aspect = +8
+#def SA3D_CAMERA_DESC_near = +12
+#def SA3D_CAMERA_DESC_far = +16
+#def SA3D_CAMERA_DESC_ortho_height = +20
+#def SA3D_CAMERA_DESC_SIZE = 24
+
+#def SA3D_CAMERA_UNIFORM_view = +0
+#def SA3D_CAMERA_UNIFORM_proj = +64
+#def SA3D_CAMERA_UNIFORM_view_proj = +128
+#def SA3D_CAMERA_UNIFORM_position = +192
+#def SA3D_CAMERA_UNIFORM_SIZE = 208
+
+#def SA3D_CAMERA_VIEWPORT_x = +0
+#def SA3D_CAMERA_VIEWPORT_y = +4
+#def SA3D_CAMERA_VIEWPORT_width = +8
+#def SA3D_CAMERA_VIEWPORT_height = +12
+#def SA3D_CAMERA_VIEWPORT_depth_min = +16
+#def SA3D_CAMERA_VIEWPORT_depth_max = +20
+#def SA3D_CAMERA_VIEWPORT_SIZE = 24
+
+#def SA3D_CAMERA_SCALING_WINDOW_SIZE = 0
+#def SA3D_CAMERA_SCALING_AUTO_MIN = 1
+#def SA3D_CAMERA_SCALING_AUTO_MAX = 2
+#def SA3D_CAMERA_SCALING_FIXED_VERTICAL = 3
+#def SA3D_CAMERA_SCALING_FIXED_HORIZONTAL = 4
+#def SA3D_CAMERA_SCALING_FIXED = 5
+
+#def SA3D_CAMERA_DEPTH_LOAD_CLEAR = 0
+#def SA3D_CAMERA_DEPTH_LOAD_LOAD = 1
+#def SA3D_CAMERA_DEPTH_TEXTURE_USAGE_RENDER_ATTACHMENT = 16
+
+#def SA3D_EXPOSURE_EV100_SUNLIGHT_BITS = 1097859072
+#def SA3D_EXPOSURE_EV100_OVERCAST_BITS = 1094713344
+#def SA3D_EXPOSURE_EV100_INDOOR_BITS = 1088421888
+#def SA3D_EXPOSURE_EV100_BLENDER_BITS = 1092301619
+
+#def SA3D_ORTHOGRAPHIC_near = +0
+#def SA3D_ORTHOGRAPHIC_far = +4
+#def SA3D_ORTHOGRAPHIC_origin_x = +8
+#def SA3D_ORTHOGRAPHIC_origin_y = +12
+#def SA3D_ORTHOGRAPHIC_scaling_mode = +16
+#def SA3D_ORTHOGRAPHIC_scale = +20
+#def SA3D_ORTHOGRAPHIC_area_min_x = +24
+#def SA3D_ORTHOGRAPHIC_area_min_y = +28
+#def SA3D_ORTHOGRAPHIC_area_max_x = +32
+#def SA3D_ORTHOGRAPHIC_area_max_y = +36
+#def SA3D_ORTHOGRAPHIC_param_width = +40
+#def SA3D_ORTHOGRAPHIC_param_height = +44
+#def SA3D_ORTHOGRAPHIC_SIZE = 48
+
+@import "../sa_plugin_3d_math/3d_math.sal"
+
+@extern tan(x: f64) -> f64
+@extern exp2(x: f64) -> f64
+@extern log2(x: f64) -> f64
+
+@sa3d_camera_desc_init_perspective(&desc: ptr, fovy_bits: i32, aspect_bits: i32, near_bits: i32, far_bits: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_CAMERA_DESC_projection, SA3D_CAMERA_PROJECTION_PERSPECTIVE as i32
+    store desc+SA3D_CAMERA_DESC_fovy_radians, fovy_bits as i32
+    store desc+SA3D_CAMERA_DESC_aspect, aspect_bits as i32
+    store desc+SA3D_CAMERA_DESC_near, near_bits as i32
+    store desc+SA3D_CAMERA_DESC_far, far_bits as i32
+    store desc+SA3D_CAMERA_DESC_ortho_height, 0 as i32
+    !far_bits
+    !near_bits
+    !aspect_bits
+    !fovy_bits
+    !desc
+    return
+
+@sa3d_camera3d_depth_load_op_default() -> i32:
+L_ENTRY:
+    return SA3D_CAMERA_DEPTH_LOAD_CLEAR
+
+@sa3d_camera3d_depth_clear_value_default() -> f32:
+L_ENTRY:
+    return 0.0
+
+@sa3d_camera3d_depth_texture_usages_default() -> i32:
+L_ENTRY:
+    return SA3D_CAMERA_DEPTH_TEXTURE_USAGE_RENDER_ATTACHMENT
+
+@sa3d_camera3d_depth_load_op_is_valid(op: i32) -> i32:
+L_ENTRY:
+    is_clear = eq op, SA3D_CAMERA_DEPTH_LOAD_CLEAR
+    is_load = eq op, SA3D_CAMERA_DEPTH_LOAD_LOAD
+    ok = or is_clear, is_load
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !is_load
+    !is_clear
+    !op
+    return 1
+
+L_FALSE:
+    !ok
+    !is_load
+    !is_clear
+    !op
+    return 0
+
+@sa3d_camera_exposure_default_ev100() -> f32:
+L_ENTRY:
+    return 9.7
+
+@sa3d_camera_exposure_sunlight_ev100() -> f32:
+L_ENTRY:
+    return 15.0
+
+@sa3d_camera_exposure_overcast_ev100() -> f32:
+L_ENTRY:
+    return 12.0
+
+@sa3d_camera_exposure_indoor_ev100() -> f32:
+L_ENTRY:
+    return 7.0
+
+@sa3d_camera_exposure_from_ev100(ev100: f32) -> f32:
+L_ENTRY:
+    neg_ev = fneg ev100
+    neg64 = neg_ev as f64
+    raw64 = call @exp2(neg64)
+    raw = raw64 as f32
+    exposure = fdiv raw, 1.2
+    !raw
+    !neg64
+    !ev100
+    return exposure
+
+@sa3d_camera_physical_ev100(aperture_f_stops: f32, shutter_speed_s: f32, sensitivity_iso: f32) -> f32:
+L_ENTRY:
+    aperture_ok = fcmp_gt aperture_f_stops, 0.0
+    shutter_ok = fcmp_gt shutter_speed_s, 0.0
+    iso_ok = fcmp_gt sensitivity_iso, 0.0
+    p = and aperture_ok, shutter_ok
+    ok = and p, iso_ok
+    br ok -> L_CALC, L_ERR
+
+L_CALC:
+    aperture_sq = fmul aperture_f_stops, aperture_f_stops
+    numerator = fmul aperture_sq, 100.0
+    denom = fmul shutter_speed_s, sensitivity_iso
+    ratio = fdiv numerator, denom
+    ratio64 = ratio as f64
+    ev64 = call @log2(ratio64)
+    ev = ev64 as f32
+    !ratio64
+    !denom
+    !numerator
+    !aperture_sq
+    !ok
+    !p
+    !iso_ok
+    !shutter_ok
+    !aperture_ok
+    !sensitivity_iso
+    !shutter_speed_s
+    !aperture_f_stops
+    return ev
+
+L_ERR:
+    !ok
+    !p
+    !iso_ok
+    !shutter_ok
+    !aperture_ok
+    !sensitivity_iso
+    !shutter_speed_s
+    !aperture_f_stops
+    return 0.0
+
+@sa3d_camera_desc_init_orthographic(&desc: ptr, ortho_height_bits: i32, aspect_bits: i32, near_bits: i32, far_bits: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_CAMERA_DESC_projection, SA3D_CAMERA_PROJECTION_ORTHOGRAPHIC as i32
+    store desc+SA3D_CAMERA_DESC_fovy_radians, 0 as i32
+    store desc+SA3D_CAMERA_DESC_aspect, aspect_bits as i32
+    store desc+SA3D_CAMERA_DESC_near, near_bits as i32
+    store desc+SA3D_CAMERA_DESC_far, far_bits as i32
+    store desc+SA3D_CAMERA_DESC_ortho_height, ortho_height_bits as i32
+    !far_bits
+    !near_bits
+    !aspect_bits
+    !ortho_height_bits
+    !desc
+    return
+
+@sa3d_camera_desc_get_projection(&desc: ptr) -> i32:
+L_ENTRY:
+    proj = load desc+SA3D_CAMERA_DESC_projection as i32
+    !desc
+    return proj
+
+@sa3d_camera_desc_get_fovy(&desc: ptr) -> i32:
+L_ENTRY:
+    fovy = load desc+SA3D_CAMERA_DESC_fovy_radians as i32
+    !desc
+    return fovy
+
+@sa3d_camera_desc_get_aspect(&desc: ptr) -> i32:
+L_ENTRY:
+    aspect = load desc+SA3D_CAMERA_DESC_aspect as i32
+    !desc
+    return aspect
+
+@sa3d_camera_desc_get_near(&desc: ptr) -> i32:
+L_ENTRY:
+    near = load desc+SA3D_CAMERA_DESC_near as i32
+    !desc
+    return near
+
+@sa3d_camera_desc_get_far(&desc: ptr) -> i32:
+L_ENTRY:
+    far = load desc+SA3D_CAMERA_DESC_far as i32
+    !desc
+    return far
+
+@sa3d_camera_desc_get_ortho_height(&desc: ptr) -> i32:
+L_ENTRY:
+    oh = load desc+SA3D_CAMERA_DESC_ortho_height as i32
+    !desc
+    return oh
+
+@sa3d_camera_desc_is_perspective(&desc: ptr) -> i32:
+L_ENTRY:
+    proj = load desc+SA3D_CAMERA_DESC_projection as i32
+    is_persp = eq proj, SA3D_CAMERA_PROJECTION_PERSPECTIVE
+    br is_persp -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !is_persp
+    !proj
+    !desc
+    return 1
+
+L_FALSE:
+    !is_persp
+    !proj
+    !desc
+    return 0
+
+@sa3d_camera_desc_is_orthographic(&desc: ptr) -> i32:
+L_ENTRY:
+    proj = load desc+SA3D_CAMERA_DESC_projection as i32
+    is_ortho = eq proj, SA3D_CAMERA_PROJECTION_ORTHOGRAPHIC
+    br is_ortho -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !is_ortho
+    !proj
+    !desc
+    return 1
+
+L_FALSE:
+    !is_ortho
+    !proj
+    !desc
+    return 0
+
+@sa3d_camera_viewport_init(&viewport: ptr, x: i32, y: i32, width: i32, height: i32) -> void:
+L_ENTRY:
+    store viewport+SA3D_CAMERA_VIEWPORT_x, x as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_y, y as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_width, width as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_height, height as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_depth_min, 0 as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_depth_max, 1000 as i32
+    !height
+    !width
+    !y
+    !x
+    !viewport
+    return
+
+@sa3d_camera_viewport_area(&viewport: ptr) -> i64:
+L_ENTRY:
+    width = load viewport+SA3D_CAMERA_VIEWPORT_width as i32
+    height = load viewport+SA3D_CAMERA_VIEWPORT_height as i32
+    w64 = sext width as i64
+    h64 = sext height as i64
+    area = mul w64, h64
+    !h64
+    !w64
+    !height
+    !width
+    !viewport
+    return area
+
+@sa3d_camera_viewport_aspect_per_mille(&viewport: ptr) -> i32:
+L_ENTRY:
+    width = load viewport+SA3D_CAMERA_VIEWPORT_width as i32
+    height = load viewport+SA3D_CAMERA_VIEWPORT_height as i32
+    invalid = sle height, 0
+    br invalid -> L_ZERO, L_CALC
+
+L_ZERO:
+    !invalid
+    !height
+    !width
+    !viewport
+    return 0
+
+L_CALC:
+    scaled = mul width, 1000
+    aspect = sdiv scaled, height
+    !scaled
+    !invalid
+    !height
+    !width
+    !viewport
+    return aspect
+
+@sa3d_camera_viewport_contains(&viewport: ptr, px: i32, py: i32) -> i32:
+L_ENTRY:
+    x = load viewport+SA3D_CAMERA_VIEWPORT_x as i32
+    y = load viewport+SA3D_CAMERA_VIEWPORT_y as i32
+    width = load viewport+SA3D_CAMERA_VIEWPORT_width as i32
+    height = load viewport+SA3D_CAMERA_VIEWPORT_height as i32
+    x1 = add x, width
+    y1 = add y, height
+    x_low = sge px, x
+    x_high = slt px, x1
+    y_low = sge py, y
+    y_high = slt py, y1
+    x_ok = and x_low, x_high
+    y_ok = and y_low, y_high
+    ok = and x_ok, y_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !y_ok
+    !x_ok
+    !y_high
+    !y_low
+    !x_high
+    !x_low
+    !y1
+    !x1
+    !height
+    !width
+    !y
+    !x
+    !py
+    !px
+    !viewport
+    return 1
+
+L_FALSE:
+    !ok
+    !y_ok
+    !x_ok
+    !y_high
+    !y_low
+    !x_high
+    !x_low
+    !y1
+    !x1
+    !height
+    !width
+    !y
+    !x
+    !py
+    !px
+    !viewport
+    return 0
+
+@sa3d_camera_viewport_clamp_to_size(&viewport: ptr, target_width: i32, target_height: i32) -> void:
+L_ENTRY:
+    x = load viewport+SA3D_CAMERA_VIEWPORT_x as i32
+    y = load viewport+SA3D_CAMERA_VIEWPORT_y as i32
+    width = load viewport+SA3D_CAMERA_VIEWPORT_width as i32
+    height = load viewport+SA3D_CAMERA_VIEWPORT_height as i32
+    x_end = add x, width
+    y_end = add y, height
+    x_over = sgt x_end, target_width
+    br x_over -> L_CLAMP_X, L_CHECK_Y
+
+L_CLAMP_X:
+    x_inside = slt x, target_width
+    br x_inside -> L_CLAMP_X_SIZE, L_CLAMP_X_POS
+
+L_CLAMP_X_SIZE:
+    new_width = sub target_width, x
+    store viewport+SA3D_CAMERA_VIEWPORT_width, new_width as i32
+    !new_width
+    !x_inside
+    jmp L_CHECK_Y
+
+L_CLAMP_X_POS:
+    target_positive = sgt target_width, 0
+    br target_positive -> L_CLAMP_X_EDGE, L_CLAMP_X_ZERO
+
+L_CLAMP_X_EDGE:
+    new_x = sub target_width, 1
+    store viewport+SA3D_CAMERA_VIEWPORT_x, new_x as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_width, 1 as i32
+    !new_x
+    !target_positive
+    !x_inside
+    jmp L_CHECK_Y
+
+L_CLAMP_X_ZERO:
+    store viewport+SA3D_CAMERA_VIEWPORT_x, 0 as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_width, 0 as i32
+    !target_positive
+    !x_inside
+    jmp L_CHECK_Y
+
+L_CHECK_Y:
+    y_over = sgt y_end, target_height
+    br y_over -> L_CLAMP_Y, L_DONE
+
+L_CLAMP_Y:
+    y_inside = slt y, target_height
+    br y_inside -> L_CLAMP_Y_SIZE, L_CLAMP_Y_POS
+
+L_CLAMP_Y_SIZE:
+    new_height = sub target_height, y
+    store viewport+SA3D_CAMERA_VIEWPORT_height, new_height as i32
+    !new_height
+    !y_inside
+    jmp L_DONE
+
+L_CLAMP_Y_POS:
+    target_positive_y = sgt target_height, 0
+    br target_positive_y -> L_CLAMP_Y_EDGE, L_CLAMP_Y_ZERO
+
+L_CLAMP_Y_EDGE:
+    new_y = sub target_height, 1
+    store viewport+SA3D_CAMERA_VIEWPORT_y, new_y as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_height, 1 as i32
+    !new_y
+    !target_positive_y
+    !y_inside
+    jmp L_DONE
+
+L_CLAMP_Y_ZERO:
+    store viewport+SA3D_CAMERA_VIEWPORT_y, 0 as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_height, 0 as i32
+    !target_positive_y
+    !y_inside
+    jmp L_DONE
+
+L_DONE:
+    !y_over
+    !x_over
+    !y_end
+    !x_end
+    !height
+    !width
+    !y
+    !x
+    !target_height
+    !target_width
+    !viewport
+    return
+
+@sa3d_camera_uniform_init(&uniform: ptr) -> void:
+L_ENTRY:
+    store uniform+192, 0 as i32
+    store uniform+196, 0 as i32
+    store uniform+200, 0 as i32
+    store uniform+0, 0 as i32
+    store uniform+64, 0 as i32
+    store uniform+128, 0 as i32
+    !uniform
+    return
+
+@sa3d_camera_viewport_set_depth_range(&viewport: ptr, depth_min: i32, depth_max: i32) -> void:
+L_ENTRY:
+    store viewport+SA3D_CAMERA_VIEWPORT_depth_min, depth_min as i32
+    store viewport+SA3D_CAMERA_VIEWPORT_depth_max, depth_max as i32
+    !depth_max
+    !depth_min
+    !viewport
+    return
+
+@sa3d_camera_viewport_get_depth_min(&viewport: ptr) -> i32:
+L_ENTRY:
+    out = load viewport+SA3D_CAMERA_VIEWPORT_depth_min as i32
+    !viewport
+    return out
+
+@sa3d_camera_viewport_get_depth_max(&viewport: ptr) -> i32:
+L_ENTRY:
+    out = load viewport+SA3D_CAMERA_VIEWPORT_depth_max as i32
+    !viewport
+    return out
+
+@sa3d_camera_mat4_zero(&mat: ptr) -> void:
+L_ENTRY:
+    store mat+0, 0.0 as f32
+    store mat+4, 0.0 as f32
+    store mat+8, 0.0 as f32
+    store mat+12, 0.0 as f32
+    store mat+16, 0.0 as f32
+    store mat+20, 0.0 as f32
+    store mat+24, 0.0 as f32
+    store mat+28, 0.0 as f32
+    store mat+32, 0.0 as f32
+    store mat+36, 0.0 as f32
+    store mat+40, 0.0 as f32
+    store mat+44, 0.0 as f32
+    store mat+48, 0.0 as f32
+    store mat+52, 0.0 as f32
+    store mat+56, 0.0 as f32
+    store mat+60, 0.0 as f32
+    !mat
+    return
+
+@sa3d_camera_projection_perspective_from_focal_y_sa(&out: ptr, focal_y: f32, aspect: f32, near: f32) -> i32:
+L_ENTRY:
+    aspect_ok = fcmp_gt aspect, 0.0
+    focal_ok = fcmp_gt focal_y, 0.0
+    near_ok = fcmp_gt near, 0.0
+    p0 = and aspect_ok, focal_ok
+    ok = and p0, near_ok
+    br ok -> L_CALC, L_ERR
+
+L_ERR:
+    call @sa3d_camera_mat4_zero(&out)
+    !ok
+    !p0
+    !near_ok
+    !focal_ok
+    !aspect_ok
+    !near
+    !aspect
+    !focal_y
+    !out
+    return 0
+
+L_CALC:
+    x = fdiv focal_y, aspect
+    call @sa3d_camera_mat4_zero(&out)
+    store out+0, x as f32
+    store out+20, focal_y as f32
+    store out+44, -1.0 as f32
+    store out+56, near as f32
+    !x
+    !ok
+    !p0
+    !near_ok
+    !focal_ok
+    !aspect_ok
+    !near
+    !aspect
+    !focal_y
+    !out
+    return 1
+
+@sa3d_camera_projection_orthographic_bounds_sa(&out: ptr, left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> i32:
+L_ENTRY:
+    width = fsub right, left
+    height = fsub top, bottom
+    depth = fsub near, far
+    width_ok = fcmp_gt width, 0.0
+    height_ok = fcmp_gt height, 0.0
+    depth_ok = fcmp_gt depth, 0.0
+    p0 = and width_ok, height_ok
+    ok = and p0, depth_ok
+    br ok -> L_CALC, L_ERR
+
+L_ERR:
+    call @sa3d_camera_mat4_zero(&out)
+    !ok
+    !p0
+    !depth_ok
+    !height_ok
+    !width_ok
+    !depth
+    !height
+    !width
+    !far
+    !near
+    !top
+    !bottom
+    !right
+    !left
+    !out
+    return 0
+
+L_CALC:
+    two_over_w = fdiv 2.0, width
+    two_over_h = fdiv 2.0, height
+    one_over_d = fdiv 1.0, depth
+    right_left = fadd right, left
+    top_bottom = fadd top, bottom
+    tx0 = fdiv right_left, width
+    ty0 = fdiv top_bottom, height
+    tx = fneg tx0
+    ty = fneg ty0
+    tz = fdiv near, depth
+    call @sa3d_camera_mat4_zero(&out)
+    store out+0, two_over_w as f32
+    store out+20, two_over_h as f32
+    store out+40, one_over_d as f32
+    store out+48, tx as f32
+    store out+52, ty as f32
+    store out+56, tz as f32
+    store out+60, 1.0 as f32
+    !tz
+    !ty
+    !tx
+    !ty0
+    !tx0
+    !top_bottom
+    !right_left
+    !one_over_d
+    !two_over_h
+    !two_over_w
+    !ok
+    !p0
+    !depth_ok
+    !height_ok
+    !width_ok
+    !depth
+    !height
+    !width
+    !far
+    !near
+    !top
+    !bottom
+    !right
+    !left
+    !out
+    return 1
+
+@sa3d_camera_orthographic_default_3d_sa(&ortho: ptr) -> void:
+L_ENTRY:
+    store ortho+SA3D_ORTHOGRAPHIC_near, 0.0 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_far, 1000.0 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_origin_x, 0.5 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_origin_y, 0.5 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_scaling_mode, SA3D_CAMERA_SCALING_WINDOW_SIZE as i32
+    store ortho+SA3D_ORTHOGRAPHIC_scale, 1.0 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_area_min_x, -1.0 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_area_min_y, -1.0 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_area_max_x, 1.0 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_area_max_y, 1.0 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_param_width, 0.0 as f32
+    store ortho+SA3D_ORTHOGRAPHIC_param_height, 0.0 as f32
+    !ortho
+    return
+
+@sa3d_camera_orthographic_set_scaling_sa(&ortho: ptr, mode: i32, width: f32, height: f32) -> void:
+L_ENTRY:
+    store ortho+SA3D_ORTHOGRAPHIC_scaling_mode, mode as i32
+    store ortho+SA3D_ORTHOGRAPHIC_param_width, width as f32
+    store ortho+SA3D_ORTHOGRAPHIC_param_height, height as f32
+    !height
+    !width
+    !mode
+    !ortho
+    return
+
+@sa3d_camera_orthographic_store_area_sa(&ortho: ptr, proj_width: f32, proj_height: f32) -> void:
+L_ENTRY:
+    origin_x_n = load ortho+SA3D_ORTHOGRAPHIC_origin_x as f32
+    origin_y_n = load ortho+SA3D_ORTHOGRAPHIC_origin_y as f32
+    scale = load ortho+SA3D_ORTHOGRAPHIC_scale as f32
+    origin_x = fmul proj_width, origin_x_n
+    origin_y = fmul proj_height, origin_y_n
+    neg_origin_x = fneg origin_x
+    neg_origin_y = fneg origin_y
+    max_x0 = fsub proj_width, origin_x
+    max_y0 = fsub proj_height, origin_y
+    min_x = fmul scale, neg_origin_x
+    min_y = fmul scale, neg_origin_y
+    max_x = fmul scale, max_x0
+    max_y = fmul scale, max_y0
+    store ortho+SA3D_ORTHOGRAPHIC_area_min_x, min_x as f32
+    store ortho+SA3D_ORTHOGRAPHIC_area_min_y, min_y as f32
+    store ortho+SA3D_ORTHOGRAPHIC_area_max_x, max_x as f32
+    store ortho+SA3D_ORTHOGRAPHIC_area_max_y, max_y as f32
+    !max_y
+    !max_x
+    !min_y
+    !min_x
+    !max_y0
+    !max_x0
+    !neg_origin_y
+    !neg_origin_x
+    !origin_y
+    !origin_x
+    !scale
+    !origin_y_n
+    !origin_x_n
+    !proj_height
+    !proj_width
+    !ortho
+    return
+
+@sa3d_camera_orthographic_update_window_sa(&ortho: ptr, width: f32, height: f32) -> i32:
+L_ENTRY:
+    call @sa3d_camera_orthographic_store_area_sa(&ortho, width, height)
+    !height
+    !width
+    !ortho
+    return 1
+
+@sa3d_camera_orthographic_update_fixed_vertical_sa(&ortho: ptr, width: f32, height: f32) -> i32:
+L_ENTRY:
+    viewport_height = load ortho+SA3D_ORTHOGRAPHIC_param_height as f32
+    wvh = fmul width, viewport_height
+    proj_width = fdiv wvh, height
+    call @sa3d_camera_orthographic_store_area_sa(&ortho, proj_width, viewport_height)
+    !proj_width
+    !wvh
+    !viewport_height
+    !height
+    !width
+    !ortho
+    return 1
+
+@sa3d_camera_orthographic_update_fixed_horizontal_sa(&ortho: ptr, width: f32, height: f32) -> i32:
+L_ENTRY:
+    viewport_width = load ortho+SA3D_ORTHOGRAPHIC_param_width as f32
+    hvw = fmul height, viewport_width
+    proj_height = fdiv hvw, width
+    call @sa3d_camera_orthographic_store_area_sa(&ortho, viewport_width, proj_height)
+    !proj_height
+    !hvw
+    !viewport_width
+    !height
+    !width
+    !ortho
+    return 1
+
+@sa3d_camera_orthographic_update_fixed_sa(&ortho: ptr) -> i32:
+L_ENTRY:
+    fixed_width = load ortho+SA3D_ORTHOGRAPHIC_param_width as f32
+    fixed_height = load ortho+SA3D_ORTHOGRAPHIC_param_height as f32
+    call @sa3d_camera_orthographic_store_area_sa(&ortho, fixed_width, fixed_height)
+    !fixed_height
+    !fixed_width
+    !ortho
+    return 1
+
+@sa3d_camera_orthographic_update_auto_min_sa(&ortho: ptr, width: f32, height: f32) -> i32:
+L_ENTRY:
+    min_width = load ortho+SA3D_ORTHOGRAPHIC_param_width as f32
+    min_height = load ortho+SA3D_ORTHOGRAPHIC_param_height as f32
+    left_cmp = fmul width, min_height
+    right_cmp = fmul min_width, height
+    use_min_height = fcmp_gt left_cmp, right_cmp
+    br use_min_height -> L_HEIGHT, L_WIDTH
+
+L_HEIGHT:
+    wh = fmul width, min_height
+    pw = fdiv wh, height
+    call @sa3d_camera_orthographic_store_area_sa(&ortho, pw, min_height)
+    !pw
+    !wh
+    !use_min_height
+    !right_cmp
+    !left_cmp
+    !min_height
+    !min_width
+    !height
+    !width
+    !ortho
+    return 1
+
+L_WIDTH:
+    hm = fmul height, min_width
+    ph = fdiv hm, width
+    call @sa3d_camera_orthographic_store_area_sa(&ortho, min_width, ph)
+    !ph
+    !hm
+    !use_min_height
+    !right_cmp
+    !left_cmp
+    !min_height
+    !min_width
+    !height
+    !width
+    !ortho
+    return 1
+
+@sa3d_camera_orthographic_update_auto_max_sa(&ortho: ptr, width: f32, height: f32) -> i32:
+L_ENTRY:
+    max_width = load ortho+SA3D_ORTHOGRAPHIC_param_width as f32
+    max_height = load ortho+SA3D_ORTHOGRAPHIC_param_height as f32
+    left_cmp = fmul width, max_height
+    right_cmp = fmul max_width, height
+    use_max_height = fcmp_lt left_cmp, right_cmp
+    br use_max_height -> L_HEIGHT, L_WIDTH
+
+L_HEIGHT:
+    wh = fmul width, max_height
+    pw = fdiv wh, height
+    call @sa3d_camera_orthographic_store_area_sa(&ortho, pw, max_height)
+    !pw
+    !wh
+    !use_max_height
+    !right_cmp
+    !left_cmp
+    !max_height
+    !max_width
+    !height
+    !width
+    !ortho
+    return 1
+
+L_WIDTH:
+    hm = fmul height, max_width
+    ph = fdiv hm, width
+    call @sa3d_camera_orthographic_store_area_sa(&ortho, max_width, ph)
+    !ph
+    !hm
+    !use_max_height
+    !right_cmp
+    !left_cmp
+    !max_height
+    !max_width
+    !height
+    !width
+    !ortho
+    return 1
+
+@sa3d_camera_orthographic_update_sa(&ortho: ptr, width: f32, height: f32) -> i32:
+L_ENTRY:
+    width_ok = fcmp_gt width, 0.0
+    height_ok = fcmp_gt height, 0.0
+    valid = and width_ok, height_ok
+    br valid -> L_MODE, L_ERR
+
+L_ERR:
+    !valid
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !ortho
+    return 0
+
+L_MODE:
+    mode = load ortho+SA3D_ORTHOGRAPHIC_scaling_mode as i32
+    is_window = eq mode, SA3D_CAMERA_SCALING_WINDOW_SIZE
+    br is_window -> L_WINDOW, L_AUTO_MIN_CHECK
+
+L_WINDOW:
+    result_window = call @sa3d_camera_orthographic_update_window_sa(&ortho, width, height)
+    !result_window
+    !is_window
+    !mode
+    !valid
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !ortho
+    return 1
+
+L_AUTO_MIN_CHECK:
+    is_auto_min = eq mode, SA3D_CAMERA_SCALING_AUTO_MIN
+    br is_auto_min -> L_AUTO_MIN, L_AUTO_MAX_CHECK
+
+L_AUTO_MIN:
+    result_auto_min = call @sa3d_camera_orthographic_update_auto_min_sa(&ortho, width, height)
+    !result_auto_min
+    !is_auto_min
+    !is_window
+    !mode
+    !valid
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !ortho
+    return 1
+
+L_AUTO_MAX_CHECK:
+    is_auto_max = eq mode, SA3D_CAMERA_SCALING_AUTO_MAX
+    br is_auto_max -> L_AUTO_MAX, L_FIXED_V_CHECK
+
+L_AUTO_MAX:
+    result_auto_max = call @sa3d_camera_orthographic_update_auto_max_sa(&ortho, width, height)
+    !result_auto_max
+    !is_auto_max
+    !is_auto_min
+    !is_window
+    !mode
+    !valid
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !ortho
+    return 1
+
+L_FIXED_V_CHECK:
+    is_fixed_v = eq mode, SA3D_CAMERA_SCALING_FIXED_VERTICAL
+    br is_fixed_v -> L_FIXED_V, L_FIXED_H_CHECK
+
+L_FIXED_V:
+    result_fixed_v = call @sa3d_camera_orthographic_update_fixed_vertical_sa(&ortho, width, height)
+    !result_fixed_v
+    !is_fixed_v
+    !is_auto_max
+    !is_auto_min
+    !is_window
+    !mode
+    !valid
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !ortho
+    return 1
+
+L_FIXED_H_CHECK:
+    is_fixed_h = eq mode, SA3D_CAMERA_SCALING_FIXED_HORIZONTAL
+    br is_fixed_h -> L_FIXED_H, L_FIXED_CHECK
+
+L_FIXED_H:
+    result_fixed_h = call @sa3d_camera_orthographic_update_fixed_horizontal_sa(&ortho, width, height)
+    !result_fixed_h
+    !is_fixed_h
+    !is_fixed_v
+    !is_auto_max
+    !is_auto_min
+    !is_window
+    !mode
+    !valid
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !ortho
+    return 1
+
+L_FIXED_CHECK:
+    is_fixed = eq mode, SA3D_CAMERA_SCALING_FIXED
+    br is_fixed -> L_FIXED, L_FALLBACK
+
+L_FIXED:
+    result_fixed = call @sa3d_camera_orthographic_update_fixed_sa(&ortho)
+    !result_fixed
+    !is_fixed
+    !is_fixed_h
+    !is_fixed_v
+    !is_auto_max
+    !is_auto_min
+    !is_window
+    !mode
+    !valid
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !ortho
+    return 1
+
+L_FALLBACK:
+    result_fallback = call @sa3d_camera_orthographic_update_window_sa(&ortho, width, height)
+    !result_fallback
+    !is_fixed
+    !is_fixed_h
+    !is_fixed_v
+    !is_auto_max
+    !is_auto_min
+    !is_window
+    !mode
+    !valid
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !ortho
+    return 1
+
+@sa3d_camera_orthographic_projection_sa(&out: ptr, &ortho: ptr) -> i32:
+L_ENTRY:
+    left = load ortho+SA3D_ORTHOGRAPHIC_area_min_x as f32
+    bottom = load ortho+SA3D_ORTHOGRAPHIC_area_min_y as f32
+    right = load ortho+SA3D_ORTHOGRAPHIC_area_max_x as f32
+    top = load ortho+SA3D_ORTHOGRAPHIC_area_max_y as f32
+    near_raw = load ortho+SA3D_ORTHOGRAPHIC_far as f32
+    far_raw = load ortho+SA3D_ORTHOGRAPHIC_near as f32
+    ok = call @sa3d_camera_projection_orthographic_bounds_sa(&out, left, right, bottom, top, near_raw, far_raw)
+    !far_raw
+    !near_raw
+    !top
+    !right
+    !bottom
+    !left
+    !ortho
+    !out
+    return ok
+
+@sa3d_camera_uniform_set_position(&uniform: ptr, x: i32, y: i32, z: i32) -> void:
+L_ENTRY:
+    store uniform+192, x as i32
+    store uniform+196, y as i32
+    store uniform+200, z as i32
+    !z
+    !y
+    !x
+    !uniform
+    return
+
+@sa3d_camera_uniform_get_position_x(&uniform: ptr) -> i32:
+L_ENTRY:
+    x = load uniform+192 as i32
+    !uniform
+    return x
+
+@sa3d_camera_uniform_get_position_y(&uniform: ptr) -> i32:
+L_ENTRY:
+    y = load uniform+196 as i32
+    !uniform
+    return y
+
+@sa3d_camera_uniform_get_position_z(&uniform: ptr) -> i32:
+L_ENTRY:
+    z = load uniform+200 as i32
+    !uniform
+    return z
+
+@sa3d_camera_uniform_copy_view(&uniform: ptr, &src: ptr) -> void:
+L_ENTRY:
+    v0 = load src+0 as i32
+    v1 = load src+4 as i32
+    v2 = load src+8 as i32
+    v3 = load src+12 as i32
+    v4 = load src+16 as i32
+    v5 = load src+20 as i32
+    v6 = load src+24 as i32
+    v7 = load src+28 as i32
+    v8 = load src+32 as i32
+    v9 = load src+36 as i32
+    v10 = load src+40 as i32
+    v11 = load src+44 as i32
+    v12 = load src+48 as i32
+    v13 = load src+52 as i32
+    v14 = load src+56 as i32
+    v15 = load src+60 as i32
+    store uniform+0, v0 as i32
+    store uniform+4, v1 as i32
+    store uniform+8, v2 as i32
+    store uniform+12, v3 as i32
+    store uniform+16, v4 as i32
+    store uniform+20, v5 as i32
+    store uniform+24, v6 as i32
+    store uniform+28, v7 as i32
+    store uniform+32, v8 as i32
+    store uniform+36, v9 as i32
+    store uniform+40, v10 as i32
+    store uniform+44, v11 as i32
+    store uniform+48, v12 as i32
+    store uniform+52, v13 as i32
+    store uniform+56, v14 as i32
+    store uniform+60, v15 as i32
+    !v15
+    !v14
+    !v13
+    !v12
+    !v11
+    !v10
+    !v9
+    !v8
+    !v7
+    !v6
+    !v5
+    !v4
+    !v3
+    !v2
+    !v1
+    !v0
+    !src
+    !uniform
+    return
+
+@export sa3d_camera_desc_perspective(out: ptr, fovy_radians: f32, aspect: f32, near: f32, far: f32):
+L_ENTRY:
+    store out+SA3D_CAMERA_DESC_projection, SA3D_CAMERA_PROJECTION_PERSPECTIVE as i32
+    store out+SA3D_CAMERA_DESC_fovy_radians, fovy_radians as f32
+    store out+SA3D_CAMERA_DESC_aspect, aspect as f32
+    store out+SA3D_CAMERA_DESC_near, near as f32
+    store out+SA3D_CAMERA_DESC_far, far as f32
+    store out+SA3D_CAMERA_DESC_ortho_height, 0.0 as f32
+    !far
+    !near
+    !aspect
+    !fovy_radians
+    !out
+    return
+
+@export sa3d_camera_desc_orthographic(out: ptr, ortho_height: f32, aspect: f32, near: f32, far: f32):
+L_ENTRY:
+    store out+SA3D_CAMERA_DESC_projection, SA3D_CAMERA_PROJECTION_ORTHOGRAPHIC as i32
+    store out+SA3D_CAMERA_DESC_fovy_radians, 0.0 as f32
+    store out+SA3D_CAMERA_DESC_aspect, aspect as f32
+    store out+SA3D_CAMERA_DESC_near, near as f32
+    store out+SA3D_CAMERA_DESC_far, far as f32
+    store out+SA3D_CAMERA_DESC_ortho_height, ortho_height as f32
+    !far
+    !near
+    !aspect
+    !ortho_height
+    !out
+    return
+
+@export sa3d_camera_desc_update_aspect(desc: ptr, width: f32, height: f32) -> i32:
+L_ENTRY:
+    width_ok = fcmp_gt width, 0.0
+    height_ok = fcmp_gt height, 0.0
+    ok = and width_ok, height_ok
+    br ok -> L_UPDATE, L_ERR
+
+L_UPDATE:
+    aspect = fdiv width, height
+    store desc+SA3D_CAMERA_DESC_aspect, aspect as f32
+    !aspect
+    !ok
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !desc
+    return 1
+
+L_ERR:
+    !ok
+    !height_ok
+    !width_ok
+    !height
+    !width
+    !desc
+    return 0
+
+@export sa3d_camera_desc_validate(desc: ptr) -> i32:
+L_ENTRY:
+    projection = load desc+SA3D_CAMERA_DESC_projection as i32
+    fovy = load desc+SA3D_CAMERA_DESC_fovy_radians as f32
+    aspect = load desc+SA3D_CAMERA_DESC_aspect as f32
+    near = load desc+SA3D_CAMERA_DESC_near as f32
+    far = load desc+SA3D_CAMERA_DESC_far as f32
+    ortho_height = load desc+SA3D_CAMERA_DESC_ortho_height as f32
+    aspect_ok = fcmp_gt aspect, 0.0
+    near_ok = fcmp_ge near, 0.0
+    far_ok = fcmp_gt far, near
+    p0 = and aspect_ok, near_ok
+    ok = and p0, far_ok
+    br ok -> L_KIND, L_ERR
+
+L_KIND:
+    is_perspective = eq projection, SA3D_CAMERA_PROJECTION_PERSPECTIVE
+    br is_perspective -> L_PERSPECTIVE, L_ORTHOGRAPHIC_CHECK
+
+L_PERSPECTIVE:
+    fovy_ok = fcmp_gt fovy, 0.0
+    !is_perspective
+    !ok
+    !p0
+    !far_ok
+    !near_ok
+    !aspect_ok
+    !ortho_height
+    !far
+    !near
+    !aspect
+    !fovy
+    !projection
+    !desc
+    br fovy_ok -> L_PERSPECTIVE_TRUE, L_PERSPECTIVE_FALSE
+
+L_ORTHOGRAPHIC_CHECK:
+    is_orthographic = eq projection, SA3D_CAMERA_PROJECTION_ORTHOGRAPHIC
+    br is_orthographic -> L_ORTHOGRAPHIC, L_INVALID
+
+L_ORTHOGRAPHIC:
+    ortho_ok = fcmp_gt ortho_height, 0.0
+    !is_orthographic
+    !is_perspective
+    !ok
+    !p0
+    !far_ok
+    !near_ok
+    !aspect_ok
+    !far
+    !near
+    !aspect
+    !fovy
+    !projection
+    !desc
+    br ortho_ok -> L_ORTHOGRAPHIC_TRUE, L_ORTHOGRAPHIC_FALSE
+
+L_INVALID:
+    !is_orthographic
+    !is_perspective
+    !ok
+    !p0
+    !far_ok
+    !near_ok
+    !aspect_ok
+    !ortho_height
+    !far
+    !near
+    !aspect
+    !fovy
+    !projection
+    !desc
+    return 0
+
+L_PERSPECTIVE_TRUE:
+    return 1
+
+L_PERSPECTIVE_FALSE:
+    return 0
+
+L_ORTHOGRAPHIC_TRUE:
+    return 1
+
+L_ORTHOGRAPHIC_FALSE:
+    return 0
+
+L_ERR:
+    !ok
+    !p0
+    !far_ok
+    !near_ok
+    !aspect_ok
+    !ortho_height
+    !far
+    !near
+    !aspect
+    !fovy
+    !projection
+    !desc
+    return 0
+
+@export sa3d_camera_viewport_init_native(out: ptr, x: u32, y: u32, width: u32, height: u32):
+L_ENTRY:
+    store out+SA3D_CAMERA_VIEWPORT_x, x as u32
+    store out+SA3D_CAMERA_VIEWPORT_y, y as u32
+    store out+SA3D_CAMERA_VIEWPORT_width, width as u32
+    store out+SA3D_CAMERA_VIEWPORT_height, height as u32
+    store out+SA3D_CAMERA_VIEWPORT_depth_min, 0.0 as f32
+    store out+SA3D_CAMERA_VIEWPORT_depth_max, 1.0 as f32
+    !height
+    !width
+    !y
+    !x
+    !out
+    return
+
+@export sa3d_camera_viewport_clamp_native(viewport: ptr, target_width: u32, target_height: u32):
+L_ENTRY:
+    x = load viewport+SA3D_CAMERA_VIEWPORT_x as u32
+    y = load viewport+SA3D_CAMERA_VIEWPORT_y as u32
+    width = load viewport+SA3D_CAMERA_VIEWPORT_width as u32
+    height = load viewport+SA3D_CAMERA_VIEWPORT_height as u32
+    remaining_x = sub target_width, x
+    width_over = ugt width, remaining_x
+    target_width_positive = ugt target_width, 0
+    remaining_y = sub target_height, y
+    height_over = ugt height, remaining_y
+    target_height_positive = ugt target_height, 0
+    x_inside = ult x, target_width
+    br x_inside -> L_CHECK_WIDTH, L_X_OOR
+
+L_CHECK_WIDTH:
+    br width_over -> L_CLAMP_WIDTH, L_CHECK_Y
+
+L_CLAMP_WIDTH:
+    edge_x = 0 as u32
+    store viewport+SA3D_CAMERA_VIEWPORT_width, remaining_x as u32
+    !edge_x
+    jmp L_CHECK_Y
+
+L_X_OOR:
+    br target_width_positive -> L_SET_EDGE_X, L_ZERO_X
+
+L_SET_EDGE_X:
+    edge_x = sub target_width, 1
+    store viewport+SA3D_CAMERA_VIEWPORT_x, edge_x as u32
+    store viewport+SA3D_CAMERA_VIEWPORT_width, 1 as u32
+    !edge_x
+    jmp L_CHECK_Y
+
+L_ZERO_X:
+    edge_x = 0 as u32
+    store viewport+SA3D_CAMERA_VIEWPORT_x, 0 as u32
+    store viewport+SA3D_CAMERA_VIEWPORT_width, 0 as u32
+    !edge_x
+    jmp L_CHECK_Y
+
+L_CHECK_Y:
+    y_inside = ult y, target_height
+    br y_inside -> L_CHECK_HEIGHT, L_Y_OOR
+
+L_CHECK_HEIGHT:
+    br height_over -> L_CLAMP_HEIGHT, L_DONE
+
+L_CLAMP_HEIGHT:
+    edge_y = 0 as u32
+    store viewport+SA3D_CAMERA_VIEWPORT_height, remaining_y as u32
+    !edge_y
+    jmp L_DONE
+
+L_Y_OOR:
+    br target_height_positive -> L_SET_EDGE_Y, L_ZERO_Y
+
+L_SET_EDGE_Y:
+    edge_y = sub target_height, 1
+    store viewport+SA3D_CAMERA_VIEWPORT_y, edge_y as u32
+    store viewport+SA3D_CAMERA_VIEWPORT_height, 1 as u32
+    !edge_y
+    jmp L_DONE
+
+L_ZERO_Y:
+    edge_y = 0 as u32
+    store viewport+SA3D_CAMERA_VIEWPORT_y, 0 as u32
+    store viewport+SA3D_CAMERA_VIEWPORT_height, 0 as u32
+    !edge_y
+    jmp L_DONE
+
+L_DONE:
+    !height_over
+    !target_height_positive
+    !remaining_y
+    !x_inside
+    !y_inside
+    !width_over
+    !target_width_positive
+    !height
+    !width
+    !y
+    !x
+    !target_height
+    !target_width
+    !viewport
+    return
+
+@export sa3d_camera_projection_perspective(out: ptr, desc: ptr) -> i32:
+L_ENTRY:
+    valid = call @sa3d_camera_desc_validate(&desc)
+    projection = load desc+SA3D_CAMERA_DESC_projection as i32
+    is_perspective = eq projection, SA3D_CAMERA_PROJECTION_PERSPECTIVE
+    ok = and valid, is_perspective
+    br ok -> L_CALC, L_ERR
+
+L_CALC:
+    fovy = load desc+SA3D_CAMERA_DESC_fovy_radians as f32
+    aspect = load desc+SA3D_CAMERA_DESC_aspect as f32
+    near = load desc+SA3D_CAMERA_DESC_near as f32
+    half = fmul fovy, 0.5
+    half64 = half as f64
+    tan_half64 = call @tan(half64)
+    focal_y64 = fdiv 1.0, tan_half64
+    focal_y = focal_y64 as f32
+    result = call @sa3d_camera_projection_perspective_from_focal_y_sa(&out, focal_y, aspect, near)
+    !focal_y
+    !tan_half64
+    !half64
+    !near
+    !aspect
+    !fovy
+    !ok
+    !is_perspective
+    !projection
+    !valid
+    !desc
+    !out
+    return result
+
+L_ERR:
+    !ok
+    !is_perspective
+    !projection
+    !valid
+    !desc
+    !out
+    return 0
+
+@export sa3d_camera_projection_orthographic(out: ptr, desc: ptr) -> i32:
+L_ENTRY:
+    valid = call @sa3d_camera_desc_validate(&desc)
+    projection = load desc+SA3D_CAMERA_DESC_projection as i32
+    is_orthographic = eq projection, SA3D_CAMERA_PROJECTION_ORTHOGRAPHIC
+    ok = and valid, is_orthographic
+    br ok -> L_CALC, L_ERR
+
+L_CALC:
+    ortho_height = load desc+SA3D_CAMERA_DESC_ortho_height as f32
+    aspect = load desc+SA3D_CAMERA_DESC_aspect as f32
+    near_raw = load desc+SA3D_CAMERA_DESC_far as f32
+    far_raw = load desc+SA3D_CAMERA_DESC_near as f32
+    width = fmul ortho_height, aspect
+    half_width = fmul width, 0.5
+    half_height = fmul ortho_height, 0.5
+    left = fneg half_width
+    right = half_width
+    bottom = fneg half_height
+    top = half_height
+    result = call @sa3d_camera_projection_orthographic_bounds_sa(&out, left, right, bottom, top, near_raw, far_raw)
+    !top
+    !bottom
+    !right
+    !left
+    !width
+    !far_raw
+    !near_raw
+    !aspect
+    !ortho_height
+    !ok
+    !is_orthographic
+    !projection
+    !valid
+    !desc
+    !out
+    return result
+
+L_ERR:
+    !ok
+    !is_orthographic
+    !projection
+    !valid
+    !desc
+    !out
+    return 0
+
+@export sa3d_camera_projection_matrix(out: ptr, desc: ptr) -> i32:
+L_ENTRY:
+    projection = load desc+SA3D_CAMERA_DESC_projection as i32
+    is_perspective = eq projection, SA3D_CAMERA_PROJECTION_PERSPECTIVE
+    br is_perspective -> L_PERSPECTIVE, L_ORTHOGRAPHIC
+
+L_PERSPECTIVE:
+    result_perspective = call @sa3d_camera_projection_perspective(&out, &desc)
+    !is_perspective
+    !projection
+    !desc
+    !out
+    return result_perspective
+
+L_ORTHOGRAPHIC:
+    is_orthographic = eq projection, SA3D_CAMERA_PROJECTION_ORTHOGRAPHIC
+    br is_orthographic -> L_ORTHO, L_ERR
+
+L_ORTHO:
+    result_orthographic = call @sa3d_camera_projection_orthographic(&out, &desc)
+    !is_orthographic
+    !is_perspective
+    !projection
+    !desc
+    !out
+    return result_orthographic
+
+L_ERR:
+    !is_orthographic
+    !is_perspective
+    !projection
+    !desc
+    !out
+    return 0
+
+@export sa3d_camera_uniform_init_native(out: ptr):
+L_ENTRY:
+    view = ptr_add out, SA3D_CAMERA_UNIFORM_view
+    proj = ptr_add out, SA3D_CAMERA_UNIFORM_proj
+    view_proj = ptr_add out, SA3D_CAMERA_UNIFORM_view_proj
+    position = ptr_add out, SA3D_CAMERA_UNIFORM_position
+    call @sa3d_mat4_identity(&view)
+    call @sa3d_mat4_identity(&proj)
+    call @sa3d_mat4_identity(&view_proj)
+    store position+SA3D_VEC3_x, 0.0 as f32
+    store position+SA3D_VEC3_y, 0.0 as f32
+    store position+SA3D_VEC3_z, 0.0 as f32
+    store out+204, 0.0 as f32
+    !position
+    !view_proj
+    !proj
+    !view
+    !out
+    return
+
+@export sa3d_camera_uniform_update(out: ptr, view: ptr, proj: ptr, position: ptr):
+L_ENTRY:
+    view_dst = ptr_add out, SA3D_CAMERA_UNIFORM_view
+    proj_dst = ptr_add out, SA3D_CAMERA_UNIFORM_proj
+    view_proj_dst = ptr_add out, SA3D_CAMERA_UNIFORM_view_proj
+    position_dst = ptr_add out, SA3D_CAMERA_UNIFORM_position
+    call @sa3d_mat4_copy(&view_dst, &view)
+    call @sa3d_mat4_copy(&proj_dst, &proj)
+    call @sa3d_mat4_mul(&view_proj_dst, &proj, &view)
+    px = load position+SA3D_VEC3_x as f32
+    py = load position+SA3D_VEC3_y as f32
+    pz = load position+SA3D_VEC3_z as f32
+    store position_dst+SA3D_VEC3_x, px as f32
+    store position_dst+SA3D_VEC3_y, py as f32
+    store position_dst+SA3D_VEC3_z, pz as f32
+    store out+204, 0.0 as f32
+    !pz
+    !py
+    !px
+    !position_dst
+    !view_proj_dst
+    !proj_dst
+    !view_dst
+    !position
+    !proj
+    !view
+    !out
+    return
+
+@sa3d_camera_approx_eq(a: f32, b: f32) -> i32:
+L_ENTRY:
+    diff = fsub a, b
+    is_negative = fcmp_lt diff, 0.0
+    br is_negative -> L_NEG, L_POS
+
+L_NEG:
+    abs_diff = fneg diff
+    close = fcmp_le abs_diff, 0.00001
+    !abs_diff
+    !is_negative
+    !diff
+    !b
+    !a
+    br close -> L_NEG_TRUE, L_NEG_FALSE
+
+L_POS:
+    close = fcmp_le diff, 0.00001
+    !is_negative
+    !diff
+    !b
+    !a
+    br close -> L_POS_TRUE, L_POS_FALSE
+
+L_NEG_TRUE:
+    return 1
+
+L_NEG_FALSE:
+    return 0
+
+L_POS_TRUE:
+    return 1
+
+L_POS_FALSE:
+    return 0
+
+@export sa3d_camera_selftest() -> i32:
+L_ENTRY:
+    perspective = alloc SA3D_CAMERA_DESC_SIZE
+    projection = alloc SA3D_CAMERA_UNIFORM_SIZE
+    call @sa3d_camera_desc_perspective(&perspective, 1.5707964, 1.7777778, 0.1, 1000.0)
+    valid = call @sa3d_camera_desc_validate(&perspective)
+    if_valid = eq valid, 0
+    br if_valid -> L_FAIL_1, L_CONT_1
+
+L_FAIL_1:
+    !if_valid
+    !valid
+    !perspective
+    !projection
+    return 1
+
+L_CONT_1:
+    persp_mat = alloc 64
+    proj_ok = call @sa3d_camera_projection_matrix(&persp_mat, &perspective)
+    if_proj_ok = eq proj_ok, 0
+    br if_proj_ok -> L_FAIL_2, L_CONT_2
+
+L_FAIL_2:
+    !if_proj_ok
+    !proj_ok
+    !perspective
+    !persp_mat
+    !projection
+    return 2
+
+L_CONT_2:
+    p0 = load persp_mat+0 as f32
+    p5 = load persp_mat+20 as f32
+    p11 = load persp_mat+44 as f32
+    p14 = load persp_mat+56 as f32
+    p0_ok = call @sa3d_camera_approx_eq(p0, 0.5625)
+    p5_ok = call @sa3d_camera_approx_eq(p5, 1.0)
+    p11_ok = call @sa3d_camera_approx_eq(p11, -1.0)
+    p14_ok = call @sa3d_camera_approx_eq(p14, 0.1)
+    p1 = and p0_ok, p5_ok
+    p2 = and p11_ok, p14_ok
+    persp_ok = and p1, p2
+    br persp_ok -> L_CONT_3, L_FAIL_3
+
+L_FAIL_3:
+    !persp_ok
+    !p2
+    !p1
+    !p14_ok
+    !p11_ok
+    !p5_ok
+    !p0_ok
+    !p14
+    !p11
+    !p5
+    !p0
+    !proj_ok
+    !perspective
+    !persp_mat
+    !projection
+    return 3
+
+L_CONT_3:
+    ortho = alloc SA3D_CAMERA_DESC_SIZE
+    call @sa3d_camera_desc_orthographic(&ortho, 10.0, 2.0, 0.0, 1000.0)
+    ortho_mat = alloc 64
+    ortho_ok_call = call @sa3d_camera_projection_matrix(&ortho_mat, &ortho)
+    if_ortho_ok = eq ortho_ok_call, 0
+    br if_ortho_ok -> L_FAIL_4, L_CONT_4
+
+L_FAIL_4:
+    !if_ortho_ok
+    !ortho_ok_call
+    !ortho
+    !ortho_mat
+    !perspective
+    !persp_mat
+    !projection
+    return 5
+
+L_CONT_4:
+    o0 = load ortho_mat+0 as f32
+    o5 = load ortho_mat+20 as f32
+    o15 = load ortho_mat+60 as f32
+    o0_ok = call @sa3d_camera_approx_eq(o0, 0.1)
+    o5_ok = call @sa3d_camera_approx_eq(o5, 0.2)
+    o15_ok = call @sa3d_camera_approx_eq(o15, 1.0)
+    o1 = and o0_ok, o5_ok
+    ortho_ok = and o1, o15_ok
+    br ortho_ok -> L_CONT_5, L_FAIL_5
+
+L_FAIL_5:
+    !ortho_ok
+    !o1
+    !o15_ok
+    !o5_ok
+    !o0_ok
+    !o15
+    !o5
+    !o0
+    !ortho_ok_call
+    !ortho
+    !ortho_mat
+    !perspective
+    !persp_mat
+    !projection
+    return 6
+
+L_CONT_5:
+    viewport = alloc SA3D_CAMERA_VIEWPORT_SIZE
+    call @sa3d_camera_viewport_init_native(&viewport, 10, 20, 640, 360)
+    call @sa3d_camera_viewport_clamp_native(&viewport, 320, 240)
+    vw = load viewport+SA3D_CAMERA_VIEWPORT_width as u32
+    vh = load viewport+SA3D_CAMERA_VIEWPORT_height as u32
+    vw_ok = eq vw, 310
+    vh_ok = eq vh, 220
+    viewport_ok = and vw_ok, vh_ok
+    br viewport_ok -> L_CONT_6, L_FAIL_6
+
+L_FAIL_6:
+    !viewport_ok
+    !vh_ok
+    !vw_ok
+    !vh
+    !vw
+    !viewport
+    !ortho_ok
+    !ortho
+    !ortho_mat
+    !perspective
+    !persp_mat
+    !projection
+    return 8
+
+L_CONT_6:
+    call @sa3d_camera_viewport_init_native(&viewport, 500, 300, 64, 64)
+    call @sa3d_camera_viewport_clamp_native(&viewport, 320, 240)
+    vx = load viewport+SA3D_CAMERA_VIEWPORT_x as u32
+    vy = load viewport+SA3D_CAMERA_VIEWPORT_y as u32
+    vw2 = load viewport+SA3D_CAMERA_VIEWPORT_width as u32
+    vh2 = load viewport+SA3D_CAMERA_VIEWPORT_height as u32
+    vx_ok = eq vx, 319
+    vy_ok = eq vy, 239
+    vw2_ok = eq vw2, 1
+    vh2_ok = eq vh2, 1
+    v1 = and vx_ok, vy_ok
+    v2 = and vw2_ok, vh2_ok
+    v_ok = and v1, v2
+    br v_ok -> L_CONT_7, L_FAIL_7
+
+L_FAIL_7:
+    !v_ok
+    !v2
+    !v1
+    !vh2_ok
+    !vw2_ok
+    !vy_ok
+    !vx_ok
+    !vh2
+    !vw2
+    !vy
+    !vx
+    !viewport
+    !ortho_ok
+    !ortho
+    !ortho_mat
+    !perspective
+    !persp_mat
+    !projection
+    return 9
+
+L_CONT_7:
+    call @sa3d_camera_viewport_clamp_native(&viewport, 0, 0)
+    vx0 = load viewport+SA3D_CAMERA_VIEWPORT_x as u32
+    vy0 = load viewport+SA3D_CAMERA_VIEWPORT_y as u32
+    vw0 = load viewport+SA3D_CAMERA_VIEWPORT_width as u32
+    vh0 = load viewport+SA3D_CAMERA_VIEWPORT_height as u32
+    vx0_ok = eq vx0, 0
+    vy0_ok = eq vy0, 0
+    vw0_ok = eq vw0, 0
+    vh0_ok = eq vh0, 0
+    w1 = and vx0_ok, vy0_ok
+    w2 = and vw0_ok, vh0_ok
+    clamp_zero_ok = and w1, w2
+    br clamp_zero_ok -> L_CONT_8, L_FAIL_8
+
+L_FAIL_8:
+    !clamp_zero_ok
+    !w2
+    !w1
+    !vh0_ok
+    !vw0_ok
+    !vy0_ok
+    !vx0_ok
+    !vh0
+    !vw0
+    !vy0
+    !vx0
+    !viewport
+    !ortho_ok
+    !ortho
+    !ortho_mat
+    !perspective
+    !persp_mat
+    !projection
+    return 10
+
+L_CONT_8:
+    uniform = alloc SA3D_CAMERA_UNIFORM_SIZE
+    call @sa3d_camera_uniform_init_native(&uniform)
+    view_ptr = ptr_add uniform, SA3D_CAMERA_UNIFORM_view
+    proj_ptr = ptr_add uniform, SA3D_CAMERA_UNIFORM_proj
+    vp_ptr = ptr_add uniform, SA3D_CAMERA_UNIFORM_view_proj
+    pos_ptr = ptr_add uniform, SA3D_CAMERA_UNIFORM_position
+    view0 = load view_ptr+0 as f32
+    proj0 = load proj_ptr+0 as f32
+    vp0 = load vp_ptr+0 as f32
+    posx0 = load pos_ptr+SA3D_VEC3_x as f32
+    view0_ok = call @sa3d_camera_approx_eq(view0, 1.0)
+    proj0_ok = call @sa3d_camera_approx_eq(proj0, 1.0)
+    vp0_ok = call @sa3d_camera_approx_eq(vp0, 1.0)
+    posx0_ok = call @sa3d_camera_approx_eq(posx0, 0.0)
+    u1 = and view0_ok, proj0_ok
+    u2 = and vp0_ok, posx0_ok
+    uniform_init_ok = and u1, u2
+    !pos_ptr
+    br uniform_init_ok -> L_CONT_9, L_FAIL_9
+
+L_FAIL_9:
+    !uniform_init_ok
+    !u2
+    !u1
+    !posx0_ok
+    !vp0_ok
+    !proj0_ok
+    !view0_ok
+    !posx0
+    !vp0
+    !proj0
+    !view0
+    !vp_ptr
+    !proj_ptr
+    !view_ptr
+    !uniform
+    !clamp_zero_ok
+    !viewport
+    !ortho_ok
+    !ortho
+    !ortho_mat
+    !perspective
+    !persp_mat
+    !projection
+    return 11
+
+L_CONT_9:
+    view = alloc 64
+    proj = alloc 64
+    call @sa3d_mat4_identity(&view)
+    call @sa3d_mat4_identity(&proj)
+    store proj+0, 2.0 as f32
+    store proj+20, 3.0 as f32
+    position = alloc SA3D_VEC3_SIZE
+    store position+SA3D_VEC3_x, 1.0 as f32
+    store position+SA3D_VEC3_y, 2.0 as f32
+    store position+SA3D_VEC3_z, 3.0 as f32
+    call @sa3d_camera_uniform_update(&uniform, &view, &proj, &position)
+    vpv_ptr = ptr_add uniform, SA3D_CAMERA_UNIFORM_view_proj
+    pos_ptr = ptr_add uniform, SA3D_CAMERA_UNIFORM_position
+    vpv0 = load vpv_ptr+0 as f32
+    vpv5 = load vpv_ptr+20 as f32
+    upx = load pos_ptr+SA3D_VEC3_x as f32
+    upz = load pos_ptr+SA3D_VEC3_z as f32
+    vpv0_ok = call @sa3d_camera_approx_eq(vpv0, 2.0)
+    vpv5_ok = call @sa3d_camera_approx_eq(vpv5, 3.0)
+    upx_ok = call @sa3d_camera_approx_eq(upx, 1.0)
+    upz_ok = call @sa3d_camera_approx_eq(upz, 3.0)
+    uu1 = and vpv0_ok, vpv5_ok
+    uu2 = and upx_ok, upz_ok
+    final_ok = and uu1, uu2
+    br final_ok -> L_OK, L_FAIL_10
+
+L_FAIL_10:
+    !final_ok
+    !uu2
+    !uu1
+    !upz_ok
+    !upx_ok
+    !vpv5_ok
+    !vpv0_ok
+    !upz
+    !upx
+    !vpv5
+    !vpv0
+    !vpv_ptr
+    !position
+    !proj
+    !view
+    !uniform
+    !u2
+    !u1
+    !posx0_ok
+    !vp0_ok
+    !proj0_ok
+    !view0_ok
+    !posx0
+    !vp0
+    !proj0
+    !view0
+    !clamp_zero_ok
+    !viewport
+    !ortho_ok
+    !ortho
+    !ortho_mat
+    !perspective
+    !persp_mat
+    !projection
+    return 12
+
+L_OK:
+    !final_ok
+    !uu2
+    !uu1
+    !upz_ok
+    !upx_ok
+    !vpv5_ok
+    !vpv0_ok
+    !upz
+    !upx
+    !vpv5
+    !vpv0
+    !position
+    !proj
+    !view
+    !uniform
+    !u2
+    !u1
+    !posx0_ok
+    !vp0_ok
+    !proj0_ok
+    !view0_ok
+    !posx0
+    !vp0
+    !proj0
+    !view0
+    !clamp_zero_ok
+    !viewport
+    !ortho_ok
+    !ortho
+    !ortho_mat
+    !perspective
+    !persp_mat
+    !projection
+    return 0
+
+@sa3d_camera_uniform_copy_proj(&uniform: ptr, &src: ptr) -> void:
+L_ENTRY:
+    v0 = load src+0 as i32
+    v1 = load src+4 as i32
+    v2 = load src+8 as i32
+    v3 = load src+12 as i32
+    v4 = load src+16 as i32
+    v5 = load src+20 as i32
+    v6 = load src+24 as i32
+    v7 = load src+28 as i32
+    v8 = load src+32 as i32
+    v9 = load src+36 as i32
+    v10 = load src+40 as i32
+    v11 = load src+44 as i32
+    v12 = load src+48 as i32
+    v13 = load src+52 as i32
+    v14 = load src+56 as i32
+    v15 = load src+60 as i32
+    store uniform+64, v0 as i32
+    store uniform+68, v1 as i32
+    store uniform+72, v2 as i32
+    store uniform+76, v3 as i32
+    store uniform+80, v4 as i32
+    store uniform+84, v5 as i32
+    store uniform+88, v6 as i32
+    store uniform+92, v7 as i32
+    store uniform+96, v8 as i32
+    store uniform+100, v9 as i32
+    store uniform+104, v10 as i32
+    store uniform+108, v11 as i32
+    store uniform+112, v12 as i32
+    store uniform+116, v13 as i32
+    store uniform+120, v14 as i32
+    store uniform+124, v15 as i32
+    !v15
+    !v14
+    !v13
+    !v12
+    !v11
+    !v10
+    !v9
+    !v8
+    !v7
+    !v6
+    !v5
+    !v4
+    !v3
+    !v2
+    !v1
+    !v0
+    !src
+    !uniform
+    return
+
+@sa3d_camera_uniform_copy_view_proj(&uniform: ptr, &src: ptr) -> void:
+L_ENTRY:
+    v0 = load src+0 as i32
+    v1 = load src+4 as i32
+    v2 = load src+8 as i32
+    v3 = load src+12 as i32
+    v4 = load src+16 as i32
+    v5 = load src+20 as i32
+    v6 = load src+24 as i32
+    v7 = load src+28 as i32
+    v8 = load src+32 as i32
+    v9 = load src+36 as i32
+    v10 = load src+40 as i32
+    v11 = load src+44 as i32
+    v12 = load src+48 as i32
+    v13 = load src+52 as i32
+    v14 = load src+56 as i32
+    v15 = load src+60 as i32
+    store uniform+128, v0 as i32
+    store uniform+132, v1 as i32
+    store uniform+136, v2 as i32
+    store uniform+140, v3 as i32
+    store uniform+144, v4 as i32
+    store uniform+148, v5 as i32
+    store uniform+152, v6 as i32
+    store uniform+156, v7 as i32
+    store uniform+160, v8 as i32
+    store uniform+164, v9 as i32
+    store uniform+168, v10 as i32
+    store uniform+172, v11 as i32
+    store uniform+176, v12 as i32
+    store uniform+180, v13 as i32
+    store uniform+184, v14 as i32
+    store uniform+188, v15 as i32
+    !v15
+    !v14
+    !v13
+    !v12
+    !v11
+    !v10
+    !v9
+    !v8
+    !v7
+    !v6
+    !v5
+    !v4
+    !v3
+    !v2
+    !v1
+    !v0
+    !src
+    !uniform
+    return

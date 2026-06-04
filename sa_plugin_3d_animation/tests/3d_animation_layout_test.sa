@@ -1,0 +1,179 @@
+@import "../3d_animation.sal"
+
+@test "3d_animation clip init and duration"():
+L_ENTRY:
+    c = alloc SA3D_ANIMATION_CLIP_SIZE
+    call @sa3d_animation_clip_init(&c)
+    dur0 = call @sa3d_animation_clip_get_duration(&c)
+    curves0 = call @sa3d_animation_clip_get_curve_count(&c)
+    dur0_ok = eq dur0, 0
+    curves0_ok = eq curves0, 0
+    ok0 = and dur0_ok, curves0_ok
+    br ok0 -> L_STEP2, L_ERR
+L_STEP2:
+    call @sa3d_animation_clip_set_duration(&c, 2000)
+    call @sa3d_animation_clip_set_curve_count(&c, 7)
+    dur1 = call @sa3d_animation_clip_get_duration(&c)
+    curves1 = call @sa3d_animation_clip_get_curve_count(&c)
+    dur1_ok = eq dur1, 2000
+    curves1_ok = eq curves1, 7
+    !c
+    ok = and dur1_ok, curves1_ok
+    br ok -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !c
+    panic(3080)
+L_ERR2:
+    panic(3081)
+
+@test "3d_animation player init and tick"():
+L_ENTRY:
+    p = alloc SA3D_ANIMATION_PLAYER_SIZE
+    call @sa3d_animation_player_init(&p)
+    t0 = call @sa3d_animation_player_get_time(&p)
+    t0_ok = eq t0, 0
+    br t0_ok -> L_STEP2, L_ERR
+L_STEP2:
+    call @sa3d_animation_player_tick(&p, 16)
+    call @sa3d_animation_player_tick(&p, 17)
+    t1 = call @sa3d_animation_player_get_time(&p)
+    t1_ok = eq t1, 33
+    br t1_ok -> L_STEP3, L_ERR2
+L_STEP3:
+    call @sa3d_animation_player_play(&p)
+    fl2 = call @sa3d_animation_player_get_flags(&p)
+    fl2_ok = eq fl2, 1
+    call @sa3d_animation_player_pause(&p)
+    fl3 = call @sa3d_animation_player_get_flags(&p)
+    fl3_ok = eq fl3, 3
+    ok = and fl2_ok, fl3_ok
+    !p
+    br ok -> L_OK, L_ERR3
+L_OK:
+    return 0
+L_ERR:
+    !p
+    panic(3082)
+L_ERR2:
+    !p
+    panic(3083)
+L_ERR3:
+    panic(3084)
+
+@test "3d_animation sampler channel and clip config validation"():
+L_ENTRY:
+    c = alloc SA3D_ANIMATION_CLIP_SIZE
+    sampler = alloc SA3D_ANIMATION_SAMPLER_SIZE
+    channel = alloc SA3D_ANIMATION_CHANNEL_SIZE
+    times = alloc 24
+    values = alloc 48
+    call @sa3d_animation_clip_init(&c)
+    call @sa3d_animation_clip_set_duration(&c, -5)
+    dur = call @sa3d_animation_clip_get_duration(&c)
+    dur_ok = eq dur, 0
+    call @sa3d_animation_clip_set_name(&c, 1234, 4)
+    call @sa3d_animation_clip_set_samplers(&c, 2222, 1)
+    call @sa3d_animation_clip_set_channels(&c, 3333, 1)
+    name_len = load c+SA3D_ANIMATION_CLIP_name_len as i64
+    samplers_len = load c+SA3D_ANIMATION_CLIP_samplers_len as i64
+    channels_len = load c+SA3D_ANIMATION_CLIP_channels_len as i64
+    name_ok = eq name_len, 4
+    samplers_ok = eq samplers_len, 1
+    channels_ok = eq channels_len, 1
+    call @sa3d_animation_sampler_init(&sampler, 4444, 3, 5555, 3, 16, SA3D_ANIMATION_INTERPOLATION_LINEAR)
+    sampler_ok = call @sa3d_animation_sampler_is_valid(&sampler)
+    call @sa3d_animation_channel_init(&channel, 77, SA3D_ANIMATION_TARGET_TRANSLATION, 0)
+    channel_ok = call @sa3d_animation_channel_is_valid(&channel, 1)
+    interp_bad = call @sa3d_animation_interpolation_is_valid(99)
+    target_bad = call @sa3d_animation_target_path_is_valid(99)
+    interp_bad_ok = eq interp_bad, 0
+    target_bad_ok = eq target_bad, 0
+    a = and dur_ok, name_ok
+    b = and samplers_ok, channels_ok
+    d = and sampler_ok, channel_ok
+    e = and interp_bad_ok, target_bad_ok
+    ab = and a, b
+    de = and d, e
+    ok = and ab, de
+    !values
+    !times
+    !channel
+    !sampler
+    !c
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3085)
+
+@test "3d_animation player duration tick follows play pause finish repeat"():
+L_ENTRY:
+    p = alloc SA3D_ANIMATION_PLAYER_SIZE
+    call @sa3d_animation_player_init(&p)
+    call @sa3d_animation_player_play(&p)
+    c0 = call @sa3d_animation_player_tick_duration(&p, 40, 100)
+    t0 = call @sa3d_animation_player_get_time(&p)
+    t0_ok = eq t0, 40
+    c0_ok = eq c0, 0
+    call @sa3d_animation_player_pause(&p)
+    c1 = call @sa3d_animation_player_tick_duration(&p, 40, 100)
+    t1 = call @sa3d_animation_player_get_time(&p)
+    t1_ok = eq t1, 40
+    c1_ok = eq c1, 0
+    call @sa3d_animation_player_play(&p)
+    c2 = call @sa3d_animation_player_tick_duration(&p, 70, 100)
+    t2 = call @sa3d_animation_player_get_time(&p)
+    finished = call @sa3d_animation_player_is_finished(&p)
+    t2_ok = eq t2, 100
+    c2_ok = eq c2, 1
+    finished_ok = eq finished, 1
+    call @sa3d_animation_player_stop(&p)
+    call @sa3d_animation_player_set_repeat(&p, 1)
+    call @sa3d_animation_player_play(&p)
+    c3 = call @sa3d_animation_player_tick_duration(&p, 125, 100)
+    t3 = call @sa3d_animation_player_get_time(&p)
+    t3_ok = eq t3, 25
+    c3_ok = eq c3, 1
+    a = and t0_ok, c0_ok
+    b = and t1_ok, c1_ok
+    c = and t2_ok, c2_ok
+    d = and finished_ok, t3_ok
+    e = and c3_ok, a
+    f = and b, c
+    g = and d, e
+    ok = and f, g
+    !p
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3086)
+
+@test "3d_animation keyframe index and progress"():
+L_ENTRY:
+    times = alloc 24
+    store times+0, 0 as i64
+    store times+8, 100 as i64
+    store times+16, 250 as i64
+    idx0 = call @sa3d_animation_keyframe_index_i64(&times, 3, -5)
+    idx1 = call @sa3d_animation_keyframe_index_i64(&times, 3, 150)
+    idx2 = call @sa3d_animation_keyframe_index_i64(&times, 3, 300)
+    prog0 = call @sa3d_animation_keyframe_progress_per_mille_i64(&times, 3, 0, 50)
+    prog1 = call @sa3d_animation_keyframe_progress_per_mille_i64(&times, 3, 1, 175)
+    idx0_ok = eq idx0, 0
+    idx1_ok = eq idx1, 1
+    idx2_ok = eq idx2, 2
+    prog0_ok = eq prog0, 500
+    prog1_ok = eq prog1, 500
+    a = and idx0_ok, idx1_ok
+    b = and idx2_ok, prog0_ok
+    c = and a, b
+    ok = and c, prog1_ok
+    !times
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3087)

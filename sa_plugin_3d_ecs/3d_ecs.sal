@@ -1,0 +1,1820 @@
+#def SA3D_ECS_VERSION_MAJOR = 0
+#def SA3D_ECS_VERSION_MINOR = 1
+
+#def SA3D_ECS_ENTITY_ID_index = +0
+#def SA3D_ECS_ENTITY_ID_generation = +8
+#def SA3D_ECS_ENTITY_ID_SIZE = 16
+
+#def SA3D_ECS_COMPONENT_DESC_type_id = +0
+#def SA3D_ECS_COMPONENT_DESC_size = +8
+#def SA3D_ECS_COMPONENT_DESC_align = +16
+#def SA3D_ECS_COMPONENT_DESC_name_ptr = +24
+#def SA3D_ECS_COMPONENT_DESC_name_len = +32
+#def SA3D_ECS_COMPONENT_DESC_SIZE = 40
+
+#def SA3D_ECS_QUERY_TERM_component_type = +0
+#def SA3D_ECS_QUERY_TERM_access = +8
+#def SA3D_ECS_QUERY_TERM_flags = +12
+#def SA3D_ECS_QUERY_TERM_SIZE = 16
+
+#def SA3D_ECS_QUERY_ACCESS_READ = 1
+#def SA3D_ECS_QUERY_ACCESS_WRITE = 2
+#def SA3D_ECS_QUERY_ACCESS_WITH = 3
+#def SA3D_ECS_QUERY_ACCESS_WITHOUT = 4
+
+#def SA3D_ECS_QUERY_DESC_terms_ptr = +0
+#def SA3D_ECS_QUERY_DESC_terms_len = +8
+#def SA3D_ECS_QUERY_DESC_result_stride = +16
+#def SA3D_ECS_QUERY_DESC_SIZE = 24
+
+#def SA3D_ECS_WORLD_DESC_components_ptr = +0
+#def SA3D_ECS_WORLD_DESC_components_len = +8
+#def SA3D_ECS_WORLD_DESC_entity_capacity = +16
+#def SA3D_ECS_WORLD_DESC_FLAGS = +24
+#def SA3D_ECS_WORLD_DESC_SIZE = 32
+
+#def SA3D_ECS_ENTITY_META_generation = +0
+#def SA3D_ECS_ENTITY_META_spawned = +8
+#def SA3D_ECS_ENTITY_META_SIZE = 16
+
+#def SA3D_ECS_WORLD_STATE_metas_ptr = +0
+#def SA3D_ECS_WORLD_STATE_capacity = +8
+#def SA3D_ECS_WORLD_STATE_next_index = +16
+#def SA3D_ECS_WORLD_STATE_alive_count = +24
+#def SA3D_ECS_WORLD_STATE_dead_count = +32
+#def SA3D_ECS_WORLD_STATE_free_indices_ptr = +40
+#def SA3D_ECS_WORLD_STATE_free_count = +48
+#def SA3D_ECS_WORLD_STATE_SIZE = 56
+
+@sa3d_ecs_entity_id_init(&entity: ptr, index: i64, generation: i64) -> void:
+L_ENTRY:
+    store entity+SA3D_ECS_ENTITY_ID_index, index as i64
+    store entity+SA3D_ECS_ENTITY_ID_generation, generation as i64
+    !generation
+    !index
+    !entity
+    return
+
+@sa3d_ecs_entity_id_get_index(&entity: ptr) -> i64:
+L_ENTRY:
+    idx = load entity+SA3D_ECS_ENTITY_ID_index as i64
+    !entity
+    return idx
+
+@sa3d_ecs_entity_id_get_generation(&entity: ptr) -> i64:
+L_ENTRY:
+    gen = load entity+SA3D_ECS_ENTITY_ID_generation as i64
+    !entity
+    return gen
+
+@sa3d_ecs_entity_id_equal(&a: ptr, &b: ptr) -> i32:
+L_ENTRY:
+    a_idx = load a+SA3D_ECS_ENTITY_ID_index as i64
+    b_idx = load b+SA3D_ECS_ENTITY_ID_index as i64
+    a_gen = load a+SA3D_ECS_ENTITY_ID_generation as i64
+    b_gen = load b+SA3D_ECS_ENTITY_ID_generation as i64
+    idx_eq = eq a_idx, b_idx
+    gen_eq = eq a_gen, b_gen
+    ok = and idx_eq, gen_eq
+    !b_gen
+    !a_gen
+    !b_idx
+    !a_idx
+    !b
+    !a
+    br ok -> L_YES, L_NO
+L_YES:
+    !ok
+    return 1
+L_NO:
+    !ok
+    return 0
+
+@sa3d_ecs_component_desc_init(&desc: ptr, type_id: i64, size: i64, align: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_ECS_COMPONENT_DESC_type_id, type_id as i64
+    store desc+SA3D_ECS_COMPONENT_DESC_size, size as i64
+    store desc+SA3D_ECS_COMPONENT_DESC_align, align as i64
+    store desc+SA3D_ECS_COMPONENT_DESC_name_ptr, 0 as i64
+    store desc+SA3D_ECS_COMPONENT_DESC_name_len, 0 as i64
+    !align
+    !size
+    !type_id
+    !desc
+    return
+
+@sa3d_ecs_query_term_init(&term: ptr, component_type: i64, access: i32, flags: i32) -> void:
+L_ENTRY:
+    store term+SA3D_ECS_QUERY_TERM_component_type, component_type as i64
+    store term+SA3D_ECS_QUERY_TERM_access, access as i32
+    store term+SA3D_ECS_QUERY_TERM_flags, flags as i32
+    !flags
+    !access
+    !component_type
+    !term
+    return
+
+@sa3d_ecs_query_desc_init(&desc: ptr, terms: ptr, terms_len: i64, result_stride: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_ECS_QUERY_DESC_terms_ptr, terms as ptr
+    store desc+SA3D_ECS_QUERY_DESC_terms_len, terms_len as i64
+    store desc+SA3D_ECS_QUERY_DESC_result_stride, result_stride as i64
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return
+
+@sa3d_ecs_query_access_is_data(access: i32) -> i32:
+L_ENTRY:
+    is_read = eq access, SA3D_ECS_QUERY_ACCESS_READ
+    is_write = eq access, SA3D_ECS_QUERY_ACCESS_WRITE
+    ok = or is_read, is_write
+    br ok -> L_YES, L_NO
+L_YES:
+    !ok
+    !is_write
+    !is_read
+    !access
+    return 1
+L_NO:
+    !ok
+    !is_write
+    !is_read
+    !access
+    return 0
+
+@sa3d_ecs_query_access_is_filter(access: i32) -> i32:
+L_ENTRY:
+    is_with = eq access, SA3D_ECS_QUERY_ACCESS_WITH
+    is_without = eq access, SA3D_ECS_QUERY_ACCESS_WITHOUT
+    ok = or is_with, is_without
+    br ok -> L_YES, L_NO
+L_YES:
+    !ok
+    !is_without
+    !is_with
+    !access
+    return 1
+L_NO:
+    !ok
+    !is_without
+    !is_with
+    !access
+    return 0
+
+@sa3d_ecs_query_access_is_valid(access: i32) -> i32:
+L_ENTRY:
+    is_data = call @sa3d_ecs_query_access_is_data(access)
+    br is_data -> L_YES, L_CHECK_FILTER
+L_CHECK_FILTER:
+    is_filter = call @sa3d_ecs_query_access_is_filter(access)
+    br is_filter -> L_YES_FILTER, L_NO
+L_YES:
+    !is_data
+    !access
+    return 1
+L_YES_FILTER:
+    !is_filter
+    !is_data
+    !access
+    return 1
+L_NO:
+    !is_filter
+    !is_data
+    !access
+    return 0
+
+@sa3d_ecs_query_terms_conflict(&a: ptr, &b: ptr) -> i32:
+L_ENTRY:
+    a_component = load a+SA3D_ECS_QUERY_TERM_component_type as i64
+    b_component = load b+SA3D_ECS_QUERY_TERM_component_type as i64
+    same_component = eq a_component, b_component
+    br same_component -> L_CHECK_ACCESS, L_NO
+
+L_CHECK_ACCESS:
+    a_access = load a+SA3D_ECS_QUERY_TERM_access as i32
+    b_access = load b+SA3D_ECS_QUERY_TERM_access as i32
+    a_data = call @sa3d_ecs_query_access_is_data(a_access)
+    b_data = call @sa3d_ecs_query_access_is_data(b_access)
+    both_data = and a_data, b_data
+    br both_data -> L_CHECK_WRITE, L_NO_ACCESS
+
+L_CHECK_WRITE:
+    a_write = eq a_access, SA3D_ECS_QUERY_ACCESS_WRITE
+    b_write = eq b_access, SA3D_ECS_QUERY_ACCESS_WRITE
+    any_write = or a_write, b_write
+    br any_write -> L_YES, L_NO_WRITE
+
+L_YES:
+    !any_write
+    !b_write
+    !a_write
+    !both_data
+    !b_data
+    !a_data
+    !b_access
+    !a_access
+    !same_component
+    !b_component
+    !a_component
+    !b
+    !a
+    return 1
+
+L_NO_WRITE:
+    !any_write
+    !b_write
+    !a_write
+    !both_data
+    !b_data
+    !a_data
+    !b_access
+    !a_access
+    !same_component
+    !b_component
+    !a_component
+    !b
+    !a
+    return 0
+
+L_NO_ACCESS:
+    !both_data
+    !b_data
+    !a_data
+    !b_access
+    !a_access
+    !same_component
+    !b_component
+    !a_component
+    !b
+    !a
+    return 0
+
+L_NO:
+    !same_component
+    !b_component
+    !a_component
+    !b
+    !a
+    return 0
+
+@sa3d_ecs_query_term_requires_with(&term: ptr) -> i32:
+L_ENTRY:
+    access = load term+SA3D_ECS_QUERY_TERM_access as i32
+    is_data = call @sa3d_ecs_query_access_is_data(access)
+    is_with = eq access, SA3D_ECS_QUERY_ACCESS_WITH
+    required = or is_data, is_with
+    br required -> L_YES, L_NO
+L_YES:
+    !required
+    !is_with
+    !is_data
+    !access
+    !term
+    return 1
+L_NO:
+    !required
+    !is_with
+    !is_data
+    !access
+    !term
+    return 0
+
+@sa3d_ecs_query_term_is_without(&term: ptr) -> i32:
+L_ENTRY:
+    access = load term+SA3D_ECS_QUERY_TERM_access as i32
+    is_without = eq access, SA3D_ECS_QUERY_ACCESS_WITHOUT
+    br is_without -> L_YES, L_NO
+L_YES:
+    !is_without
+    !access
+    !term
+    return 1
+L_NO:
+    !is_without
+    !access
+    !term
+    return 0
+
+@sa3d_ecs_query_desc_has_required_with(&desc: ptr, component_type: i64) -> i32:
+L_ENTRY:
+    terms = load desc+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    terms_len = load desc+SA3D_ECS_QUERY_DESC_terms_len as i64
+    has_terms = sgt terms_len, 0
+    br has_terms -> L_REQUIRE_PTR, L_NO_EMPTY
+
+L_REQUIRE_PTR:
+    has_ptr = ne terms, 0
+    br has_ptr -> L_LOOP_SETUP, L_NO_PTR
+
+L_LOOP_SETUP:
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_LOOP_HEAD
+
+L_LOOP_HEAD:
+    i = load i_slot+0 as i64
+    more = slt i, terms_len
+    br more -> L_LOOP_BODY, L_NO
+
+L_LOOP_BODY:
+    offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add terms, offset
+    term_component = load term+SA3D_ECS_QUERY_TERM_component_type as i64
+    same = eq term_component, component_type
+    br same -> L_CHECK_REQUIRED, L_NEXT
+
+L_CHECK_REQUIRED:
+    required = call @sa3d_ecs_query_term_requires_with(&term)
+    br required -> L_YES, L_NEXT_REQUIRED
+
+L_NEXT_REQUIRED:
+    !required
+    jmp L_NEXT
+
+L_NEXT:
+    next_i = add i, 1
+    store i_slot+0, next_i as i64
+    !next_i
+    !same
+    !term_component
+    !term
+    !offset
+    !more
+    !i
+    jmp L_LOOP_HEAD
+
+L_YES:
+    !required
+    !same
+    !term_component
+    !term
+    !offset
+    !more
+    !i
+    !has_ptr
+    !has_terms
+    !terms_len
+    !terms
+    !component_type
+    !desc
+    return 1
+
+L_NO:
+    !more
+    !i
+    !has_ptr
+    !has_terms
+    !terms_len
+    !terms
+    !component_type
+    !desc
+    return 0
+
+L_NO_PTR:
+    !has_ptr
+    !has_terms
+    !terms_len
+    !terms
+    !component_type
+    !desc
+    return 0
+
+L_NO_EMPTY:
+    !has_terms
+    !terms_len
+    !terms
+    !component_type
+    !desc
+    return 0
+
+@sa3d_ecs_query_desc_has_without(&desc: ptr, component_type: i64) -> i32:
+L_ENTRY:
+    terms = load desc+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    terms_len = load desc+SA3D_ECS_QUERY_DESC_terms_len as i64
+    has_terms = sgt terms_len, 0
+    br has_terms -> L_REQUIRE_PTR, L_NO_EMPTY
+
+L_REQUIRE_PTR:
+    has_ptr = ne terms, 0
+    br has_ptr -> L_LOOP_SETUP, L_NO_PTR
+
+L_LOOP_SETUP:
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_LOOP_HEAD
+
+L_LOOP_HEAD:
+    i = load i_slot+0 as i64
+    more = slt i, terms_len
+    br more -> L_LOOP_BODY, L_NO
+
+L_LOOP_BODY:
+    offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add terms, offset
+    term_component = load term+SA3D_ECS_QUERY_TERM_component_type as i64
+    same = eq term_component, component_type
+    br same -> L_CHECK_WITHOUT, L_NEXT
+
+L_CHECK_WITHOUT:
+    without = call @sa3d_ecs_query_term_is_without(&term)
+    br without -> L_YES, L_NEXT_WITHOUT
+
+L_NEXT_WITHOUT:
+    !without
+    jmp L_NEXT
+
+L_NEXT:
+    next_i = add i, 1
+    store i_slot+0, next_i as i64
+    !next_i
+    !same
+    !term_component
+    !term
+    !offset
+    !more
+    !i
+    jmp L_LOOP_HEAD
+
+L_YES:
+    !without
+    !same
+    !term_component
+    !term
+    !offset
+    !more
+    !i
+    !has_ptr
+    !has_terms
+    !terms_len
+    !terms
+    !component_type
+    !desc
+    return 1
+
+L_NO:
+    !more
+    !i
+    !has_ptr
+    !has_terms
+    !terms_len
+    !terms
+    !component_type
+    !desc
+    return 0
+
+L_NO_PTR:
+    !has_ptr
+    !has_terms
+    !terms_len
+    !terms
+    !component_type
+    !desc
+    return 0
+
+L_NO_EMPTY:
+    !has_terms
+    !terms_len
+    !terms
+    !component_type
+    !desc
+    return 0
+
+@sa3d_ecs_query_descs_have_data_conflict(&a: ptr, &b: ptr) -> i32:
+L_ENTRY:
+    a_terms = load a+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    a_len = load a+SA3D_ECS_QUERY_DESC_terms_len as i64
+    b_terms = load b+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    b_len = load b+SA3D_ECS_QUERY_DESC_terms_len as i64
+    i_slot = stack_alloc 8
+    j_slot = stack_alloc 8
+    a_term_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_OUTER_HEAD
+
+L_OUTER_HEAD:
+    i = load i_slot+0 as i64
+    more_a = slt i, a_len
+    br more_a -> L_OUTER_BODY, L_NO
+
+L_OUTER_BODY:
+    a_offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    a_term = ptr_add a_terms, a_offset
+    store a_term_slot+0, a_term as ptr
+    a_access = load a_term+SA3D_ECS_QUERY_TERM_access as i32
+    a_data = call @sa3d_ecs_query_access_is_data(a_access)
+    br a_data -> L_INNER_SETUP, L_NEXT_OUTER_DATA
+
+L_INNER_SETUP:
+    store j_slot+0, 0 as i64
+    jmp L_INNER_HEAD
+
+L_INNER_HEAD:
+    j = load j_slot+0 as i64
+    more_b = slt j, b_len
+    br more_b -> L_INNER_BODY, L_NEXT_OUTER
+
+L_INNER_BODY:
+    b_offset = mul j, SA3D_ECS_QUERY_TERM_SIZE
+    b_term = ptr_add b_terms, b_offset
+    current_a_term = load a_term_slot+0 as ptr
+    conflict = call @sa3d_ecs_query_terms_conflict(&current_a_term, &b_term)
+    br conflict -> L_YES, L_NEXT_INNER
+
+L_NEXT_INNER:
+    j_next = add j, 1
+    store j_slot+0, j_next as i64
+    !j_next
+    !conflict
+    !current_a_term
+    !b_term
+    !b_offset
+    !more_b
+    !j
+    jmp L_INNER_HEAD
+
+L_NEXT_OUTER:
+    !j
+    !more_b
+    jmp L_NEXT_OUTER_DATA
+
+L_NEXT_OUTER_DATA:
+    i_next = add i, 1
+    store i_slot+0, i_next as i64
+    !i_next
+    !a_data
+    !a_access
+    !a_term
+    !a_offset
+    !more_a
+    !i
+    jmp L_OUTER_HEAD
+
+L_YES:
+    !conflict
+    !current_a_term
+    !b_term
+    !b_offset
+    !more_b
+    !j
+    !a_data
+    !a_access
+    !a_term
+    !a_offset
+    !more_a
+    !i
+    !b_len
+    !b_terms
+    !a_len
+    !a_terms
+    !b
+    !a
+    return 1
+
+L_NO:
+    !more_a
+    !i
+    !b_len
+    !b_terms
+    !a_len
+    !a_terms
+    !b
+    !a
+    return 0
+
+@sa3d_ecs_query_descs_filters_disjoint(&a: ptr, &b: ptr) -> i32:
+L_ENTRY:
+    a_terms = load a+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    a_len = load a+SA3D_ECS_QUERY_DESC_terms_len as i64
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_LOOP_HEAD
+
+L_LOOP_HEAD:
+    i = load i_slot+0 as i64
+    more = slt i, a_len
+    br more -> L_LOOP_BODY, L_NO
+
+L_LOOP_BODY:
+    offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add a_terms, offset
+    component = load term+SA3D_ECS_QUERY_TERM_component_type as i64
+    required = call @sa3d_ecs_query_term_requires_with(&term)
+    br required -> L_CHECK_B_WITHOUT, L_CHECK_A_WITHOUT
+
+L_CHECK_B_WITHOUT:
+    b_without = call @sa3d_ecs_query_desc_has_without(&b, component)
+    br b_without -> L_YES_REQUIRED, L_CHECK_A_WITHOUT_FROM_REQUIRED
+
+L_CHECK_A_WITHOUT_FROM_REQUIRED:
+    !b_without
+    jmp L_CHECK_A_WITHOUT
+
+L_CHECK_A_WITHOUT:
+    without = call @sa3d_ecs_query_term_is_without(&term)
+    br without -> L_CHECK_B_REQUIRED, L_NEXT_WITHOUT
+
+L_CHECK_B_REQUIRED:
+    b_required = call @sa3d_ecs_query_desc_has_required_with(&b, component)
+    br b_required -> L_YES_WITHOUT, L_NEXT_REQUIRED
+
+L_NEXT_REQUIRED:
+    !b_required
+    jmp L_NEXT_WITHOUT
+
+L_NEXT_WITHOUT:
+    !without
+    jmp L_NEXT
+
+L_NEXT:
+    next_i = add i, 1
+    store i_slot+0, next_i as i64
+    !next_i
+    !required
+    !component
+    !term
+    !offset
+    !more
+    !i
+    jmp L_LOOP_HEAD
+
+L_YES_REQUIRED:
+    !b_without
+    !required
+    !component
+    !term
+    !offset
+    !more
+    !i
+    !a_len
+    !a_terms
+    !b
+    !a
+    return 1
+
+L_YES_WITHOUT:
+    !b_required
+    !without
+    !required
+    !component
+    !term
+    !offset
+    !more
+    !i
+    !a_len
+    !a_terms
+    !b
+    !a
+    return 1
+
+L_NO:
+    !more
+    !i
+    !a_len
+    !a_terms
+    !b
+    !a
+    return 0
+
+@sa3d_ecs_query_desc_has_filter_terms(&desc: ptr) -> i32:
+L_ENTRY:
+    terms = load desc+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    terms_len = load desc+SA3D_ECS_QUERY_DESC_terms_len as i64
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_HEAD
+
+L_HEAD:
+    i = load i_slot+0 as i64
+    more = slt i, terms_len
+    br more -> L_BODY, L_NO
+
+L_BODY:
+    offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add terms, offset
+    access = load term+SA3D_ECS_QUERY_TERM_access as i32
+    is_filter = call @sa3d_ecs_query_access_is_filter(access)
+    br is_filter -> L_YES, L_NEXT
+
+L_NEXT:
+    next = add i, 1
+    store i_slot+0, next as i64
+    !next
+    !is_filter
+    !access
+    !term
+    !offset
+    !more
+    !i
+    jmp L_HEAD
+
+L_YES:
+    !is_filter
+    !access
+    !term
+    !offset
+    !more
+    !i
+    !terms_len
+    !terms
+    !desc
+    return 1
+
+L_NO:
+    !more
+    !i
+    !terms_len
+    !terms
+    !desc
+    return 0
+
+@sa3d_ecs_query_desc_set_has_with(&desc: ptr, set_id: i32, component_type: i64) -> i32:
+L_ENTRY:
+    terms = load desc+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    terms_len = load desc+SA3D_ECS_QUERY_DESC_terms_len as i64
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_HEAD
+
+L_HEAD:
+    i = load i_slot+0 as i64
+    more = slt i, terms_len
+    br more -> L_BODY, L_NO
+
+L_BODY:
+    offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add terms, offset
+    component = load term+SA3D_ECS_QUERY_TERM_component_type as i64
+    same_component = eq component, component_type
+    br same_component -> L_CHECK_ACCESS, L_NEXT
+
+L_CHECK_ACCESS:
+    access = load term+SA3D_ECS_QUERY_TERM_access as i32
+    is_data = call @sa3d_ecs_query_access_is_data(access)
+    br is_data -> L_YES_DATA, L_CHECK_WITH
+
+L_CHECK_WITH:
+    is_with = eq access, SA3D_ECS_QUERY_ACCESS_WITH
+    br is_with -> L_CHECK_SET, L_NEXT_ACCESS
+
+L_CHECK_SET:
+    flags = load term+SA3D_ECS_QUERY_TERM_flags as i32
+    same_set = eq flags, set_id
+    br same_set -> L_YES_SET, L_NEXT_SET
+
+L_NEXT_SET:
+    !same_set
+    !flags
+    jmp L_NEXT_ACCESS
+
+L_NEXT_ACCESS:
+    !is_with
+    !is_data
+    !access
+    jmp L_NEXT
+
+L_NEXT:
+    next = add i, 1
+    store i_slot+0, next as i64
+    !next
+    !same_component
+    !component
+    !term
+    !offset
+    !more
+    !i
+    jmp L_HEAD
+
+L_YES_DATA:
+    !is_data
+    !access
+    !same_component
+    !component
+    !term
+    !offset
+    !more
+    !i
+    !terms_len
+    !terms
+    !component_type
+    !set_id
+    !desc
+    return 1
+
+L_YES_SET:
+    !same_set
+    !flags
+    !is_with
+    !is_data
+    !access
+    !same_component
+    !component
+    !term
+    !offset
+    !more
+    !i
+    !terms_len
+    !terms
+    !component_type
+    !set_id
+    !desc
+    return 1
+
+L_NO:
+    !more
+    !i
+    !terms_len
+    !terms
+    !component_type
+    !set_id
+    !desc
+    return 0
+
+@sa3d_ecs_query_desc_set_has_without(&desc: ptr, set_id: i32, component_type: i64) -> i32:
+L_ENTRY:
+    terms = load desc+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    terms_len = load desc+SA3D_ECS_QUERY_DESC_terms_len as i64
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_HEAD
+
+L_HEAD:
+    i = load i_slot+0 as i64
+    more = slt i, terms_len
+    br more -> L_BODY, L_NO
+
+L_BODY:
+    offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add terms, offset
+    component = load term+SA3D_ECS_QUERY_TERM_component_type as i64
+    same_component = eq component, component_type
+    br same_component -> L_CHECK_ACCESS, L_NEXT
+
+L_CHECK_ACCESS:
+    access = load term+SA3D_ECS_QUERY_TERM_access as i32
+    is_without = eq access, SA3D_ECS_QUERY_ACCESS_WITHOUT
+    br is_without -> L_CHECK_SET, L_NEXT_ACCESS
+
+L_CHECK_SET:
+    flags = load term+SA3D_ECS_QUERY_TERM_flags as i32
+    same_set = eq flags, set_id
+    br same_set -> L_YES, L_NEXT_SET
+
+L_NEXT_SET:
+    !same_set
+    !flags
+    jmp L_NEXT_ACCESS
+
+L_NEXT_ACCESS:
+    !is_without
+    !access
+    jmp L_NEXT
+
+L_NEXT:
+    next = add i, 1
+    store i_slot+0, next as i64
+    !next
+    !same_component
+    !component
+    !term
+    !offset
+    !more
+    !i
+    jmp L_HEAD
+
+L_YES:
+    !same_set
+    !flags
+    !is_without
+    !access
+    !same_component
+    !component
+    !term
+    !offset
+    !more
+    !i
+    !terms_len
+    !terms
+    !component_type
+    !set_id
+    !desc
+    return 1
+
+L_NO:
+    !more
+    !i
+    !terms_len
+    !terms
+    !component_type
+    !set_id
+    !desc
+    return 0
+
+@sa3d_ecs_query_filter_sets_ruled_out(&a: ptr, a_set: i32, &b: ptr, b_set: i32) -> i32:
+L_ENTRY:
+    a_terms = load a+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    a_len = load a+SA3D_ECS_QUERY_DESC_terms_len as i64
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_A_HEAD
+
+L_A_HEAD:
+    i = load i_slot+0 as i64
+    more = slt i, a_len
+    br more -> L_A_BODY, L_CHECK_B
+
+L_A_BODY:
+    offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add a_terms, offset
+    component = load term+SA3D_ECS_QUERY_TERM_component_type as i64
+    a_has_with = call @sa3d_ecs_query_desc_set_has_with(&a, a_set, component)
+    br a_has_with -> L_A_CHECK_B_WITHOUT, L_A_CHECK_WITHOUT
+
+L_A_CHECK_B_WITHOUT:
+    b_without = call @sa3d_ecs_query_desc_set_has_without(&b, b_set, component)
+    br b_without -> L_YES_A_WITH, L_A_CHECK_WITHOUT_FROM_WITH
+
+L_A_CHECK_WITHOUT_FROM_WITH:
+    !b_without
+    jmp L_A_CHECK_WITHOUT
+
+L_A_CHECK_WITHOUT:
+    a_without = call @sa3d_ecs_query_desc_set_has_without(&a, a_set, component)
+    br a_without -> L_A_CHECK_B_WITH, L_A_NEXT_WITHOUT
+
+L_A_CHECK_B_WITH:
+    b_with = call @sa3d_ecs_query_desc_set_has_with(&b, b_set, component)
+    br b_with -> L_YES_A_WITHOUT, L_A_NEXT_B_WITH
+
+L_A_NEXT_B_WITH:
+    !b_with
+    jmp L_A_NEXT_WITHOUT
+
+L_A_NEXT_WITHOUT:
+    !a_without
+    jmp L_A_NEXT
+
+L_A_NEXT:
+    next = add i, 1
+    store i_slot+0, next as i64
+    !next
+    !a_has_with
+    !component
+    !term
+    !offset
+    !more
+    !i
+    jmp L_A_HEAD
+
+L_CHECK_B:
+    b_terms = load b+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    b_len = load b+SA3D_ECS_QUERY_DESC_terms_len as i64
+    j_slot = stack_alloc 8
+    store j_slot+0, 0 as i64
+    jmp L_B_HEAD
+
+L_B_HEAD:
+    j = load j_slot+0 as i64
+    more_b = slt j, b_len
+    br more_b -> L_B_BODY, L_NO
+
+L_B_BODY:
+    b_offset = mul j, SA3D_ECS_QUERY_TERM_SIZE
+    b_term = ptr_add b_terms, b_offset
+    b_component = load b_term+SA3D_ECS_QUERY_TERM_component_type as i64
+    b_has_with = call @sa3d_ecs_query_desc_set_has_with(&b, b_set, b_component)
+    br b_has_with -> L_B_CHECK_A_WITHOUT, L_B_CHECK_WITHOUT
+
+L_B_CHECK_A_WITHOUT:
+    a_without2 = call @sa3d_ecs_query_desc_set_has_without(&a, a_set, b_component)
+    br a_without2 -> L_YES_B_WITH, L_B_CHECK_WITHOUT_FROM_WITH
+
+L_B_CHECK_WITHOUT_FROM_WITH:
+    !a_without2
+    jmp L_B_CHECK_WITHOUT
+
+L_B_CHECK_WITHOUT:
+    b_without2 = call @sa3d_ecs_query_desc_set_has_without(&b, b_set, b_component)
+    br b_without2 -> L_B_CHECK_A_WITH, L_B_NEXT_WITHOUT
+
+L_B_CHECK_A_WITH:
+    a_with2 = call @sa3d_ecs_query_desc_set_has_with(&a, a_set, b_component)
+    br a_with2 -> L_YES_B_WITHOUT, L_B_NEXT_A_WITH
+
+L_B_NEXT_A_WITH:
+    !a_with2
+    jmp L_B_NEXT_WITHOUT
+
+L_B_NEXT_WITHOUT:
+    !b_without2
+    jmp L_B_NEXT
+
+L_B_NEXT:
+    j_next = add j, 1
+    store j_slot+0, j_next as i64
+    !j_next
+    !b_has_with
+    !b_component
+    !b_term
+    !b_offset
+    !more_b
+    !j
+    jmp L_B_HEAD
+
+L_YES_A_WITH:
+    !b_without
+    !a_has_with
+    !component
+    !term
+    !offset
+    !more
+    !i
+    !a_len
+    !a_terms
+    !b_set
+    !b
+    !a_set
+    !a
+    return 1
+
+L_YES_A_WITHOUT:
+    !b_with
+    !a_without
+    !a_has_with
+    !component
+    !term
+    !offset
+    !more
+    !i
+    !a_len
+    !a_terms
+    !b_set
+    !b
+    !a_set
+    !a
+    return 1
+
+L_YES_B_WITH:
+    !a_without2
+    !b_has_with
+    !b_component
+    !b_term
+    !b_offset
+    !more_b
+    !j
+    !b_len
+    !b_terms
+    !a_len
+    !a_terms
+    !b_set
+    !b
+    !a_set
+    !a
+    return 1
+
+L_YES_B_WITHOUT:
+    !a_with2
+    !b_without2
+    !b_has_with
+    !b_component
+    !b_term
+    !b_offset
+    !more_b
+    !j
+    !b_len
+    !b_terms
+    !a_len
+    !a_terms
+    !b_set
+    !b
+    !a_set
+    !a
+    return 1
+
+L_NO:
+    !more_b
+    !j
+    !b_len
+    !b_terms
+    !a_len
+    !a_terms
+    !b_set
+    !b
+    !a_set
+    !a
+    return 0
+
+@sa3d_ecs_query_descs_filters_dnf_compatible(&a: ptr, &b: ptr) -> i32:
+L_ENTRY:
+    a_has_filters = call @sa3d_ecs_query_desc_has_filter_terms(&a)
+    br a_has_filters -> L_A_FILTER_OUTER_SETUP, L_A_DEFAULT
+
+L_A_DEFAULT:
+    b_default_result = call @sa3d_ecs_query_descs_filters_dnf_compatible_for_a_set(&a, 0, &b)
+    !a_has_filters
+    !b
+    !a
+    return b_default_result
+
+L_A_FILTER_OUTER_SETUP:
+    a_terms = load a+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    a_len = load a+SA3D_ECS_QUERY_DESC_terms_len as i64
+    i_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_A_HEAD
+
+L_A_HEAD:
+    i = load i_slot+0 as i64
+    more = slt i, a_len
+    br more -> L_A_BODY, L_YES
+
+L_A_BODY:
+    offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add a_terms, offset
+    access = load term+SA3D_ECS_QUERY_TERM_access as i32
+    is_filter = call @sa3d_ecs_query_access_is_filter(access)
+    br is_filter -> L_A_CHECK_SET, L_A_NEXT
+
+L_A_CHECK_SET:
+    set_id = load term+SA3D_ECS_QUERY_TERM_flags as i32
+    ok_for_set = call @sa3d_ecs_query_descs_filters_dnf_compatible_for_a_set(&a, set_id, &b)
+    br ok_for_set -> L_A_NEXT_SET, L_NO
+
+L_A_NEXT_SET:
+    !ok_for_set
+    !set_id
+    jmp L_A_NEXT
+
+L_A_NEXT:
+    next = add i, 1
+    store i_slot+0, next as i64
+    !next
+    !is_filter
+    !access
+    !term
+    !offset
+    !more
+    !i
+    jmp L_A_HEAD
+
+L_YES:
+    !more
+    !i
+    !a_len
+    !a_terms
+    !a_has_filters
+    !b
+    !a
+    return 1
+
+L_NO:
+    !ok_for_set
+    !set_id
+    !is_filter
+    !access
+    !term
+    !offset
+    !more
+    !i
+    !a_len
+    !a_terms
+    !a_has_filters
+    !b
+    !a
+    return 0
+
+@sa3d_ecs_query_descs_filters_dnf_compatible_for_a_set(&a: ptr, a_set: i32, &b: ptr) -> i32:
+L_ENTRY:
+    b_has_filters = call @sa3d_ecs_query_desc_has_filter_terms(&b)
+    br b_has_filters -> L_B_FILTER_SETUP, L_B_DEFAULT
+
+L_B_DEFAULT:
+    default_ruled = call @sa3d_ecs_query_filter_sets_ruled_out(&a, a_set, &b, 0)
+    !b_has_filters
+    !a_set
+    !b
+    !a
+    return default_ruled
+
+L_B_FILTER_SETUP:
+    b_terms = load b+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    b_len = load b+SA3D_ECS_QUERY_DESC_terms_len as i64
+    j_slot = stack_alloc 8
+    store j_slot+0, 0 as i64
+    jmp L_B_HEAD
+
+L_B_HEAD:
+    j = load j_slot+0 as i64
+    more = slt j, b_len
+    br more -> L_B_BODY, L_YES
+
+L_B_BODY:
+    offset = mul j, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add b_terms, offset
+    access = load term+SA3D_ECS_QUERY_TERM_access as i32
+    is_filter = call @sa3d_ecs_query_access_is_filter(access)
+    br is_filter -> L_B_CHECK_SET, L_B_NEXT
+
+L_B_CHECK_SET:
+    b_set = load term+SA3D_ECS_QUERY_TERM_flags as i32
+    ruled = call @sa3d_ecs_query_filter_sets_ruled_out(&a, a_set, &b, b_set)
+    br ruled -> L_B_NEXT_SET, L_NO
+
+L_B_NEXT_SET:
+    !ruled
+    !b_set
+    jmp L_B_NEXT
+
+L_B_NEXT:
+    next = add j, 1
+    store j_slot+0, next as i64
+    !next
+    !is_filter
+    !access
+    !term
+    !offset
+    !more
+    !j
+    jmp L_B_HEAD
+
+L_YES:
+    !more
+    !j
+    !b_len
+    !b_terms
+    !b_has_filters
+    !a_set
+    !b
+    !a
+    return 1
+
+L_NO:
+    !ruled
+    !b_set
+    !is_filter
+    !access
+    !term
+    !offset
+    !more
+    !j
+    !b_len
+    !b_terms
+    !b_has_filters
+    !a_set
+    !b
+    !a
+    return 0
+
+@sa3d_ecs_query_descs_compatible(&a: ptr, &b: ptr) -> i32:
+L_ENTRY:
+    a_valid = call @sa3d_ecs_query_desc_validate(&a)
+    br a_valid -> L_VALIDATE_B, L_INVALID_A
+
+L_VALIDATE_B:
+    b_valid = call @sa3d_ecs_query_desc_validate(&b)
+    br b_valid -> L_CHECK_CONFLICT, L_INVALID_B
+
+L_CHECK_CONFLICT:
+    has_conflict = call @sa3d_ecs_query_descs_have_data_conflict(&a, &b)
+    br has_conflict -> L_CHECK_DISJOINT, L_COMPATIBLE_NO_CONFLICT
+
+L_CHECK_DISJOINT:
+    disjoint = call @sa3d_ecs_query_descs_filters_dnf_compatible(&a, &b)
+    br disjoint -> L_COMPATIBLE_DISJOINT, L_INCOMPATIBLE
+
+L_COMPATIBLE_NO_CONFLICT:
+    !has_conflict
+    !b_valid
+    !a_valid
+    !b
+    !a
+    return 1
+
+L_COMPATIBLE_DISJOINT:
+    !disjoint
+    !has_conflict
+    !b_valid
+    !a_valid
+    !b
+    !a
+    return 1
+
+L_INCOMPATIBLE:
+    !disjoint
+    !has_conflict
+    !b_valid
+    !a_valid
+    !b
+    !a
+    return 0
+
+L_INVALID_B:
+    !b_valid
+    !a_valid
+    !b
+    !a
+    return 0
+
+L_INVALID_A:
+    !a_valid
+    !b
+    !a
+    return 0
+
+@sa3d_ecs_query_desc_validate(&desc: ptr) -> i32:
+L_ENTRY:
+    terms = load desc+SA3D_ECS_QUERY_DESC_terms_ptr as ptr
+    terms_len = load desc+SA3D_ECS_QUERY_DESC_terms_len as i64
+    result_stride = load desc+SA3D_ECS_QUERY_DESC_result_stride as i64
+    len_negative = slt terms_len, 0
+    br len_negative -> L_INVALID_HEADER, L_CHECK_STRIDE
+
+L_CHECK_STRIDE:
+    stride_negative = slt result_stride, 0
+    br stride_negative -> L_INVALID_STRIDE, L_CHECK_EMPTY
+
+L_CHECK_EMPTY:
+    has_terms = sgt terms_len, 0
+    br has_terms -> L_REQUIRE_PTR, L_VALID_EMPTY
+
+L_REQUIRE_PTR:
+    has_ptr = ne terms, 0
+    br has_ptr -> L_LOOP_SETUP, L_INVALID_PTR
+
+L_LOOP_SETUP:
+    i_slot = stack_alloc 8
+    j_slot = stack_alloc 8
+    term_slot = stack_alloc 8
+    store i_slot+0, 0 as i64
+    jmp L_TERM_LOOP_COND
+
+L_TERM_LOOP_COND:
+    i = load i_slot+0 as i64
+    more_terms = slt i, terms_len
+    br more_terms -> L_TERM_LOOP_BODY, L_VALID
+
+L_TERM_LOOP_BODY:
+    term_offset = mul i, SA3D_ECS_QUERY_TERM_SIZE
+    term = ptr_add terms, term_offset
+    store term_slot+0, term as ptr
+    component = load term+SA3D_ECS_QUERY_TERM_component_type as i64
+    component_negative = slt component, 0
+    br component_negative -> L_INVALID_TERM, L_CHECK_TERM_ACCESS
+
+L_CHECK_TERM_ACCESS:
+    access = load term+SA3D_ECS_QUERY_TERM_access as i32
+    access_ok = call @sa3d_ecs_query_access_is_valid(access)
+    br access_ok -> L_PAIR_LOOP_INIT, L_INVALID_ACCESS
+
+L_PAIR_LOOP_INIT:
+    j = add i, 1
+    store j_slot+0, j as i64
+    !j
+    jmp L_PAIR_LOOP_COND
+
+L_PAIR_LOOP_COND:
+    j = load j_slot+0 as i64
+    more_pairs = slt j, terms_len
+    br more_pairs -> L_PAIR_LOOP_BODY, L_NEXT_TERM
+
+L_PAIR_LOOP_BODY:
+    other_offset = mul j, SA3D_ECS_QUERY_TERM_SIZE
+    other = ptr_add terms, other_offset
+    current_term = load term_slot+0 as ptr
+    conflict = call @sa3d_ecs_query_terms_conflict(&current_term, &other)
+    br conflict -> L_INVALID_CONFLICT, L_NEXT_PAIR
+
+L_NEXT_PAIR:
+    j_next = add j, 1
+    store j_slot+0, j_next as i64
+    !j_next
+    !conflict
+    !current_term
+    !other
+    !other_offset
+    !more_pairs
+    !j
+    jmp L_PAIR_LOOP_COND
+
+L_NEXT_TERM:
+    i_next = add i, 1
+    store i_slot+0, i_next as i64
+    !i_next
+    !j
+    !more_pairs
+    !access_ok
+    !access
+    !component_negative
+    !component
+    !term
+    !term_offset
+    !i
+    !more_terms
+    jmp L_TERM_LOOP_COND
+
+L_VALID:
+    !has_ptr
+    !has_terms
+    !stride_negative
+    !len_negative
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return 1
+
+L_INVALID_CONFLICT:
+    !conflict
+    !current_term
+    !other
+    !other_offset
+    !more_pairs
+    !j
+    !access_ok
+    !access
+    !component_negative
+    !component
+    !term
+    !term_offset
+    !more_terms
+    !i
+    !has_ptr
+    !has_terms
+    !stride_negative
+    !len_negative
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return 0
+
+L_INVALID_ACCESS:
+    !access_ok
+    !access
+    !component_negative
+    !component
+    !term
+    !term_offset
+    !more_terms
+    !i
+    !has_ptr
+    !has_terms
+    !stride_negative
+    !len_negative
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return 0
+
+L_INVALID_TERM:
+    !component_negative
+    !component
+    !term
+    !term_offset
+    !more_terms
+    !i
+    !has_ptr
+    !has_terms
+    !stride_negative
+    !len_negative
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return 0
+
+L_INVALID_PTR:
+    !has_ptr
+    !has_terms
+    !stride_negative
+    !len_negative
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return 0
+
+L_VALID_EMPTY:
+    !has_terms
+    !stride_negative
+    !len_negative
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return 1
+
+L_INVALID_STRIDE:
+    !stride_negative
+    !len_negative
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return 0
+
+L_INVALID_HEADER:
+    !len_negative
+    !result_stride
+    !terms_len
+    !terms
+    !desc
+    return 0
+
+@sa3d_ecs_world_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_ECS_WORLD_DESC_components_ptr, 0 as i64
+    store desc+SA3D_ECS_WORLD_DESC_components_len, 0 as i64
+    store desc+SA3D_ECS_WORLD_DESC_entity_capacity, 1024 as i64
+    store desc+SA3D_ECS_WORLD_DESC_FLAGS, 0 as i32
+    !desc
+    return
+
+@sa3d_ecs_world_desc_get_entity_capacity(&desc: ptr) -> i64:
+L_ENTRY:
+    cap = load desc+SA3D_ECS_WORLD_DESC_entity_capacity as i64
+    !desc
+    return cap
+
+@sa3d_ecs_world_state_init(&world: ptr, metas: ptr, capacity: i64) -> void:
+L_ENTRY:
+    store world+SA3D_ECS_WORLD_STATE_metas_ptr, metas as ptr
+    store world+SA3D_ECS_WORLD_STATE_capacity, capacity as i64
+    store world+SA3D_ECS_WORLD_STATE_next_index, 0 as i64
+    store world+SA3D_ECS_WORLD_STATE_alive_count, 0 as i64
+    store world+SA3D_ECS_WORLD_STATE_dead_count, 0 as i64
+    store world+SA3D_ECS_WORLD_STATE_free_indices_ptr, 0 as i64
+    store world+SA3D_ECS_WORLD_STATE_free_count, 0 as i64
+    !capacity
+    !metas
+    !world
+    return
+
+@sa3d_ecs_world_state_init_with_free_list(&world: ptr, metas: ptr, free_indices: ptr, capacity: i64) -> void:
+L_ENTRY:
+    store world+SA3D_ECS_WORLD_STATE_metas_ptr, metas as ptr
+    store world+SA3D_ECS_WORLD_STATE_capacity, capacity as i64
+    store world+SA3D_ECS_WORLD_STATE_next_index, 0 as i64
+    store world+SA3D_ECS_WORLD_STATE_alive_count, 0 as i64
+    store world+SA3D_ECS_WORLD_STATE_dead_count, 0 as i64
+    store world+SA3D_ECS_WORLD_STATE_free_indices_ptr, free_indices as ptr
+    store world+SA3D_ECS_WORLD_STATE_free_count, 0 as i64
+    !capacity
+    !free_indices
+    !metas
+    !world
+    return
+
+@sa3d_ecs_world_state_get_alive_count(&world: ptr) -> i64:
+L_ENTRY:
+    alive = load world+SA3D_ECS_WORLD_STATE_alive_count as i64
+    !world
+    return alive
+
+@sa3d_ecs_world_state_get_dead_count(&world: ptr) -> i64:
+L_ENTRY:
+    dead = load world+SA3D_ECS_WORLD_STATE_dead_count as i64
+    !world
+    return dead
+
+@sa3d_ecs_world_desc_has_components(&desc: ptr) -> i32:
+L_ENTRY:
+    ptrv = load desc+SA3D_ECS_WORLD_DESC_components_ptr as ptr
+    lenv = load desc+SA3D_ECS_WORLD_DESC_components_len as i64
+    has_ptr = ne ptrv, 0
+    len_ok = sgt lenv, 0
+    ok = and has_ptr, len_ok
+    br ok -> L_YES, L_NO
+L_YES:
+    !ok
+    !len_ok
+    !has_ptr
+    !lenv
+    !ptrv
+    !desc
+    return 1
+L_NO:
+    !ok
+    !len_ok
+    !has_ptr
+    !lenv
+    !ptrv
+    !desc
+    return 0
+
+@sa3d_ecs_world_spawn(&world: ptr, &out_entity: ptr) -> i32:
+L_ENTRY:
+    free_count = load world+SA3D_ECS_WORLD_STATE_free_count as i64
+    has_free = sgt free_count, 0
+    br has_free -> L_SPAWN_FREE, L_CHECK_FRESH
+
+L_SPAWN_FREE:
+    free_indices = load world+SA3D_ECS_WORLD_STATE_free_indices_ptr as ptr
+    has_free_ptr = ne free_indices, 0
+    br has_free_ptr -> L_SPAWN_FREE_POP, L_CHECK_FRESH
+
+L_SPAWN_FREE_POP:
+    free_next = sub free_count, 1
+    free_offset = mul free_next, 8
+    free_slot = ptr_add free_indices, free_offset
+    free_index = load free_slot+0 as i64
+    metas_free = load world+SA3D_ECS_WORLD_STATE_metas_ptr as ptr
+    meta_free_offset = mul free_index, SA3D_ECS_ENTITY_META_SIZE
+    meta_free = ptr_add metas_free, meta_free_offset
+    generation_free = load meta_free+SA3D_ECS_ENTITY_META_generation as i64
+    store meta_free+SA3D_ECS_ENTITY_META_spawned, 1 as i64
+    store world+SA3D_ECS_WORLD_STATE_free_count, free_next as i64
+    call @sa3d_ecs_entity_id_init(&out_entity, free_index, generation_free)
+    alive_free = load world+SA3D_ECS_WORLD_STATE_alive_count as i64
+    alive_free_after = add alive_free, 1
+    dead_free = load world+SA3D_ECS_WORLD_STATE_dead_count as i64
+    dead_free_after = sub dead_free, 1
+    store world+SA3D_ECS_WORLD_STATE_alive_count, alive_free_after as i64
+    store world+SA3D_ECS_WORLD_STATE_dead_count, dead_free_after as i64
+    !dead_free_after
+    !dead_free
+    !alive_free_after
+    !alive_free
+    !generation_free
+    !meta_free
+    !meta_free_offset
+    !metas_free
+    !free_index
+    !free_slot
+    !free_offset
+    !free_next
+    !free_indices
+    !has_free_ptr
+    !free_count
+    !has_free
+    !out_entity
+    !world
+    return 1
+
+L_CHECK_FRESH:
+    next = load world+SA3D_ECS_WORLD_STATE_next_index as i64
+    capacity = load world+SA3D_ECS_WORLD_STATE_capacity as i64
+    has_slot = slt next, capacity
+    br has_slot -> L_SPAWN, L_FULL
+
+L_SPAWN:
+    metas = load world+SA3D_ECS_WORLD_STATE_metas_ptr as ptr
+    offset = mul next, SA3D_ECS_ENTITY_META_SIZE
+    meta = ptr_add metas, offset
+    generation = load meta+SA3D_ECS_ENTITY_META_generation as i64
+    store meta+SA3D_ECS_ENTITY_META_spawned, 1 as i64
+    call @sa3d_ecs_entity_id_init(&out_entity, next, generation)
+    next_after = add next, 1
+    alive = load world+SA3D_ECS_WORLD_STATE_alive_count as i64
+    alive_after = add alive, 1
+    store world+SA3D_ECS_WORLD_STATE_next_index, next_after as i64
+    store world+SA3D_ECS_WORLD_STATE_alive_count, alive_after as i64
+    !alive_after
+    !alive
+    !next_after
+    !generation
+    !meta
+    !offset
+    !metas
+    !has_slot
+    !capacity
+    !next
+    !free_count
+    !has_free
+    !out_entity
+    !world
+    return 1
+
+L_FULL:
+    !has_slot
+    !capacity
+    !next
+    !free_count
+    !has_free
+    !out_entity
+    !world
+    return 0
+
+@sa3d_ecs_world_contains_spawned(&world: ptr, &entity: ptr) -> i32:
+L_ENTRY:
+    index = load entity+SA3D_ECS_ENTITY_ID_index as i64
+    capacity = load world+SA3D_ECS_WORLD_STATE_capacity as i64
+    in_range = slt index, capacity
+    br in_range -> L_CHECK_META, L_NO
+
+L_CHECK_META:
+    metas = load world+SA3D_ECS_WORLD_STATE_metas_ptr as ptr
+    offset = mul index, SA3D_ECS_ENTITY_META_SIZE
+    meta = ptr_add metas, offset
+    entity_gen = load entity+SA3D_ECS_ENTITY_ID_generation as i64
+    meta_gen = load meta+SA3D_ECS_ENTITY_META_generation as i64
+    spawned = load meta+SA3D_ECS_ENTITY_META_spawned as i64
+    gen_ok = eq entity_gen, meta_gen
+    spawned_ok = eq spawned, 1
+    ok = and gen_ok, spawned_ok
+    br ok -> L_YES, L_NO_META
+
+L_YES:
+    !ok
+    !spawned_ok
+    !gen_ok
+    !spawned
+    !meta_gen
+    !entity_gen
+    !meta
+    !offset
+    !metas
+    !in_range
+    !capacity
+    !index
+    !entity
+    !world
+    return 1
+
+L_NO_META:
+    !ok
+    !spawned_ok
+    !gen_ok
+    !spawned
+    !meta_gen
+    !entity_gen
+    !meta
+    !offset
+    !metas
+    !in_range
+    !capacity
+    !index
+    !entity
+    !world
+    return 0
+
+L_NO:
+    !in_range
+    !capacity
+    !index
+    !entity
+    !world
+    return 0
+
+@sa3d_ecs_world_despawn(&world: ptr, &entity: ptr) -> i32:
+L_ENTRY:
+    is_spawned = call @sa3d_ecs_world_contains_spawned(&world, &entity)
+    br is_spawned -> L_DESPAWN, L_NOT_SPAWNED
+
+L_DESPAWN:
+    index = load entity+SA3D_ECS_ENTITY_ID_index as i64
+    metas = load world+SA3D_ECS_WORLD_STATE_metas_ptr as ptr
+    offset = mul index, SA3D_ECS_ENTITY_META_SIZE
+    meta = ptr_add metas, offset
+    gen = load meta+SA3D_ECS_ENTITY_META_generation as i64
+    next_gen = add gen, 1
+    alive = load world+SA3D_ECS_WORLD_STATE_alive_count as i64
+    alive_after = sub alive, 1
+    store meta+SA3D_ECS_ENTITY_META_generation, next_gen as i64
+    store meta+SA3D_ECS_ENTITY_META_spawned, 0 as i64
+    store world+SA3D_ECS_WORLD_STATE_alive_count, alive_after as i64
+    free_indices = load world+SA3D_ECS_WORLD_STATE_free_indices_ptr as ptr
+    has_free_ptr = ne free_indices, 0
+    br has_free_ptr -> L_DESPAWN_PUSH_FREE, L_DESPAWN_RETURN
+
+L_DESPAWN_PUSH_FREE:
+    free_count = load world+SA3D_ECS_WORLD_STATE_free_count as i64
+    free_offset = mul free_count, 8
+    free_slot = ptr_add free_indices, free_offset
+    next_free_count = add free_count, 1
+    dead = load world+SA3D_ECS_WORLD_STATE_dead_count as i64
+    dead_after = add dead, 1
+    store free_slot+0, index as i64
+    store world+SA3D_ECS_WORLD_STATE_free_count, next_free_count as i64
+    store world+SA3D_ECS_WORLD_STATE_dead_count, dead_after as i64
+    !dead_after
+    !dead
+    !next_free_count
+    !free_slot
+    !free_offset
+    !free_count
+    jmp L_DESPAWN_RETURN
+
+L_DESPAWN_RETURN:
+    !has_free_ptr
+    !free_indices
+    !alive_after
+    !alive
+    !next_gen
+    !gen
+    !meta
+    !offset
+    !metas
+    !index
+    !is_spawned
+    !entity
+    !world
+    return 1
+
+L_NOT_SPAWNED:
+    !is_spawned
+    !entity
+    !world
+    return 0

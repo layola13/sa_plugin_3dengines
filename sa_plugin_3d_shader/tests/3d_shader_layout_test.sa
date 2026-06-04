@@ -1,0 +1,386 @@
+@import "../3d_shader.sal"
+
+@test "3d_shader desc init and setters"():
+L_ENTRY:
+    d = alloc SA3D_SHADER_DESC_SIZE
+    call @sa3d_shader_desc_init(&d)
+    fmt = load d+SA3D_SHADER_DESC_format as i32
+    val = load d+SA3D_SHADER_DESC_validate as i32
+    fmt_ok = eq fmt, 0
+    val_ok = eq val, SA3D_SHADER_VALIDATE_ENABLED
+    ok = and fmt_ok, val_ok
+    br ok -> L_STEP2, L_ERR
+L_STEP2:
+    call @sa3d_shader_desc_set_format(&d, SA3D_SHADER_FORMAT_WGSL)
+    call @sa3d_shader_desc_set_validate(&d, SA3D_SHADER_VALIDATE_DISABLED)
+    fmt2 = load d+SA3D_SHADER_DESC_format as i32
+    val2 = load d+SA3D_SHADER_DESC_validate as i32
+    fmt2_ok = eq fmt2, SA3D_SHADER_FORMAT_WGSL
+    val2_ok = eq val2, SA3D_SHADER_VALIDATE_DISABLED
+    ok2 = and fmt2_ok, val2_ok
+    !d
+    br ok2 -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !d
+    panic(3050)
+L_ERR2:
+    panic(3051)
+
+@test "3d_shader ref default init"():
+L_ENTRY:
+    r = alloc SA3D_SHADER_REF_SIZE
+    call @sa3d_shader_ref_init_default(&r)
+    kind = call @sa3d_shader_ref_get_kind(&r)
+    ok = eq kind, SA3D_SHADER_REF_DEFAULT
+    !r
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3052)
+
+@test "3d_shader ref handle init"():
+L_ENTRY:
+    r = alloc SA3D_SHADER_REF_SIZE
+    call @sa3d_shader_ref_init_handle(&r, 42)
+    kind = call @sa3d_shader_ref_get_kind(&r)
+    handle = load r+SA3D_SHADER_REF_handle as i64
+    kind_ok = eq kind, SA3D_SHADER_REF_HANDLE
+    handle_ok = eq handle, 42
+    ok = and kind_ok, handle_ok
+    !r
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3053)
+
+@test "3d_shader entry init"():
+L_ENTRY:
+    e = alloc SA3D_SHADER_ENTRY_SIZE
+    name = alloc 8
+    call @sa3d_shader_entry_init(&e, &name, 5, SA3D_SHADER_STAGE_VERTEX)
+    stage = call @sa3d_shader_entry_get_stage(&e)
+    name_len = load e+SA3D_SHADER_ENTRY_name_len as i64
+    stage_ok = eq stage, SA3D_SHADER_STAGE_VERTEX
+    len_ok = eq name_len, 5
+    ok = and stage_ok, len_ok
+    !name
+    !e
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3054)
+
+@test "3d_shader desc validation and paths"():
+L_ENTRY:
+    d = alloc SA3D_SHADER_DESC_SIZE
+    src = alloc 64
+    path = alloc 16
+    import_path = alloc 8
+    defs = alloc 64
+    call @sa3d_shader_desc_init(&d)
+    valid0 = call @sa3d_shader_desc_validate(&d)
+    call @sa3d_shader_desc_set_format(&d, SA3D_SHADER_FORMAT_WGSL)
+    call @sa3d_shader_desc_set_source(&d, &src, 64)
+    valid_source = call @sa3d_shader_desc_validate(&d)
+    has_source = call @sa3d_shader_desc_has_source(&d)
+    call @sa3d_shader_desc_set_path(&d, &path, 12)
+    call @sa3d_shader_desc_set_import_path(&d, &import_path, 8)
+    call @sa3d_shader_desc_set_defs(&d, &defs, 2)
+    valid_path = call @sa3d_shader_desc_validate(&d)
+    has_path = call @sa3d_shader_desc_has_path(&d)
+    import_len = load d+SA3D_SHADER_DESC_import_path_len as i64
+    defs_len = load d+SA3D_SHADER_DESC_defs_len as i64
+    fmt_ok = call @sa3d_shader_format_is_valid(SA3D_SHADER_FORMAT_WGSL)
+    fmt_bad = call @sa3d_shader_format_is_valid(99)
+    valid0_ok = eq valid0, 0
+    valid_source_ok = eq valid_source, 1
+    has_source_ok = eq has_source, 1
+    valid_path_ok = eq valid_path, 1
+    has_path_ok = eq has_path, 1
+    import_len_ok = eq import_len, 8
+    defs_len_ok = eq defs_len, 2
+    fmt_ok_ok = eq fmt_ok, 1
+    fmt_bad_ok = eq fmt_bad, 0
+    p1 = and valid0_ok, valid_source_ok
+    p2 = and has_source_ok, valid_path_ok
+    p3 = and has_path_ok, import_len_ok
+    p4 = and defs_len_ok, fmt_ok_ok
+    p5 = and fmt_bad_ok, p4
+    q1 = and p1, p2
+    q2 = and p3, p5
+    ok = and q1, q2
+    br ok -> L_DESC_VALID_OK, L_DESC_VALID_ERR
+
+L_DESC_VALID_OK:
+    !defs
+    !import_path
+    !path
+    !src
+    !d
+    return
+
+L_DESC_VALID_ERR:
+    !defs
+    !import_path
+    !path
+    !src
+    !d
+    panic(3055)
+
+@test "3d_shader refs stages and entries"():
+L_ENTRY:
+    default_ref = alloc SA3D_SHADER_REF_SIZE
+    handle_ref = alloc SA3D_SHADER_REF_SIZE
+    zero_handle_ref = alloc SA3D_SHADER_REF_SIZE
+    path_ref = alloc SA3D_SHADER_REF_SIZE
+    inline_ref = alloc SA3D_SHADER_REF_SIZE
+    entry = alloc SA3D_SHADER_ENTRY_SIZE
+    bad_entry = alloc SA3D_SHADER_ENTRY_SIZE
+    path_name = alloc 24
+    entry_name = alloc 8
+    call @sa3d_shader_ref_init_default(&default_ref)
+    call @sa3d_shader_ref_init_handle(&handle_ref, 42)
+    call @sa3d_shader_ref_init_handle(&zero_handle_ref, 0)
+    call @sa3d_shader_ref_init_path(&path_ref, &path_name, 20)
+    call @sa3d_shader_ref_init_inline(&inline_ref)
+    default_bound = call @sa3d_shader_ref_is_bound(&default_ref)
+    handle_bound = call @sa3d_shader_ref_is_bound(&handle_ref)
+    zero_bound = call @sa3d_shader_ref_is_bound(&zero_handle_ref)
+    path_bound = call @sa3d_shader_ref_is_bound(&path_ref)
+    inline_bound = call @sa3d_shader_ref_is_bound(&inline_ref)
+    stage_v = call @sa3d_shader_stage_is_valid(SA3D_SHADER_STAGE_VERTEX)
+    stage_bad = call @sa3d_shader_stage_is_valid(8)
+    mask = or SA3D_SHADER_STAGE_VERTEX, SA3D_SHADER_STAGE_FRAGMENT
+    mask_has_v = call @sa3d_shader_stage_mask_has(mask, SA3D_SHADER_STAGE_VERTEX)
+    mask_has_c = call @sa3d_shader_stage_mask_has(mask, SA3D_SHADER_STAGE_COMPUTE)
+    call @sa3d_shader_entry_init(&entry, &entry_name, 4, SA3D_SHADER_STAGE_FRAGMENT)
+    entry_valid0 = call @sa3d_shader_entry_validate(&entry)
+    call @sa3d_shader_entry_set_ref_handle(&entry, 77)
+    entry_valid1 = call @sa3d_shader_entry_validate(&entry)
+    entry_ref_kind = load entry+SA3D_SHADER_ENTRY_shader_ref as i32
+    entry_ref_handle = load entry+32 as i64
+    call @sa3d_shader_entry_init(&bad_entry, 0, 0, 8)
+    bad_valid = call @sa3d_shader_entry_validate(&bad_entry)
+    default_bound_ok = eq default_bound, 0
+    handle_bound_ok = eq handle_bound, 1
+    zero_bound_ok = eq zero_bound, 0
+    path_bound_ok = eq path_bound, 1
+    inline_bound_ok = eq inline_bound, 1
+    stage_v_ok = eq stage_v, 1
+    stage_bad_ok = eq stage_bad, 0
+    mask_has_v_ok = eq mask_has_v, 1
+    mask_has_c_ok = eq mask_has_c, 0
+    entry_valid0_ok = eq entry_valid0, 0
+    entry_valid1_ok = eq entry_valid1, 1
+    entry_ref_kind_ok = eq entry_ref_kind, SA3D_SHADER_REF_HANDLE
+    entry_ref_handle_ok = eq entry_ref_handle, 77
+    bad_valid_ok = eq bad_valid, 0
+    p1 = and default_bound_ok, handle_bound_ok
+    p2 = and zero_bound_ok, path_bound_ok
+    p3 = and inline_bound_ok, stage_v_ok
+    p4 = and stage_bad_ok, mask_has_v_ok
+    p5 = and mask_has_c_ok, entry_valid0_ok
+    p6 = and entry_valid1_ok, entry_ref_kind_ok
+    p7 = and entry_ref_handle_ok, bad_valid_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    r1 = and q1, q2
+    r2 = and q3, p7
+    ok = and r1, r2
+    br ok -> L_REFS_OK, L_REFS_ERR
+
+L_REFS_OK:
+    !entry_name
+    !path_name
+    !bad_entry
+    !entry
+    !inline_ref
+    !path_ref
+    !zero_handle_ref
+    !handle_ref
+    !default_ref
+    return
+
+L_REFS_ERR:
+    !entry_name
+    !path_name
+    !bad_entry
+    !entry
+    !inline_ref
+    !path_ref
+    !zero_handle_ref
+    !handle_ref
+    !default_ref
+    panic(3056)
+
+@test "3d_shader render entry pair"():
+L_ENTRY:
+    pair = alloc SA3D_SHADER_ENTRY_PAIR_SIZE
+    fragment = ptr_add pair, SA3D_SHADER_ENTRY_PAIR_fragment
+    vs_name = alloc 8
+    fs_name = alloc 8
+    call @sa3d_shader_entry_pair_init(&pair, &vs_name, 7, &fs_name, 7)
+    valid0 = call @sa3d_shader_entry_pair_validate_render(&pair)
+    call @sa3d_shader_entry_pair_set_ref_handle(&pair, 99)
+    valid1 = call @sa3d_shader_entry_pair_validate_render(&pair)
+    v_handle = call @sa3d_shader_entry_get_handle(&pair)
+    f_handle = call @sa3d_shader_entry_get_handle(&fragment)
+    v_uses = call @sa3d_shader_entry_uses_handle(&pair)
+    f_stage = call @sa3d_shader_entry_get_stage(&fragment)
+    valid0_ok = eq valid0, 0
+    valid1_ok = eq valid1, 1
+    v_handle_ok = eq v_handle, 99
+    f_handle_ok = eq f_handle, 99
+    v_uses_ok = eq v_uses, 1
+    f_stage_ok = eq f_stage, SA3D_SHADER_STAGE_FRAGMENT
+    p1 = and valid0_ok, valid1_ok
+    p2 = and v_handle_ok, f_handle_ok
+    p3 = and v_uses_ok, f_stage_ok
+    q = and p1, p2
+    ok = and q, p3
+    !fs_name
+    !vs_name
+    !fragment
+    !pair
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return
+
+L_ERR:
+    panic(3057)
+
+@test "3d_shader defs and import path behavior"():
+L_ENTRY:
+    desc = alloc SA3D_SHADER_DESC_SIZE
+    bad_desc = alloc SA3D_SHADER_DESC_SIZE
+    source = alloc 32
+    path = alloc 16
+    defs = alloc 96
+    fog = alloc 8
+    lod = alloc 8
+    msa = alloc 8
+    def0 = ptr_add defs, 0
+    def1 = ptr_add defs, SA3D_SHADER_DEF_SIZE
+    def2 = ptr_add defs, 64
+    store fog+0, 70 as u8
+    store fog+1, 79 as u8
+    store fog+2, 71 as u8
+    store lod+0, 76 as u8
+    store lod+1, 79 as u8
+    store lod+2, 68 as u8
+    store msa+0, 77 as u8
+    store msa+1, 83 as u8
+    store msa+2, 65 as u8
+    store path+0, 100 as u8
+    store path+1, 101 as u8
+    store path+2, 109 as u8
+    store path+3, 111 as u8
+    store path+4, 46 as u8
+    store path+5, 119 as u8
+    store path+6, 103 as u8
+    store path+7, 115 as u8
+    store path+8, 108 as u8
+    call @sa3d_shader_desc_init(&desc)
+    call @sa3d_shader_desc_set_format(&desc, SA3D_SHADER_FORMAT_WGSL)
+    call @sa3d_shader_desc_set_source(&desc, &source, 32)
+    call @sa3d_shader_desc_set_path(&desc, &path, 9)
+    call @sa3d_shader_desc_set_defs(&desc, &defs, 3)
+    has_import0 = call @sa3d_shader_desc_has_import_path(&desc)
+    resolved = call @sa3d_shader_desc_resolve_import_path(&desc)
+    has_import1 = call @sa3d_shader_desc_has_import_path(&desc)
+    has_defs = call @sa3d_shader_desc_has_defs(&desc)
+    import_ptr = load desc+SA3D_SHADER_DESC_import_path_ptr as i64
+    import_len = load desc+SA3D_SHADER_DESC_import_path_len as i64
+    valid = call @sa3d_shader_desc_validate(&desc)
+    call @sa3d_shader_def_init_bool(&def0, &fog, 3, 1)
+    call @sa3d_shader_def_init_int(&def1, &lod, 3, 7)
+    call @sa3d_shader_def_init_uint(&def2, &msa, 3, 9)
+    def0_kind = call @sa3d_shader_def_get_kind(&def0)
+    def0_value = call @sa3d_shader_def_get_value(&def0)
+    def1_kind = call @sa3d_shader_def_get_kind(&def1)
+    def1_value = call @sa3d_shader_def_get_value(&def1)
+    def2_kind = call @sa3d_shader_def_get_kind(&def2)
+    def2_value = call @sa3d_shader_def_get_value(&def2)
+    def0_valid = call @sa3d_shader_def_is_valid(&def0)
+    def1_valid = call @sa3d_shader_def_is_valid(&def1)
+    def2_valid = call @sa3d_shader_def_is_valid(&def2)
+    found_lod = call @sa3d_shader_defs_find_by_name(&defs, 3, &lod, 3)
+    missing = call @sa3d_shader_defs_find_by_name(&defs, 3, &path, 9)
+    call @sa3d_shader_desc_init(&bad_desc)
+    call @sa3d_shader_desc_set_format(&bad_desc, SA3D_SHADER_FORMAT_WGSL)
+    call @sa3d_shader_desc_set_source(&bad_desc, &source, 32)
+    store bad_desc+SA3D_SHADER_DESC_defs_len, 1 as i64
+    bad_valid = call @sa3d_shader_desc_validate(&bad_desc)
+    has_import0_ok = eq has_import0, 0
+    resolved_ok = eq resolved, 1
+    has_import1_ok = eq has_import1, 1
+    has_defs_ok = eq has_defs, 1
+    import_ptr_ok = eq import_ptr, path
+    import_len_ok = eq import_len, 9
+    valid_ok = eq valid, 1
+    def0_kind_ok = eq def0_kind, SA3D_SHADER_DEF_BOOL
+    def0_value_ok = eq def0_value, 1
+    def1_kind_ok = eq def1_kind, SA3D_SHADER_DEF_INT
+    def1_value_ok = eq def1_value, 7
+    def2_kind_ok = eq def2_kind, SA3D_SHADER_DEF_UINT
+    def2_value_ok = eq def2_value, 9
+    def0_valid_ok = eq def0_valid, 1
+    def1_valid_ok = eq def1_valid, 1
+    def2_valid_ok = eq def2_valid, 1
+    found_lod_ok = eq found_lod, 1
+    missing_ok = eq missing, -1
+    bad_valid_ok = eq bad_valid, 0
+    p1 = and has_import0_ok, resolved_ok
+    p2 = and has_import1_ok, has_defs_ok
+    p3 = and import_ptr_ok, import_len_ok
+    p4 = and valid_ok, def0_kind_ok
+    p5 = and def0_value_ok, def1_kind_ok
+    p6 = and def1_value_ok, def2_kind_ok
+    p7 = and def2_value_ok, def0_valid_ok
+    p8 = and def1_valid_ok, def2_valid_ok
+    p9 = and found_lod_ok, missing_ok
+    p10 = and bad_valid_ok, p8
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p9
+    q5 = and q1, q2
+    q6 = and q3, q4
+    ok = and q5, q6
+    ok = and ok, p10
+    br ok -> L_BEHAVIOR_OK, L_BEHAVIOR_ERR
+
+L_BEHAVIOR_OK:
+    !bad_desc
+    !source
+    !path
+    !defs
+    !msa
+    !lod
+    !fog
+    !def2
+    !def1
+    !def0
+    !desc
+    return
+
+L_BEHAVIOR_ERR:
+    !bad_desc
+    !source
+    !path
+    !defs
+    !msa
+    !lod
+    !fog
+    !def2
+    !def1
+    !def0
+    !desc
+    panic(3058)

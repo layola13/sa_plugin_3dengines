@@ -1,0 +1,89 @@
+@import "../3d_yaml.sal"
+
+@test "3d_yaml doc desc init"():
+L_ENTRY:
+    d = alloc SA3D_YAML_DOC_DESC_SIZE
+    call @sa3d_yaml_doc_desc_init(&d)
+    flags = call @sa3d_yaml_doc_desc_get_flags(&d)
+    ok = eq flags, 0
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3170)
+
+@test "3d_yaml node desc init"():
+L_ENTRY:
+    n = alloc SA3D_YAML_NODE_DESC_SIZE
+    call @sa3d_yaml_node_desc_init(&n)
+    kind = call @sa3d_yaml_node_desc_get_kind(&n)
+    sk = call @sa3d_yaml_node_desc_get_scalar_kind(&n)
+    kind_ok = eq kind, SA3D_YAML_NODE_SCALAR
+    sk_ok = eq sk, SA3D_YAML_SCALAR_STRING
+    ok = and kind_ok, sk_ok
+    !n
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3171)
+
+@test "3d_yaml doc and node validation"():
+L_ENTRY:
+    d = alloc SA3D_YAML_DOC_DESC_SIZE
+    src = alloc 4
+    n = alloc SA3D_YAML_NODE_DESC_SIZE
+    value = alloc 8
+    call @sa3d_yaml_doc_desc_init(&d)
+    call @sa3d_yaml_doc_desc_set_source(&d, &src, 4)
+    doc_valid = call @sa3d_yaml_doc_desc_is_valid(&d)
+    call @sa3d_yaml_node_desc_init(&n)
+    node_before = call @sa3d_yaml_node_desc_is_valid(&n)
+    call @sa3d_yaml_node_desc_set_value(&n, &value, 8)
+    node_after = call @sa3d_yaml_node_desc_is_valid(&n)
+    kind_bad = call @sa3d_yaml_node_kind_is_valid(99)
+    scalar_bad = call @sa3d_yaml_scalar_kind_is_valid(99)
+    doc_ok = eq doc_valid, 1
+    node_before_ok = eq node_before, 0
+    node_after_ok = eq node_after, 1
+    kind_bad_ok = eq kind_bad, 0
+    scalar_bad_ok = eq scalar_bad, 0
+    a = and doc_ok, node_before_ok
+    b = and node_after_ok, kind_bad_ok
+    c = and a, b
+    ok = and c, scalar_bad_ok
+    !value
+    !n
+    !src
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3172)
+
+@test "3d_yaml mapping node and sibling count"():
+L_ENTRY:
+    a = alloc SA3D_YAML_NODE_DESC_SIZE
+    b = alloc SA3D_YAML_NODE_DESC_SIZE
+    c = alloc SA3D_YAML_NODE_DESC_SIZE
+    call @sa3d_yaml_node_desc_init(&a)
+    call @sa3d_yaml_node_desc_init(&b)
+    call @sa3d_yaml_node_desc_init(&c)
+    call @sa3d_yaml_node_desc_set_kind(&a, SA3D_YAML_NODE_MAPPING, SA3D_YAML_SCALAR_STRING)
+    valid = call @sa3d_yaml_node_desc_is_valid(&a)
+    store a+SA3D_YAML_NODE_DESC_next_sibling, b as ptr
+    store b+SA3D_YAML_NODE_DESC_next_sibling, c as ptr
+    count = call @sa3d_yaml_count_siblings(&a)
+    valid_ok = eq valid, 1
+    count_ok = eq count, 3
+    ok = and valid_ok, count_ok
+    !c
+    !b
+    !a
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3173)

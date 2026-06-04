@@ -1,0 +1,1080 @@
+#def SA3D_MATERIAL_VERSION_MAJOR = 0
+#def SA3D_MATERIAL_VERSION_MINOR = 1
+
+#def SA3D_MATERIAL_MODEL_UNLIT = 0
+#def SA3D_MATERIAL_MODEL_PBR = 1
+
+#def SA3D_TEXTURE_SLOT_NONE = 0
+#def SA3D_TEXTURE_SLOT_BASE_COLOR = 1
+#def SA3D_TEXTURE_SLOT_NORMAL = 2
+#def SA3D_TEXTURE_SLOT_METALLIC_ROUGHNESS = 3
+#def SA3D_TEXTURE_SLOT_EMISSIVE = 4
+
+#def SA3D_MATERIAL_FLAG_DOUBLE_SIDED = 1
+#def SA3D_MATERIAL_FLAG_ALPHA_BLEND = 2
+#def SA3D_MATERIAL_FLAG_ALPHA_MASK = 4
+#def SA3D_MATERIAL_FLAG_DEPTH_WRITE = 8
+
+#def SA3D_MATERIAL_DESC_model = +0
+#def SA3D_MATERIAL_DESC_flags = +4
+#def SA3D_MATERIAL_DESC_base_color = +8
+#def SA3D_MATERIAL_DESC_emissive = +24
+#def SA3D_MATERIAL_DESC_metallic = +40
+#def SA3D_MATERIAL_DESC_roughness = +44
+#def SA3D_MATERIAL_DESC_alpha_cutoff = +48
+#def SA3D_MATERIAL_DESC_base_color_texture = +56
+#def SA3D_MATERIAL_DESC_normal_texture = +64
+#def SA3D_MATERIAL_DESC_metallic_roughness_texture = +72
+#def SA3D_MATERIAL_DESC_emissive_texture = +80
+#def SA3D_MATERIAL_DESC_vertex_shader_ref = +88
+#def SA3D_MATERIAL_DESC_fragment_shader_ref = +120
+#def SA3D_MATERIAL_DESC_SIZE = 152
+
+#def SA3D_ALPHA_MODE_OPAQUE = 0
+#def SA3D_ALPHA_MODE_MASK = 1
+#def SA3D_ALPHA_MODE_BLEND = 2
+#def SA3D_ALPHA_MODE_PREMULTIPLIED = 3
+#def SA3D_ALPHA_MODE_ALPHA_TO_COVERAGE = 4
+#def SA3D_ALPHA_MODE_ADD = 5
+#def SA3D_ALPHA_MODE_MULTIPLY = 6
+
+#def SA3D_OPAQUE_RENDER_FORWARD = 0
+#def SA3D_OPAQUE_RENDER_DEFERRED = 1
+#def SA3D_OPAQUE_RENDER_AUTO = 2
+
+#def SA3D_FACE_NONE = 0
+#def SA3D_FACE_FRONT = 1
+#def SA3D_FACE_BACK = 2
+
+#def SA3D_STANDARD_MATERIAL_base_color = +0
+#def SA3D_STANDARD_MATERIAL_emissive = +16
+#def SA3D_STANDARD_MATERIAL_perceptual_roughness = +32
+#def SA3D_STANDARD_MATERIAL_metallic = +36
+#def SA3D_STANDARD_MATERIAL_reflectance = +40
+#def SA3D_STANDARD_MATERIAL_diffuse_transmission = +44
+#def SA3D_STANDARD_MATERIAL_specular_transmission = +48
+#def SA3D_STANDARD_MATERIAL_thickness = +52
+#def SA3D_STANDARD_MATERIAL_ior = +56
+#def SA3D_STANDARD_MATERIAL_clearcoat = +60
+#def SA3D_STANDARD_MATERIAL_clearcoat_perceptual_roughness = +64
+#def SA3D_STANDARD_MATERIAL_double_sided = +68
+#def SA3D_STANDARD_MATERIAL_cull_mode = +72
+#def SA3D_STANDARD_MATERIAL_unlit = +76
+#def SA3D_STANDARD_MATERIAL_fog_enabled = +80
+#def SA3D_STANDARD_MATERIAL_alpha_mode = +84
+#def SA3D_STANDARD_MATERIAL_alpha_cutoff = +88
+#def SA3D_STANDARD_MATERIAL_depth_bias = +92
+#def SA3D_STANDARD_MATERIAL_parallax_depth_scale = +96
+#def SA3D_STANDARD_MATERIAL_max_parallax_layer_count = +100
+#def SA3D_STANDARD_MATERIAL_lightmap_exposure = +104
+#def SA3D_STANDARD_MATERIAL_opaque_render_method = +108
+#def SA3D_STANDARD_MATERIAL_texture_flags = +112
+#def SA3D_STANDARD_MATERIAL_SIZE = 120
+
+#def SA3D_STANDARD_MATERIAL_FLAG_BASE_COLOR_TEXTURE = 1
+#def SA3D_STANDARD_MATERIAL_FLAG_EMISSIVE_TEXTURE = 2
+#def SA3D_STANDARD_MATERIAL_FLAG_METALLIC_ROUGHNESS_TEXTURE = 4
+#def SA3D_STANDARD_MATERIAL_FLAG_OCCLUSION_TEXTURE = 8
+#def SA3D_STANDARD_MATERIAL_FLAG_DOUBLE_SIDED = 16
+#def SA3D_STANDARD_MATERIAL_FLAG_UNLIT = 32
+#def SA3D_STANDARD_MATERIAL_FLAG_FLIP_NORMAL_MAP_Y = 128
+#def SA3D_STANDARD_MATERIAL_FLAG_FOG_ENABLED = 256
+#def SA3D_STANDARD_MATERIAL_FLAG_DEPTH_MAP = 512
+#def SA3D_STANDARD_MATERIAL_ALPHA_SHIFT = 29
+
+@sa3d_material_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_MATERIAL_DESC_model, SA3D_MATERIAL_MODEL_UNLIT as i32
+    store desc+SA3D_MATERIAL_DESC_flags, 0 as i32
+    store desc+SA3D_MATERIAL_DESC_base_color, 1065353216 as i32
+    store desc+12, 1065353216 as i32
+    store desc+16, 1065353216 as i32
+    store desc+20, 1065353216 as i32
+    store desc+SA3D_MATERIAL_DESC_emissive, 0 as i32
+    store desc+28, 0 as i32
+    store desc+32, 0 as i32
+    store desc+SA3D_MATERIAL_DESC_metallic, 0 as i32
+    store desc+SA3D_MATERIAL_DESC_roughness, 1065353216 as i32
+    store desc+SA3D_MATERIAL_DESC_alpha_cutoff, 0 as i32
+    store desc+SA3D_MATERIAL_DESC_base_color_texture, 0 as i64
+    store desc+SA3D_MATERIAL_DESC_normal_texture, 0 as i64
+    store desc+SA3D_MATERIAL_DESC_metallic_roughness_texture, 0 as i64
+    store desc+SA3D_MATERIAL_DESC_emissive_texture, 0 as i64
+    store desc+88, 0 as i64
+    store desc+96, 0 as i64
+    store desc+104, 0 as i64
+    store desc+112, 0 as i64
+    store desc+116, 0 as i32
+    store desc+120, 0 as i64
+    store desc+128, 0 as i64
+    store desc+136, 0 as i64
+    store desc+144, 0 as i64
+    store desc+148, 0 as i32
+    !desc
+    return
+
+@sa3d_material_desc_init_pbr(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_MATERIAL_DESC_model, SA3D_MATERIAL_MODEL_PBR as i32
+    store desc+SA3D_MATERIAL_DESC_flags, 0 as i32
+    store desc+SA3D_MATERIAL_DESC_base_color, 1065353216 as i32
+    store desc+12, 1065353216 as i32
+    store desc+16, 1065353216 as i32
+    store desc+20, 1065353216 as i32
+    store desc+SA3D_MATERIAL_DESC_emissive, 0 as i32
+    store desc+28, 0 as i32
+    store desc+32, 0 as i32
+    store desc+SA3D_MATERIAL_DESC_metallic, 0 as i32
+    store desc+SA3D_MATERIAL_DESC_roughness, 1065353216 as i32
+    store desc+SA3D_MATERIAL_DESC_alpha_cutoff, 0 as i32
+    store desc+SA3D_MATERIAL_DESC_base_color_texture, 0 as i64
+    store desc+SA3D_MATERIAL_DESC_normal_texture, 0 as i64
+    store desc+SA3D_MATERIAL_DESC_metallic_roughness_texture, 0 as i64
+    store desc+SA3D_MATERIAL_DESC_emissive_texture, 0 as i64
+    store desc+88, 0 as i64
+    store desc+96, 0 as i64
+    store desc+104, 0 as i64
+    store desc+112, 0 as i64
+    store desc+116, 0 as i32
+    store desc+120, 0 as i64
+    store desc+128, 0 as i64
+    store desc+136, 0 as i64
+    store desc+144, 0 as i64
+    store desc+148, 0 as i32
+    !desc
+    return
+
+@sa3d_material_desc_get_model(&desc: ptr) -> i32:
+L_ENTRY:
+    model = load desc+SA3D_MATERIAL_DESC_model as i32
+    !desc
+    return model
+
+@sa3d_material_desc_get_base_color_r(&desc: ptr) -> i32:
+L_ENTRY:
+    r = load desc+SA3D_MATERIAL_DESC_base_color as i32
+    !desc
+    return r
+
+@sa3d_material_desc_get_base_color_g(&desc: ptr) -> i32:
+L_ENTRY:
+    g = load desc+12 as i32
+    !desc
+    return g
+
+@sa3d_material_desc_get_base_color_b(&desc: ptr) -> i32:
+L_ENTRY:
+    b = load desc+16 as i32
+    !desc
+    return b
+
+@sa3d_material_desc_get_base_color_a(&desc: ptr) -> i32:
+L_ENTRY:
+    a = load desc+20 as i32
+    !desc
+    return a
+
+@sa3d_material_desc_get_metallic(&desc: ptr) -> i32:
+L_ENTRY:
+    m = load desc+SA3D_MATERIAL_DESC_metallic as i32
+    !desc
+    return m
+
+@sa3d_material_desc_get_roughness(&desc: ptr) -> i32:
+L_ENTRY:
+    r = load desc+SA3D_MATERIAL_DESC_roughness as i32
+    !desc
+    return r
+
+@sa3d_material_desc_set_base_color(&desc: ptr, r: i32, g: i32, b: i32, a: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_MATERIAL_DESC_base_color, r as i32
+    store desc+12, g as i32
+    store desc+16, b as i32
+    store desc+20, a as i32
+    !a
+    !b
+    !g
+    !r
+    !desc
+    return
+
+@sa3d_material_desc_set_emissive(&desc: ptr, r: i32, g: i32, b: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_MATERIAL_DESC_emissive, r as i32
+    store desc+28, g as i32
+    store desc+32, b as i32
+    !b
+    !g
+    !r
+    !desc
+    return
+
+@sa3d_material_desc_set_metallic_roughness(&desc: ptr, metallic: i32, roughness: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_MATERIAL_DESC_metallic, metallic as i32
+    store desc+SA3D_MATERIAL_DESC_roughness, roughness as i32
+    !roughness
+    !metallic
+    !desc
+    return
+
+@sa3d_material_desc_set_alpha_cutoff(&desc: ptr, cutoff: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_MATERIAL_DESC_alpha_cutoff, cutoff as i32
+    !cutoff
+    !desc
+    return
+
+@sa3d_material_desc_get_flags(&desc: ptr) -> i32:
+L_ENTRY:
+    flags = load desc+SA3D_MATERIAL_DESC_flags as i32
+    !desc
+    return flags
+
+@sa3d_material_desc_set_flags(&desc: ptr, flags: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_MATERIAL_DESC_flags, flags as i32
+    !flags
+    !desc
+    return
+
+@sa3d_material_desc_enable_flag(&desc: ptr, flag: i32) -> void:
+L_ENTRY:
+    flags = load desc+SA3D_MATERIAL_DESC_flags as i32
+    next = or flags, flag
+    store desc+SA3D_MATERIAL_DESC_flags, next as i32
+    !next
+    !flags
+    !flag
+    !desc
+    return
+
+@sa3d_material_desc_disable_flag(&desc: ptr, flag: i32) -> void:
+L_ENTRY:
+    flags = load desc+SA3D_MATERIAL_DESC_flags as i32
+    mask = xor flag, -1
+    next = and flags, mask
+    store desc+SA3D_MATERIAL_DESC_flags, next as i32
+    !next
+    !mask
+    !flags
+    !flag
+    !desc
+    return
+
+@sa3d_material_desc_has_flag(&desc: ptr, flag: i32) -> i32:
+L_ENTRY:
+    flags = load desc+SA3D_MATERIAL_DESC_flags as i32
+    masked = and flags, flag
+    ok = ne masked, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !masked
+    !flags
+    !flag
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !masked
+    !flags
+    !flag
+    !desc
+    return 0
+
+@sa3d_material_desc_is_pbr(&desc: ptr) -> i32:
+L_ENTRY:
+    model = load desc+SA3D_MATERIAL_DESC_model as i32
+    ok = eq model, SA3D_MATERIAL_MODEL_PBR
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !model
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !model
+    !desc
+    return 0
+
+@sa3d_material_desc_requires_blend(&desc: ptr) -> i32:
+L_ENTRY:
+    out = call @sa3d_material_desc_has_flag(&desc, SA3D_MATERIAL_FLAG_ALPHA_BLEND)
+    !desc
+    return out
+
+@sa3d_material_desc_texture_offset(slot: i32) -> i64:
+L_ENTRY:
+    is_base = eq slot, SA3D_TEXTURE_SLOT_BASE_COLOR
+    br is_base -> L_BASE, L_NORMAL_CHECK
+
+L_BASE:
+    !is_base
+    !slot
+    return SA3D_MATERIAL_DESC_base_color_texture
+
+L_NORMAL_CHECK:
+    is_normal = eq slot, SA3D_TEXTURE_SLOT_NORMAL
+    br is_normal -> L_NORMAL, L_MR_CHECK
+
+L_NORMAL:
+    !is_normal
+    !is_base
+    !slot
+    return SA3D_MATERIAL_DESC_normal_texture
+
+L_MR_CHECK:
+    is_mr = eq slot, SA3D_TEXTURE_SLOT_METALLIC_ROUGHNESS
+    br is_mr -> L_MR, L_EMISSIVE_CHECK
+
+L_MR:
+    !is_mr
+    !is_normal
+    !is_base
+    !slot
+    return SA3D_MATERIAL_DESC_metallic_roughness_texture
+
+L_EMISSIVE_CHECK:
+    is_emissive = eq slot, SA3D_TEXTURE_SLOT_EMISSIVE
+    br is_emissive -> L_EMISSIVE, L_NONE
+
+L_EMISSIVE:
+    !is_emissive
+    !is_mr
+    !is_normal
+    !is_base
+    !slot
+    return SA3D_MATERIAL_DESC_emissive_texture
+
+L_NONE:
+    !is_emissive
+    !is_mr
+    !is_normal
+    !is_base
+    !slot
+    return 0
+
+@sa3d_material_desc_set_texture(&desc: ptr, slot: i32, handle: i64) -> i32:
+L_ENTRY:
+    offset = call @sa3d_material_desc_texture_offset(slot)
+    valid = ne offset, 0
+    br valid -> L_SET, L_INVALID
+
+L_SET:
+    target = ptr_add desc, offset
+    store target+0, handle as i64
+    !target
+    !valid
+    !offset
+    !handle
+    !slot
+    !desc
+    return 1
+
+L_INVALID:
+    !valid
+    !offset
+    !handle
+    !slot
+    !desc
+    return 0
+
+@sa3d_material_desc_get_texture(&desc: ptr, slot: i32) -> i64:
+L_ENTRY:
+    offset = call @sa3d_material_desc_texture_offset(slot)
+    valid = ne offset, 0
+    br valid -> L_GET, L_ZERO
+
+L_GET:
+    target = ptr_add desc, offset
+    handle = load target+0 as i64
+    !target
+    !valid
+    !offset
+    !slot
+    !desc
+    return handle
+
+L_ZERO:
+    !valid
+    !offset
+    !slot
+    !desc
+    return 0
+
+@sa3d_material_desc_has_texture(&desc: ptr, slot: i32) -> i32:
+L_ENTRY:
+    handle = call @sa3d_material_desc_get_texture(&desc, slot)
+    ok = ne handle, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !handle
+    !slot
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !handle
+    !slot
+    !desc
+    return 0
+
+@sa3d_material_desc_set_shader_handles(&desc: ptr, vertex_handle: i64, fragment_handle: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_MATERIAL_DESC_vertex_shader_ref, 1 as i32
+    store desc+96, 0 as i32
+    store desc+104, vertex_handle as i64
+    store desc+SA3D_MATERIAL_DESC_fragment_shader_ref, 1 as i32
+    store desc+128, 0 as i32
+    store desc+136, fragment_handle as i64
+    !fragment_handle
+    !vertex_handle
+    !desc
+    return
+
+@sa3d_material_desc_has_shader_pair(&desc: ptr) -> i32:
+L_ENTRY:
+    vk = load desc+SA3D_MATERIAL_DESC_vertex_shader_ref as i32
+    fk = load desc+SA3D_MATERIAL_DESC_fragment_shader_ref as i32
+    vh = load desc+104 as i64
+    fh = load desc+136 as i64
+    vk_ok = ne vk, 0
+    fk_ok = ne fk, 0
+    vh_ok = ne vh, 0
+    fh_ok = ne fh, 0
+    p1 = and vk_ok, fk_ok
+    p2 = and vh_ok, fh_ok
+    ok = and p1, p2
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p2
+    !p1
+    !fh_ok
+    !vh_ok
+    !fk_ok
+    !vk_ok
+    !fh
+    !vh
+    !fk
+    !vk
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !p2
+    !p1
+    !fh_ok
+    !vh_ok
+    !fk_ok
+    !vk_ok
+    !fh
+    !vh
+    !fk
+    !vk
+    !desc
+    return 0
+
+@sa3d_material_desc_validate(&desc: ptr) -> i32:
+L_ENTRY:
+    model = load desc+SA3D_MATERIAL_DESC_model as i32
+    roughness = load desc+SA3D_MATERIAL_DESC_roughness as i32
+    is_unlit = eq model, SA3D_MATERIAL_MODEL_UNLIT
+    is_pbr = eq model, SA3D_MATERIAL_MODEL_PBR
+    model_ok = or is_unlit, is_pbr
+    roughness_ok = sge roughness, 0
+    ok = and model_ok, roughness_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !roughness_ok
+    !model_ok
+    !is_pbr
+    !is_unlit
+    !roughness
+    !model
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !roughness_ok
+    !model_ok
+    !is_pbr
+    !is_unlit
+    !roughness
+    !model
+    !desc
+    return 0
+
+@sa3d_standard_material_default(&mat: ptr) -> void:
+L_ENTRY:
+    store mat+SA3D_STANDARD_MATERIAL_base_color, 1.0 as f32
+    store mat+4, 1.0 as f32
+    store mat+8, 1.0 as f32
+    store mat+12, 1.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_emissive, 0.0 as f32
+    store mat+20, 0.0 as f32
+    store mat+24, 0.0 as f32
+    store mat+28, 0.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_perceptual_roughness, 0.5 as f32
+    store mat+SA3D_STANDARD_MATERIAL_metallic, 0.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_reflectance, 0.5 as f32
+    store mat+SA3D_STANDARD_MATERIAL_diffuse_transmission, 0.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_specular_transmission, 0.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_thickness, 0.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_ior, 1.5 as f32
+    store mat+SA3D_STANDARD_MATERIAL_clearcoat, 0.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_clearcoat_perceptual_roughness, 0.5 as f32
+    store mat+SA3D_STANDARD_MATERIAL_double_sided, 0 as i32
+    store mat+SA3D_STANDARD_MATERIAL_cull_mode, SA3D_FACE_BACK as i32
+    store mat+SA3D_STANDARD_MATERIAL_unlit, 0 as i32
+    store mat+SA3D_STANDARD_MATERIAL_fog_enabled, 1 as i32
+    store mat+SA3D_STANDARD_MATERIAL_alpha_mode, SA3D_ALPHA_MODE_OPAQUE as i32
+    store mat+SA3D_STANDARD_MATERIAL_alpha_cutoff, 0.5 as f32
+    store mat+SA3D_STANDARD_MATERIAL_depth_bias, 0.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_parallax_depth_scale, 0.1 as f32
+    store mat+SA3D_STANDARD_MATERIAL_max_parallax_layer_count, 16.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_lightmap_exposure, 1.0 as f32
+    store mat+SA3D_STANDARD_MATERIAL_opaque_render_method, SA3D_OPAQUE_RENDER_AUTO as i32
+    store mat+SA3D_STANDARD_MATERIAL_texture_flags, 0 as i32
+    !mat
+    return
+
+@sa3d_standard_material_from_base_color(&mat: ptr, r: f32, g: f32, b: f32, a: f32) -> void:
+L_ENTRY:
+    call @sa3d_standard_material_default(&mat)
+    store mat+SA3D_STANDARD_MATERIAL_base_color, r as f32
+    store mat+4, g as f32
+    store mat+8, b as f32
+    store mat+12, a as f32
+    transparent = fcmp_lt a, 1.0
+    br transparent -> L_BLEND, L_DONE
+
+L_BLEND:
+    store mat+SA3D_STANDARD_MATERIAL_alpha_mode, SA3D_ALPHA_MODE_BLEND as i32
+    !transparent
+    !a
+    !b
+    !g
+    !r
+    !mat
+    return
+
+L_DONE:
+    !transparent
+    !a
+    !b
+    !g
+    !r
+    !mat
+    return
+
+@sa3d_standard_material_clamp01(value: f32) -> f32:
+L_ENTRY:
+    below = fcmp_lt value, 0.0
+    br below -> L_ZERO, L_HIGH
+
+L_ZERO:
+    !below
+    !value
+    return 0.0
+
+L_HIGH:
+    above = fcmp_gt value, 1.0
+    br above -> L_ONE, L_VALUE
+
+L_ONE:
+    !above
+    !below
+    !value
+    return 1.0
+
+L_VALUE:
+    !above
+    !below
+    return value
+
+@sa3d_standard_material_set_metallic_roughness(&mat: ptr, metallic: f32, perceptual_roughness: f32) -> void:
+L_ENTRY:
+    m = call @sa3d_standard_material_clamp01(metallic)
+    r = call @sa3d_standard_material_clamp01(perceptual_roughness)
+    store mat+SA3D_STANDARD_MATERIAL_metallic, m as f32
+    store mat+SA3D_STANDARD_MATERIAL_perceptual_roughness, r as f32
+    !r
+    !m
+    !perceptual_roughness
+    !metallic
+    !mat
+    return
+
+@sa3d_standard_material_roughness(&mat: ptr) -> f32:
+L_ENTRY:
+    pr = load mat+SA3D_STANDARD_MATERIAL_perceptual_roughness as f32
+    rough = fmul pr, pr
+    !pr
+    !mat
+    return rough
+
+@sa3d_standard_material_dielectric_f0(&mat: ptr) -> f32:
+L_ENTRY:
+    reflectance = load mat+SA3D_STANDARD_MATERIAL_reflectance as f32
+    r2 = fmul reflectance, reflectance
+    f0 = fmul 0.16, r2
+    !r2
+    !reflectance
+    !mat
+    return f0
+
+@sa3d_standard_material_set_reflectance(&mat: ptr, reflectance: f32) -> void:
+L_ENTRY:
+    r = call @sa3d_standard_material_clamp01(reflectance)
+    store mat+SA3D_STANDARD_MATERIAL_reflectance, r as f32
+    !r
+    !reflectance
+    !mat
+    return
+
+@sa3d_standard_material_set_depth_bias(&mat: ptr, depth_bias: f32) -> void:
+L_ENTRY:
+    store mat+SA3D_STANDARD_MATERIAL_depth_bias, depth_bias as f32
+    !depth_bias
+    !mat
+    return
+
+@sa3d_standard_material_depth_bias(&mat: ptr) -> f32:
+L_ENTRY:
+    depth_bias = load mat+SA3D_STANDARD_MATERIAL_depth_bias as f32
+    !mat
+    return depth_bias
+
+@sa3d_standard_material_set_opaque_render_method(&mat: ptr, method: i32) -> i32:
+L_ENTRY:
+    valid_low = sge method, SA3D_OPAQUE_RENDER_FORWARD
+    valid_high = sle method, SA3D_OPAQUE_RENDER_AUTO
+    valid = and valid_low, valid_high
+    br valid -> L_SET, L_ERR
+
+L_SET:
+    store mat+SA3D_STANDARD_MATERIAL_opaque_render_method, method as i32
+    !valid
+    !valid_high
+    !valid_low
+    !method
+    !mat
+    return 1
+
+L_ERR:
+    !valid
+    !valid_high
+    !valid_low
+    !method
+    !mat
+    return 0
+
+@sa3d_standard_material_opaque_render_method(&mat: ptr) -> i32:
+L_ENTRY:
+    method = load mat+SA3D_STANDARD_MATERIAL_opaque_render_method as i32
+    diffuse = load mat+SA3D_STANDARD_MATERIAL_diffuse_transmission as f32
+    is_auto = eq method, SA3D_OPAQUE_RENDER_AUTO
+    has_diffuse = fcmp_gt diffuse, 0.0
+    override_forward = and is_auto, has_diffuse
+    br override_forward -> L_FORWARD, L_RETURN
+
+L_FORWARD:
+    !override_forward
+    !has_diffuse
+    !is_auto
+    !diffuse
+    !method
+    !mat
+    return SA3D_OPAQUE_RENDER_FORWARD
+
+L_RETURN:
+    method_out = load mat+SA3D_STANDARD_MATERIAL_opaque_render_method as i32
+    !override_forward
+    !has_diffuse
+    !is_auto
+    !diffuse
+    !method
+    !mat
+    return method_out
+
+@sa3d_standard_material_set_diffuse_transmission(&mat: ptr, diffuse_transmission: f32) -> void:
+L_ENTRY:
+    store mat+SA3D_STANDARD_MATERIAL_diffuse_transmission, diffuse_transmission as f32
+    !diffuse_transmission
+    !mat
+    return
+
+@sa3d_standard_material_set_specular_transmission(&mat: ptr, specular_transmission: f32) -> void:
+L_ENTRY:
+    store mat+SA3D_STANDARD_MATERIAL_specular_transmission, specular_transmission as f32
+    !specular_transmission
+    !mat
+    return
+
+@sa3d_standard_material_reads_view_transmission_texture(&mat: ptr) -> i32:
+L_ENTRY:
+    specular = load mat+SA3D_STANDARD_MATERIAL_specular_transmission as f32
+    ok = fcmp_gt specular, 0.0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !specular
+    !mat
+    return 1
+
+L_FALSE:
+    !ok
+    !specular
+    !mat
+    return 0
+
+@sa3d_standard_material_set_alpha_mode(&mat: ptr, mode: i32, cutoff: f32) -> i32:
+L_ENTRY:
+    valid_low = sge mode, SA3D_ALPHA_MODE_OPAQUE
+    valid_high = sle mode, SA3D_ALPHA_MODE_MULTIPLY
+    valid = and valid_low, valid_high
+    br valid -> L_SET, L_ERR
+
+L_ERR:
+    !valid
+    !valid_high
+    !valid_low
+    !cutoff
+    !mode
+    !mat
+    return 0
+
+L_SET:
+    store mat+SA3D_STANDARD_MATERIAL_alpha_mode, mode as i32
+    cut = call @sa3d_standard_material_clamp01(cutoff)
+    store mat+SA3D_STANDARD_MATERIAL_alpha_cutoff, cut as f32
+    !cut
+    !valid
+    !valid_high
+    !valid_low
+    !cutoff
+    !mode
+    !mat
+    return 1
+
+@sa3d_standard_material_is_transparent(&mat: ptr) -> i32:
+L_ENTRY:
+    mode = load mat+SA3D_STANDARD_MATERIAL_alpha_mode as i32
+    is_blend = eq mode, SA3D_ALPHA_MODE_BLEND
+    is_pre = eq mode, SA3D_ALPHA_MODE_PREMULTIPLIED
+    is_add = eq mode, SA3D_ALPHA_MODE_ADD
+    is_mul = eq mode, SA3D_ALPHA_MODE_MULTIPLY
+    p1 = or is_blend, is_pre
+    p2 = or is_add, is_mul
+    ok = or p1, p2
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p2
+    !p1
+    !is_mul
+    !is_add
+    !is_pre
+    !is_blend
+    !mode
+    !mat
+    return 1
+
+L_FALSE:
+    !ok
+    !p2
+    !p1
+    !is_mul
+    !is_add
+    !is_pre
+    !is_blend
+    !mode
+    !mat
+    return 0
+
+@sa3d_standard_material_depth_write_enabled(&mat: ptr) -> i32:
+L_ENTRY:
+    transparent = call @sa3d_standard_material_is_transparent(&mat)
+    no_write = ne transparent, 0
+    br no_write -> L_FALSE, L_TRUE
+
+L_TRUE:
+    !no_write
+    !transparent
+    !mat
+    return 1
+
+L_FALSE:
+    !no_write
+    !transparent
+    !mat
+    return 0
+
+@sa3d_standard_material_alpha_accepts(&mat: ptr, alpha: f32, msaa_samples: i32) -> i32:
+L_ENTRY:
+    mode = load mat+SA3D_STANDARD_MATERIAL_alpha_mode as i32
+    is_mask = eq mode, SA3D_ALPHA_MODE_MASK
+    is_a2c = eq mode, SA3D_ALPHA_MODE_ALPHA_TO_COVERAGE
+    br is_mask -> L_MASK, L_A2C_CHECK
+
+L_MASK:
+    cutoff = load mat+SA3D_STANDARD_MATERIAL_alpha_cutoff as f32
+    pass = fcmp_ge alpha, cutoff
+    br pass -> L_TRUE_MASK, L_FALSE_MASK
+
+L_TRUE_MASK:
+    !pass
+    !cutoff
+    !is_a2c
+    !is_mask
+    !mode
+    !msaa_samples
+    !alpha
+    !mat
+    return 1
+
+L_FALSE_MASK:
+    !pass
+    !cutoff
+    !is_a2c
+    !is_mask
+    !mode
+    !msaa_samples
+    !alpha
+    !mat
+    return 0
+
+L_A2C_CHECK:
+    br is_a2c -> L_A2C, L_TRUE_OTHER
+
+L_A2C:
+    msaa_off = sle msaa_samples, 1
+    br msaa_off -> L_A2C_MASK, L_TRUE_A2C
+
+L_A2C_MASK:
+    pass_a2c = fcmp_ge alpha, 0.5
+    br pass_a2c -> L_TRUE_A2C_MASK, L_FALSE_A2C_MASK
+
+L_TRUE_A2C_MASK:
+    !pass_a2c
+    !msaa_off
+    !is_a2c
+    !is_mask
+    !mode
+    !msaa_samples
+    !alpha
+    !mat
+    return 1
+
+L_FALSE_A2C_MASK:
+    !pass_a2c
+    !msaa_off
+    !is_a2c
+    !is_mask
+    !mode
+    !msaa_samples
+    !alpha
+    !mat
+    return 0
+
+L_TRUE_A2C:
+    !msaa_off
+    !is_a2c
+    !is_mask
+    !mode
+    !msaa_samples
+    !alpha
+    !mat
+    return 1
+
+L_TRUE_OTHER:
+    !is_a2c
+    !is_mask
+    !mode
+    !msaa_samples
+    !alpha
+    !mat
+    return 1
+
+@sa3d_standard_material_alpha_flag_bits(mode: i32) -> i32:
+L_ENTRY:
+    is_a2c = eq mode, SA3D_ALPHA_MODE_ALPHA_TO_COVERAGE
+    is_add = eq mode, SA3D_ALPHA_MODE_ADD
+    is_mul = eq mode, SA3D_ALPHA_MODE_MULTIPLY
+    br is_a2c -> L_A2C, L_NOT_A2C
+
+L_A2C:
+    bits = shl 6, SA3D_STANDARD_MATERIAL_ALPHA_SHIFT
+    !is_mul
+    !is_add
+    !is_a2c
+    !mode
+    return bits
+
+L_NOT_A2C:
+    br is_add -> L_ADD, L_NOT_ADD
+
+L_ADD:
+    bits = shl 4, SA3D_STANDARD_MATERIAL_ALPHA_SHIFT
+    !is_mul
+    !is_add
+    !is_a2c
+    !mode
+    return bits
+
+L_NOT_ADD:
+    br is_mul -> L_MUL, L_OTHER
+
+L_MUL:
+    bits = shl 5, SA3D_STANDARD_MATERIAL_ALPHA_SHIFT
+    !is_mul
+    !is_add
+    !is_a2c
+    !mode
+    return bits
+
+L_OTHER:
+    bits = shl mode, SA3D_STANDARD_MATERIAL_ALPHA_SHIFT
+    !is_mul
+    !is_add
+    !is_a2c
+    !mode
+    return bits
+
+@sa3d_standard_material_flags(&mat: ptr) -> i32:
+L_ENTRY:
+    texture_flags = load mat+SA3D_STANDARD_MATERIAL_texture_flags as i32
+    double_sided = load mat+SA3D_STANDARD_MATERIAL_double_sided as i32
+    unlit = load mat+SA3D_STANDARD_MATERIAL_unlit as i32
+    fog = load mat+SA3D_STANDARD_MATERIAL_fog_enabled as i32
+    alpha_mode = load mat+SA3D_STANDARD_MATERIAL_alpha_mode as i32
+    alpha_bits = call @sa3d_standard_material_alpha_flag_bits(alpha_mode)
+    ds_bool = ne double_sided, 0
+    unlit_bool = ne unlit, 0
+    fog_bool = ne fog, 0
+    ds_i = zext ds_bool as i32
+    unlit_i = zext unlit_bool as i32
+    fog_i = zext fog_bool as i32
+    ds_flag = mul ds_i, SA3D_STANDARD_MATERIAL_FLAG_DOUBLE_SIDED
+    unlit_flag = mul unlit_i, SA3D_STANDARD_MATERIAL_FLAG_UNLIT
+    fog_flag = mul fog_i, SA3D_STANDARD_MATERIAL_FLAG_FOG_ENABLED
+    flags0 = or texture_flags, alpha_bits
+    flags1 = or flags0, ds_flag
+    flags2 = or flags1, unlit_flag
+    flags3 = or flags2, fog_flag
+    !flags2
+    !flags1
+    !flags0
+    !fog_flag
+    !unlit_flag
+    !ds_flag
+    !fog_i
+    !unlit_i
+    !ds_i
+    !fog_bool
+    !unlit_bool
+    !ds_bool
+    !alpha_bits
+    !alpha_mode
+    !fog
+    !unlit
+    !double_sided
+    !texture_flags
+    !mat
+    return flags3
+
+@sa3d_standard_material_validate(&mat: ptr) -> i32:
+L_ENTRY:
+    pr = load mat+SA3D_STANDARD_MATERIAL_perceptual_roughness as f32
+    metallic = load mat+SA3D_STANDARD_MATERIAL_metallic as f32
+    reflectance = load mat+SA3D_STANDARD_MATERIAL_reflectance as f32
+    ior = load mat+SA3D_STANDARD_MATERIAL_ior as f32
+    alpha_mode = load mat+SA3D_STANDARD_MATERIAL_alpha_mode as i32
+    pr_ok0 = fcmp_ge pr, 0.0
+    pr_ok1 = fcmp_le pr, 1.0
+    metallic_ok0 = fcmp_ge metallic, 0.0
+    metallic_ok1 = fcmp_le metallic, 1.0
+    reflect_ok0 = fcmp_ge reflectance, 0.0
+    reflect_ok1 = fcmp_le reflectance, 1.0
+    ior_ok = fcmp_gt ior, 0.0
+    alpha_ok0 = sge alpha_mode, SA3D_ALPHA_MODE_OPAQUE
+    alpha_ok1 = sle alpha_mode, SA3D_ALPHA_MODE_MULTIPLY
+    p1 = and pr_ok0, pr_ok1
+    p2 = and metallic_ok0, metallic_ok1
+    p3 = and reflect_ok0, reflect_ok1
+    p4 = and alpha_ok0, alpha_ok1
+    q1 = and p1, p2
+    q2 = and p3, ior_ok
+    q3 = and q1, q2
+    ok = and q3, p4
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !q3
+    !q2
+    !q1
+    !p4
+    !p3
+    !p2
+    !p1
+    !alpha_ok1
+    !alpha_ok0
+    !ior_ok
+    !reflect_ok1
+    !reflect_ok0
+    !metallic_ok1
+    !metallic_ok0
+    !pr_ok1
+    !pr_ok0
+    !alpha_mode
+    !ior
+    !reflectance
+    !metallic
+    !pr
+    !mat
+    return 1
+
+L_FALSE:
+    !ok
+    !q3
+    !q2
+    !q1
+    !p4
+    !p3
+    !p2
+    !p1
+    !alpha_ok1
+    !alpha_ok0
+    !ior_ok
+    !reflect_ok1
+    !reflect_ok0
+    !metallic_ok1
+    !metallic_ok0
+    !pr_ok1
+    !pr_ok0
+    !alpha_mode
+    !ior
+    !reflectance
+    !metallic
+    !pr
+    !mat
+    return 0

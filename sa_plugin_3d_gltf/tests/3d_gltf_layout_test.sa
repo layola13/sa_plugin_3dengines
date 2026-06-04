@@ -1,0 +1,2894 @@
+@import "../3d_gltf.sal"
+
+@const EXPECT_SCENE7 = utf8:"Scene7"
+@const EXPECT_PRIMITIVE = utf8:"Mesh2/Primitive5"
+@const EXPECT_MATERIAL_INVERTED = utf8:"Material3 (inverted)"
+@const EXPECT_DEFAULT_MATERIAL = utf8:"DefaultMaterial"
+@const EXPECT_IBM = utf8:"Skin4/InverseBindMatrices"
+@const EXPECT_FROM_ASSET = utf8:"models/Fox.glb#Scene0"
+@const EXPECT_BUFFER_BIN = utf8:"buffer.bin"
+@const GLTF_PATH_FOX = utf8:"models/Fox.glb"
+@const EXPECT_NODE_FALLBACK = utf8:"GltfNode12"
+@const EXPECT_NODE_NAME = utf8:"Camera"
+@const EXPECT_PRIMITIVE_NAME = utf8:"Helmet.Gold"
+@const EXPECT_PRIMITIVE_NAME_FALLBACK = utf8:"Mesh.Gold"
+@const EXPECT_A_PNG = utf8:"a.png"
+@const EXPECT_IMAGE_PNG = utf8:"image/png"
+@const EXPECT_IMAGE_JPEG = utf8:"image/jpeg"
+@const NAME_CAMERA = utf8:"Camera"
+@const NAME_HELMET = utf8:"Helmet"
+@const NAME_GOLD = utf8:"Gold"
+@const DATA_URI_OCTET_B64 = utf8:"data:application/octet-stream;base64,AAAA"
+@const DATA_URI_GLTF_RAW = utf8:"data:application/gltf-buffer,raw"
+@const DATA_URI_TEXT_B64 = utf8:"data:text/plain;base64,AAAA"
+@const DATA_URI_EXTERNAL = utf8:"buffer.bin"
+@const BASE64_MAN = utf8:"TWFu"
+@const BASE64_MA = utf8:"TWE="
+@const BASE64_M = utf8:"TQ=="
+@const BASE64_INVALID_CHAR = utf8:"TW$u"
+@const BASE64_BAD_PADDING = utf8:"AA=A"
+@const JSON_DOC_SUMMARY = utf8:"{\"asset\":{\"version\":\"2.0\"},\"scenes\":[{\"nodes\":[0]},{\"name\":\"s\"}],\"nodes\":[{\"mesh\":0},{\"children\":[1]}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0}}]}],\"materials\":[{},{}],\"images\":[{\"uri\":\"a.png\"}],\"textures\":[{\"source\":0}],\"animations\":[],\"skins\":[{}],\"buffers\":[{\"uri\":\"b.bin\"}],\"bufferViews\":[{},{}],\"accessors\":[{},{},{}],\"extras\":{\"meshes\":[1,2,3]}}"
+@const JSON_DOC_BAD = utf8:"["
+@const JSON_TABLES = utf8:"{\"buffers\":[{\"uri\":\"buffer.bin\",\"byteLength\":96},{\"byteLength\":32}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":4,\"byteLength\":48,\"byteStride\":12},{\"buffer\":1,\"byteLength\":16}],\"accessors\":[{\"bufferView\":0,\"byteOffset\":4,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":1,\"componentType\":5121,\"count\":4,\"type\":\"VEC4\",\"normalized\":true},{\"componentType\":5123,\"count\":6,\"type\":\"SCALAR\"}]}"
+@const JSON_PRIMITIVE_MESH = utf8:"{\"buffers\":[{\"byteLength\":80}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":36},{\"buffer\":0,\"byteOffset\":36,\"byteLength\":36},{\"buffer\":0,\"byteOffset\":72,\"byteLength\":6}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":1,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5121,\"count\":6,\"type\":\"SCALAR\"}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0,\"NORMAL\":1},\"indices\":2,\"mode\":4,\"material\":0}]}]}"
+@const JSON_PRIMITIVE_MESH_WITH_MATERIAL = utf8:"{\"buffers\":[{\"byteLength\":80}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":36},{\"buffer\":0,\"byteOffset\":36,\"byteLength\":36},{\"buffer\":0,\"byteOffset\":72,\"byteLength\":6}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":1,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5121,\"count\":6,\"type\":\"SCALAR\"}],\"materials\":[{\"normalTexture\":{\"index\":0}}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0,\"NORMAL\":1},\"indices\":2,\"mode\":4,\"material\":0}]}]}"
+@const JSON_MATERIAL_TANGENTS = utf8:"{\"materials\":[{\"normalTexture\":{\"index\":0,\"texCoord\":1}},{\"extensions\":{\"KHR_materials_clearcoat\":{\"clearcoatNormalTexture\":{\"index\":1}}}},{}]}"
+@const JSON_MATERIAL_TABLE = utf8:"{\"materials\":[{\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":0,\"texCoord\":1},\"metallicRoughnessTexture\":{\"index\":2}},\"normalTexture\":{\"index\":3},\"occlusionTexture\":{\"index\":4,\"texCoord\":1},\"emissiveTexture\":{\"index\":5,\"texCoord\":9}},{}]}"
+@const JSON_MATERIAL_DIRECT = utf8:"{\"materials\":[{\"doubleSided\":true,\"alphaMode\":\"MASK\",\"alphaCutoff\":0.25,\"extensions\":{\"KHR_materials_unlit\":{}}},{\"alphaMode\":\"BLEND\"},{\"doubleSided\":false}]}"
+@const JSON_MATERIAL_FACTORS = utf8:"{\"materials\":[{\"pbrMetallicRoughness\":{\"baseColorFactor\":[0.25,0.5,0.75,1.0],\"metallicFactor\":0.5,\"roughnessFactor\":0.25},\"emissiveFactor\":[1.0,0.5,0.25]},{}]}"
+@const JSON_SAMPLER_TEXTURE_TABLE = utf8:"{\"samplers\":[{\"magFilter\":9728,\"minFilter\":9987,\"wrapS\":33071,\"wrapT\":33648},{}],\"textures\":[{\"source\":2,\"sampler\":0},{\"source\":3}]}"
+@const JSON_IMAGE_TABLE = utf8:"{\"images\":[{\"uri\":\"a.png\",\"mimeType\":\"image/png\"},{\"bufferView\":1,\"mimeType\":\"image/jpeg\"},{}]}"
+
+@gltf_test_bytes_eq(&lhs: ptr, lhs_len: i64, &rhs: ptr, rhs_len: i64) -> i32:
+L_ENTRY:
+    same_len = eq lhs_len, rhs_len
+    br same_len -> L_LOOP_INIT, L_FALSE
+
+L_LOOP_INIT:
+    idx_slot = stack_alloc 8
+    store idx_slot+0, 0 as i64
+    jmp L_HEAD
+
+L_HEAD:
+    idx = load idx_slot+0 as i64
+    done = eq idx, lhs_len
+    br done -> L_TRUE, L_BODY
+
+L_BODY:
+    lhs_ip = ptr_add lhs, idx
+    rhs_ip = ptr_add rhs, idx
+    lhs_byte = load lhs_ip+0 as u8
+    rhs_byte = load rhs_ip+0 as u8
+    byte_ok = eq lhs_byte, rhs_byte
+    !rhs_ip
+    !lhs_ip
+    br byte_ok -> L_NEXT, L_FALSE_BODY
+
+L_NEXT:
+    next_idx = add idx, 1
+    store idx_slot+0, next_idx as i64
+    !next_idx
+    !byte_ok
+    !rhs_byte
+    !lhs_byte
+    !done
+    !idx
+    jmp L_HEAD
+
+L_TRUE:
+    !done
+    !idx
+    !same_len
+    !rhs_len
+    !rhs
+    !lhs_len
+    !lhs
+    return 1
+
+L_FALSE_BODY:
+    !byte_ok
+    !rhs_byte
+    !lhs_byte
+    !done
+    !idx
+    !same_len
+    !rhs_len
+    !rhs
+    !lhs_len
+    !lhs
+    return 0
+
+L_FALSE:
+    !same_len
+    !rhs_len
+    !rhs
+    !lhs_len
+    !lhs
+    return 0
+
+@test "3d_gltf asset desc init"():
+L_ENTRY:
+    d = alloc SA3D_GLTF_ASSET_DESC_SIZE
+    call @sa3d_gltf_asset_desc_init(&d)
+    fmt = call @sa3d_gltf_asset_desc_get_format(&d)
+    fmt_ok = eq fmt, SA3D_GLTF_FORMAT_JSON
+    br fmt_ok -> L_STEP2, L_ERR
+L_STEP2:
+    call @sa3d_gltf_asset_desc_set_format(&d, SA3D_GLTF_FORMAT_GLB)
+    fmt2 = call @sa3d_gltf_asset_desc_get_format(&d)
+    ok = eq fmt2, SA3D_GLTF_FORMAT_GLB
+    !d
+    br ok -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !d
+    panic(3150)
+L_ERR2:
+    panic(3151)
+
+@test "3d_gltf json and glb header helpers"():
+L_ENTRY:
+    json_desc = alloc SA3D_GLTF_ASSET_DESC_SIZE
+    glb_desc = alloc SA3D_GLTF_ASSET_DESC_SIZE
+    bad_glb_desc = alloc SA3D_GLTF_ASSET_DESC_SIZE
+    json_src = alloc 6
+    glb_src = alloc 24
+    bad_glb_src = alloc 12
+    base_uri = alloc 4
+
+    store json_src+0, 32 as u8
+    store json_src+1, 32 as u8
+    store json_src+2, 123 as u8
+    store json_src+3, 125 as u8
+    store json_src+4, 32 as u8
+    store json_src+5, 10 as u8
+
+    store glb_src+0, 103 as u8
+    store glb_src+1, 108 as u8
+    store glb_src+2, 84 as u8
+    store glb_src+3, 70 as u8
+    store glb_src+4, 2 as u8
+    store glb_src+5, 0 as u8
+    store glb_src+6, 0 as u8
+    store glb_src+7, 0 as u8
+    store glb_src+8, 24 as u8
+    store glb_src+9, 0 as u8
+    store glb_src+10, 0 as u8
+    store glb_src+11, 0 as u8
+    store glb_src+12, 4 as u8
+    store glb_src+13, 0 as u8
+    store glb_src+14, 0 as u8
+    store glb_src+15, 0 as u8
+    store glb_src+16, 74 as u8
+    store glb_src+17, 83 as u8
+    store glb_src+18, 79 as u8
+    store glb_src+19, 78 as u8
+    store glb_src+20, 123 as u8
+    store glb_src+21, 125 as u8
+    store glb_src+22, 32 as u8
+    store glb_src+23, 32 as u8
+
+    store bad_glb_src+0, 103 as u8
+    store bad_glb_src+1, 108 as u8
+    store bad_glb_src+2, 84 as u8
+    store bad_glb_src+3, 70 as u8
+    store bad_glb_src+4, 1 as u8
+    store bad_glb_src+5, 0 as u8
+    store bad_glb_src+6, 0 as u8
+    store bad_glb_src+7, 0 as u8
+    store bad_glb_src+8, 12 as u8
+    store bad_glb_src+9, 0 as u8
+    store bad_glb_src+10, 0 as u8
+    store bad_glb_src+11, 0 as u8
+
+    call @sa3d_gltf_asset_desc_init(&json_desc)
+    call @sa3d_gltf_asset_desc_set_source(&json_desc, &json_src, 6)
+    call @sa3d_gltf_asset_desc_set_base_uri(&json_desc, 0, 4)
+    call @sa3d_gltf_asset_desc_set_format(&json_desc, SA3D_GLTF_FORMAT_JSON)
+    call @sa3d_gltf_asset_desc_set_flags(&json_desc, SA3D_GLTF_LOAD_MESHES)
+    invalid_base = call @sa3d_gltf_asset_desc_is_valid(&json_desc)
+    call @sa3d_gltf_asset_desc_set_base_uri(&json_desc, &base_uri, 4)
+    json_header_ok = call @sa3d_gltf_json_header_is_valid(&json_desc)
+    json_valid = call @sa3d_gltf_asset_desc_is_valid(&json_desc)
+
+    call @sa3d_gltf_asset_desc_init(&glb_desc)
+    call @sa3d_gltf_asset_desc_set_source(&glb_desc, &glb_src, 24)
+    call @sa3d_gltf_asset_desc_set_base_uri(&glb_desc, &base_uri, 4)
+    call @sa3d_gltf_asset_desc_set_format(&glb_desc, SA3D_GLTF_FORMAT_GLB)
+    call @sa3d_gltf_asset_desc_set_flags(&glb_desc, SA3D_GLTF_LOAD_MESHES)
+    glb_header_ok = call @sa3d_gltf_glb_header_is_valid(&glb_desc)
+    glb_valid = call @sa3d_gltf_asset_desc_is_valid(&glb_desc)
+
+    call @sa3d_gltf_asset_desc_init(&bad_glb_desc)
+    call @sa3d_gltf_asset_desc_set_source(&bad_glb_desc, &bad_glb_src, 12)
+    call @sa3d_gltf_asset_desc_set_base_uri(&bad_glb_desc, &base_uri, 4)
+    call @sa3d_gltf_asset_desc_set_format(&bad_glb_desc, SA3D_GLTF_FORMAT_GLB)
+    bad_glb_header = call @sa3d_gltf_glb_header_is_valid(&bad_glb_desc)
+
+    invalid_base_ok = eq invalid_base, 0
+    json_header_ok2 = eq json_header_ok, 1
+    json_valid_ok = eq json_valid, 1
+    glb_header_ok2 = eq glb_header_ok, 1
+    glb_valid_ok = eq glb_valid, 1
+    bad_glb_header_ok = eq bad_glb_header, 0
+
+    a = and invalid_base_ok, json_header_ok2
+    b = and json_valid_ok, glb_header_ok2
+    c = and glb_valid_ok, bad_glb_header_ok
+    ok = and a, b
+    ok2 = and ok, c
+
+    !bad_glb_desc
+    !bad_glb_src
+    !glb_desc
+    !json_desc
+    !glb_src
+    !json_src
+    !base_uri
+    br ok2 -> L_OK, L_ERR
+
+L_OK:
+    return 0
+
+L_ERR:
+    panic(3153)
+
+@test "3d_gltf GLB chunk parser validates JSON and BIN chunks"():
+L_ENTRY:
+    buf = alloc 36
+    view = alloc SA3D_GLTF_GLB_VIEW_SIZE
+
+    store buf+0, 103 as u8
+    store buf+1, 108 as u8
+    store buf+2, 84 as u8
+    store buf+3, 70 as u8
+    store buf+4, 2 as u8
+    store buf+5, 0 as u8
+    store buf+6, 0 as u8
+    store buf+7, 0 as u8
+    store buf+8, 24 as u8
+    store buf+9, 0 as u8
+    store buf+10, 0 as u8
+    store buf+11, 0 as u8
+    store buf+12, 4 as u8
+    store buf+13, 0 as u8
+    store buf+14, 0 as u8
+    store buf+15, 0 as u8
+    store buf+16, 74 as u8
+    store buf+17, 83 as u8
+    store buf+18, 79 as u8
+    store buf+19, 78 as u8
+    store buf+20, 123 as u8
+    store buf+21, 125 as u8
+    store buf+22, 32 as u8
+    store buf+23, 32 as u8
+
+    status_json = call @sa3d_gltf_glb_parse_bytes(&buf, 24, &view)
+    json_len = load view+SA3D_GLTF_GLB_VIEW_json_len as i64
+    json_ptr = load view+SA3D_GLTF_GLB_VIEW_json_ptr as ptr
+    json_first = load json_ptr+0 as u8
+    json_second = load json_ptr+1 as u8
+    json_has_bin = load view+SA3D_GLTF_GLB_VIEW_has_bin as i32
+    json_count = load view+SA3D_GLTF_GLB_VIEW_chunk_count as i32
+    json_declared = load view+SA3D_GLTF_GLB_VIEW_declared_len as i64
+    json_field_status = load view+SA3D_GLTF_GLB_VIEW_status as i32
+
+    store buf+8, 36 as u8
+    store buf+24, 4 as u8
+    store buf+25, 0 as u8
+    store buf+26, 0 as u8
+    store buf+27, 0 as u8
+    store buf+28, 66 as u8
+    store buf+29, 73 as u8
+    store buf+30, 78 as u8
+    store buf+31, 0 as u8
+    store buf+32, 1 as u8
+    store buf+33, 2 as u8
+    store buf+34, 3 as u8
+    store buf+35, 4 as u8
+
+    status_bin = call @sa3d_gltf_glb_parse_bytes(&buf, 36, &view)
+    bin_len = load view+SA3D_GLTF_GLB_VIEW_bin_len as i64
+    bin_ptr = load view+SA3D_GLTF_GLB_VIEW_bin_ptr as ptr
+    bin_first = load bin_ptr+0 as u8
+    bin_has = load view+SA3D_GLTF_GLB_VIEW_has_bin as i32
+    bin_count = load view+SA3D_GLTF_GLB_VIEW_chunk_count as i32
+
+    store buf+8, 24 as u8
+    store buf+16, 66 as u8
+    store buf+17, 73 as u8
+    store buf+18, 78 as u8
+    store buf+19, 0 as u8
+    status_bad_first = call @sa3d_gltf_glb_parse_bytes(&buf, 24, &view)
+
+    store buf+16, 74 as u8
+    store buf+17, 83 as u8
+    store buf+18, 79 as u8
+    store buf+19, 78 as u8
+    store buf+12, 8 as u8
+    status_overflow = call @sa3d_gltf_glb_parse_bytes(&buf, 24, &view)
+
+    store buf+12, 4 as u8
+    store buf+8, 28 as u8
+    status_bad_declared = call @sa3d_gltf_glb_parse_bytes(&buf, 24, &view)
+
+    json_status_ok = eq status_json, SA3D_GLTF_GLB_STATUS_OK
+    json_len_ok = eq json_len, 4
+    json_first_ok = eq json_first, 123
+    json_second_ok = eq json_second, 125
+    json_has_bin_ok = eq json_has_bin, 0
+    json_count_ok = eq json_count, 1
+    json_declared_ok = eq json_declared, 24
+    json_field_status_ok = eq json_field_status, SA3D_GLTF_GLB_STATUS_OK
+
+    bin_status_ok = eq status_bin, SA3D_GLTF_GLB_STATUS_OK
+    bin_len_ok = eq bin_len, 4
+    bin_first_ok = eq bin_first, 1
+    bin_has_ok = eq bin_has, 1
+    bin_count_ok = eq bin_count, 2
+
+    bad_first_ok = eq status_bad_first, SA3D_GLTF_GLB_STATUS_BAD_FIRST_CHUNK
+    overflow_ok = eq status_overflow, SA3D_GLTF_GLB_STATUS_CHUNK_OVERFLOW
+    bad_declared_ok = eq status_bad_declared, SA3D_GLTF_GLB_STATUS_BAD_DECLARED_LENGTH
+
+    p0 = and json_status_ok, json_len_ok
+    p1 = and json_first_ok, json_second_ok
+    p2 = and json_has_bin_ok, json_count_ok
+    p3 = and json_declared_ok, json_field_status_ok
+    p4 = and bin_status_ok, bin_len_ok
+    p5 = and bin_first_ok, bin_has_ok
+    p6 = and bin_count_ok, bad_first_ok
+    p7 = and overflow_ok, bad_declared_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    r0 = and q0, q1
+    r1 = and q2, q3
+    ok = and r0, r1
+
+    !view
+    !buf
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3180)
+
+@test "3d_gltf Bevy DataUri parse and buffer mime policy"():
+L_ENTRY:
+    view = alloc SA3D_GLTF_DATA_URI_VIEW_SIZE
+
+    status_octet = call @sa3d_gltf_data_uri_parse(&DATA_URI_OCTET_B64, 41, &view)
+    mime_len_octet = load view+SA3D_GLTF_DATA_URI_VIEW_mime_len as i64
+    data_len_octet = load view+SA3D_GLTF_DATA_URI_VIEW_data_len as i64
+    base64_octet = load view+SA3D_GLTF_DATA_URI_VIEW_base64 as i32
+    data_ptr_octet = load view+SA3D_GLTF_DATA_URI_VIEW_data_ptr as ptr
+    data_first_octet = load data_ptr_octet+0 as u8
+    kind_octet = call @sa3d_gltf_buffer_uri_kind(&DATA_URI_OCTET_B64, 41, &view)
+
+    status_gltf = call @sa3d_gltf_data_uri_parse(&DATA_URI_GLTF_RAW, 32, &view)
+    mime_len_gltf = load view+SA3D_GLTF_DATA_URI_VIEW_mime_len as i64
+    data_len_gltf = load view+SA3D_GLTF_DATA_URI_VIEW_data_len as i64
+    base64_gltf = load view+SA3D_GLTF_DATA_URI_VIEW_base64 as i32
+    data_ptr_gltf = load view+SA3D_GLTF_DATA_URI_VIEW_data_ptr as ptr
+    data_first_gltf = load data_ptr_gltf+0 as u8
+    kind_gltf = call @sa3d_gltf_buffer_uri_kind(&DATA_URI_GLTF_RAW, 32, &view)
+
+    kind_text = call @sa3d_gltf_buffer_uri_kind(&DATA_URI_TEXT_B64, 27, &view)
+    kind_external = call @sa3d_gltf_buffer_uri_kind(&DATA_URI_EXTERNAL, 10, &view)
+
+    octet_status_ok = eq status_octet, SA3D_GLTF_DATA_URI_STATUS_OK
+    octet_mime_len_ok = eq mime_len_octet, 24
+    octet_data_len_ok = eq data_len_octet, 4
+    octet_base64_ok = eq base64_octet, 1
+    octet_data_first_ok = eq data_first_octet, 65
+    octet_kind_ok = eq kind_octet, SA3D_GLTF_BUFFER_URI_DATA
+
+    gltf_status_ok = eq status_gltf, SA3D_GLTF_DATA_URI_STATUS_OK
+    gltf_mime_len_ok = eq mime_len_gltf, 23
+    gltf_data_len_ok = eq data_len_gltf, 3
+    gltf_base64_ok = eq base64_gltf, 0
+    gltf_data_first_ok = eq data_first_gltf, 114
+    gltf_kind_ok = eq kind_gltf, SA3D_GLTF_BUFFER_URI_DATA
+
+    text_kind_ok = eq kind_text, SA3D_GLTF_BUFFER_URI_UNSUPPORTED_DATA_MIME
+    external_kind_ok = eq kind_external, SA3D_GLTF_BUFFER_URI_EXTERNAL
+
+    p0 = and octet_status_ok, octet_mime_len_ok
+    p1 = and octet_data_len_ok, octet_base64_ok
+    p2 = and octet_data_first_ok, octet_kind_ok
+    p3 = and gltf_status_ok, gltf_mime_len_ok
+    p4 = and gltf_data_len_ok, gltf_base64_ok
+    p5 = and gltf_data_first_ok, gltf_kind_ok
+    p6 = and text_kind_ok, external_kind_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    r0 = and q0, q1
+    r1 = and q2, p6
+    ok = and r0, r1
+
+    !view
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3181)
+
+@test "3d_gltf Bevy DataUri decode base64 and raw buffers"():
+L_ENTRY:
+    out = alloc 8
+    out_len = alloc 8
+    view = alloc SA3D_GLTF_DATA_URI_VIEW_SIZE
+
+    man_status = call @sa3d_gltf_base64_decode(&BASE64_MAN, 4, &out, 8, &out_len)
+    man_len = load out_len+0 as i64
+    man0 = load out+0 as u8
+    man1 = load out+1 as u8
+    man2 = load out+2 as u8
+
+    ma_status = call @sa3d_gltf_base64_decode(&BASE64_MA, 4, &out, 8, &out_len)
+    ma_len = load out_len+0 as i64
+    ma0 = load out+0 as u8
+    ma1 = load out+1 as u8
+
+    m_status = call @sa3d_gltf_base64_decode(&BASE64_M, 4, &out, 8, &out_len)
+    m_len = load out_len+0 as i64
+    m0 = load out+0 as u8
+
+    invalid_status = call @sa3d_gltf_base64_decode(&BASE64_INVALID_CHAR, 4, &out, 8, &out_len)
+    bad_padding_status = call @sa3d_gltf_base64_decode(&BASE64_BAD_PADDING, 4, &out, 8, &out_len)
+    small_status = call @sa3d_gltf_base64_decode(&BASE64_MAN, 4, &out, 2, &out_len)
+
+    call @sa3d_gltf_data_uri_parse(&DATA_URI_OCTET_B64, 41, &view)
+    uri_b64_status = call @sa3d_gltf_data_uri_decode_to_buffer(&view, &out, 8, &out_len)
+    uri_b64_len = load out_len+0 as i64
+    uri_b64_0 = load out+0 as u8
+    uri_b64_1 = load out+1 as u8
+    uri_b64_2 = load out+2 as u8
+
+    call @sa3d_gltf_data_uri_parse(&DATA_URI_GLTF_RAW, 32, &view)
+    uri_raw_status = call @sa3d_gltf_data_uri_decode_to_buffer(&view, &out, 8, &out_len)
+    uri_raw_len = load out_len+0 as i64
+    uri_raw_0 = load out+0 as u8
+    uri_raw_1 = load out+1 as u8
+    uri_raw_2 = load out+2 as u8
+
+    man_status_ok = eq man_status, SA3D_GLTF_BUFFER_DECODE_STATUS_OK
+    man_len_ok = eq man_len, 3
+    man0_ok = eq man0, 77
+    man1_ok = eq man1, 97
+    man2_ok = eq man2, 110
+    ma_status_ok = eq ma_status, SA3D_GLTF_BUFFER_DECODE_STATUS_OK
+    ma_len_ok = eq ma_len, 2
+    ma0_ok = eq ma0, 77
+    ma1_ok = eq ma1, 97
+    m_status_ok = eq m_status, SA3D_GLTF_BUFFER_DECODE_STATUS_OK
+    m_len_ok = eq m_len, 1
+    m0_ok = eq m0, 77
+    invalid_ok = eq invalid_status, SA3D_GLTF_BUFFER_DECODE_STATUS_INVALID_BASE64_CHAR
+    bad_padding_ok = eq bad_padding_status, SA3D_GLTF_BUFFER_DECODE_STATUS_BAD_BASE64_PADDING
+    small_ok = eq small_status, SA3D_GLTF_BUFFER_DECODE_STATUS_OUTPUT_TOO_SMALL
+    uri_b64_status_ok = eq uri_b64_status, SA3D_GLTF_BUFFER_DECODE_STATUS_OK
+    uri_b64_len_ok = eq uri_b64_len, 3
+    uri_b64_0_ok = eq uri_b64_0, 0
+    uri_b64_1_ok = eq uri_b64_1, 0
+    uri_b64_2_ok = eq uri_b64_2, 0
+    uri_raw_status_ok = eq uri_raw_status, SA3D_GLTF_BUFFER_DECODE_STATUS_OK
+    uri_raw_len_ok = eq uri_raw_len, 3
+    uri_raw_0_ok = eq uri_raw_0, 114
+    uri_raw_1_ok = eq uri_raw_1, 97
+    uri_raw_2_ok = eq uri_raw_2, 119
+
+    p0 = and man_status_ok, man_len_ok
+    p1 = and man0_ok, man1_ok
+    p2 = and man2_ok, ma_status_ok
+    p3 = and ma_len_ok, ma0_ok
+    p4 = and ma1_ok, m_status_ok
+    p5 = and m_len_ok, m0_ok
+    p6 = and invalid_ok, bad_padding_ok
+    p7 = and small_ok, uri_b64_status_ok
+    p8 = and uri_b64_len_ok, uri_b64_0_ok
+    p9 = and uri_b64_1_ok, uri_b64_2_ok
+    p10 = and uri_raw_status_ok, uri_raw_len_ok
+    p11 = and uri_raw_0_ok, uri_raw_1_ok
+    p12 = and uri_raw_2_ok, p11
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p12
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    ok = and s0, r2
+
+    !view
+    !out_len
+    !out
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3182)
+
+@test "3d_gltf Bevy load_buffers source resolution"():
+L_ENTRY:
+    out = alloc 8
+    result = alloc SA3D_GLTF_BUFFER_LOAD_RESULT_SIZE
+    blob = alloc 4
+    store blob+0, 9 as u8
+    store blob+1, 8 as u8
+    store blob+2, 7 as u8
+    store blob+3, 6 as u8
+
+    bin_status = call @sa3d_gltf_buffer_source_resolve(SA3D_GLTF_BUFFER_SOURCE_BIN, 0, 0, &blob, 4, 1, &out, 8, &result)
+    bin_ptr = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_bytes_ptr as ptr
+    bin_len = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_bytes_len as i64
+    bin_first = load bin_ptr+0 as u8
+    bin_kind = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_source_kind as i32
+
+    missing_status = call @sa3d_gltf_buffer_source_resolve(SA3D_GLTF_BUFFER_SOURCE_BIN, 0, 0, 0, 0, 0, &out, 8, &result)
+
+    data_status = call @sa3d_gltf_buffer_source_resolve(SA3D_GLTF_BUFFER_SOURCE_URI, &DATA_URI_GLTF_RAW, 32, 0, 0, 0, &out, 8, &result)
+    data_ptr = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_bytes_ptr as ptr
+    data_len = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_bytes_len as i64
+    data_first = load data_ptr+0 as u8
+    data_decode_status = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_decode_status as i32
+
+    external_status = call @sa3d_gltf_buffer_source_resolve(SA3D_GLTF_BUFFER_SOURCE_URI, &DATA_URI_EXTERNAL, 10, 0, 0, 0, &out, 8, &result)
+    external_ptr = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_external_uri_ptr as ptr
+    external_len = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_external_uri_len as i64
+    external_first = load external_ptr+0 as u8
+
+    unsupported_status = call @sa3d_gltf_buffer_source_resolve(SA3D_GLTF_BUFFER_SOURCE_URI, &DATA_URI_TEXT_B64, 27, 0, 0, 0, &out, 8, &result)
+    small_status = call @sa3d_gltf_buffer_source_resolve(SA3D_GLTF_BUFFER_SOURCE_URI, &DATA_URI_GLTF_RAW, 32, 0, 0, 0, &out, 2, &result)
+    small_decode_status = load result+SA3D_GLTF_BUFFER_LOAD_RESULT_decode_status as i32
+    invalid_status = call @sa3d_gltf_buffer_source_resolve(99, 0, 0, 0, 0, 0, &out, 8, &result)
+
+    bin_status_ok = eq bin_status, SA3D_GLTF_BUFFER_LOAD_STATUS_OK
+    bin_len_ok = eq bin_len, 4
+    bin_first_ok = eq bin_first, 9
+    bin_kind_ok = eq bin_kind, SA3D_GLTF_BUFFER_SOURCE_BIN
+    missing_ok = eq missing_status, SA3D_GLTF_BUFFER_LOAD_STATUS_MISSING_BLOB
+    data_status_ok = eq data_status, SA3D_GLTF_BUFFER_LOAD_STATUS_OK
+    data_len_ok = eq data_len, 3
+    data_first_ok = eq data_first, 114
+    data_decode_ok = eq data_decode_status, SA3D_GLTF_BUFFER_DECODE_STATUS_OK
+    external_status_ok = eq external_status, SA3D_GLTF_BUFFER_LOAD_STATUS_EXTERNAL_URI
+    external_len_ok = eq external_len, 10
+    external_first_ok = eq external_first, 98
+    unsupported_ok = eq unsupported_status, SA3D_GLTF_BUFFER_LOAD_STATUS_UNSUPPORTED_DATA_MIME
+    small_status_ok = eq small_status, SA3D_GLTF_BUFFER_LOAD_STATUS_OUTPUT_TOO_SMALL
+    small_decode_ok = eq small_decode_status, SA3D_GLTF_BUFFER_DECODE_STATUS_OUTPUT_TOO_SMALL
+    invalid_ok = eq invalid_status, SA3D_GLTF_BUFFER_LOAD_STATUS_INVALID_SOURCE
+
+    p0 = and bin_status_ok, bin_len_ok
+    p1 = and bin_first_ok, bin_kind_ok
+    p2 = and missing_ok, data_status_ok
+    p3 = and data_len_ok, data_first_ok
+    p4 = and data_decode_ok, external_status_ok
+    p5 = and external_len_ok, external_first_ok
+    p6 = and unsupported_ok, small_status_ok
+    p7 = and small_decode_ok, invalid_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    r0 = and q0, q1
+    r1 = and q2, q3
+    ok = and r0, r1
+
+    !blob
+    !result
+    !out
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3183)
+
+@test "3d_gltf import result init"():
+L_ENTRY:
+    r = alloc SA3D_GLTF_IMPORT_RESULT_SIZE
+    call @sa3d_gltf_import_result_init(&r)
+    mc = call @sa3d_gltf_import_result_get_mesh_count(&r)
+    sc = load r+SA3D_GLTF_IMPORT_RESULT_scene_count as i64
+    sk = load r+SA3D_GLTF_IMPORT_RESULT_skin_count as i64
+    nn = load r+SA3D_GLTF_IMPORT_RESULT_node_count as i64
+    ok0 = eq mc, 0
+    ok1 = eq sc, 0
+    ok2 = eq sk, 0
+    ok3 = eq nn, 0
+    !r
+    a = and ok0, ok1
+    b = and ok2, ok3
+    ok = and a, b
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3152)
+
+@test "3d_gltf import result counts and load flags"():
+L_ENTRY:
+    r = alloc SA3D_GLTF_IMPORT_RESULT_SIZE
+    call @sa3d_gltf_import_result_init(&r)
+    call @sa3d_gltf_import_result_set_counts(&r, 2, 3, 4, 5)
+    total = call @sa3d_gltf_import_result_total_assets(&r)
+    total_ok = eq total, 14
+    br total_ok -> L_STEP2, L_ERR
+L_STEP2:
+    flags = or SA3D_GLTF_LOAD_MATERIALS, SA3D_GLTF_LOAD_ANIMATIONS
+    call @sa3d_gltf_import_result_apply_load_flags(&r, flags)
+    call @sa3d_gltf_import_result_set_extended_counts(&r, 1, 2, 3)
+    meshes = call @sa3d_gltf_import_result_get_mesh_count(&r)
+    mats = load r+SA3D_GLTF_IMPORT_RESULT_material_count as i64
+    anims = load r+SA3D_GLTF_IMPORT_RESULT_animation_count as i64
+    scene = load r+SA3D_GLTF_IMPORT_RESULT_scene_handle as i64
+    scenes = load r+SA3D_GLTF_IMPORT_RESULT_scene_count as i64
+    skins = load r+SA3D_GLTF_IMPORT_RESULT_skin_count as i64
+    nodes = load r+SA3D_GLTF_IMPORT_RESULT_node_count as i64
+    meshes_ok = eq meshes, 0
+    mats_ok = eq mats, 1
+    anims_ok = eq anims, 1
+    scene_ok = eq scene, 0
+    scenes_ok = eq scenes, 1
+    skins_ok = eq skins, 2
+    nodes_ok = eq nodes, 3
+    a = and meshes_ok, mats_ok
+    b = and anims_ok, scene_ok
+    c = and scenes_ok, skins_ok
+    d = and nodes_ok, c
+    ok = and a, b
+    ok2 = and d, ok
+    !r
+    br ok2 -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !r
+    panic(3154)
+L_ERR2:
+    panic(3155)
+
+@test "3d_gltf Bevy document summary counts root arrays"():
+L_ENTRY:
+    summary = alloc SA3D_GLTF_DOCUMENT_SUMMARY_SIZE
+    bad_summary = alloc SA3D_GLTF_DOCUMENT_SUMMARY_SIZE
+
+    status = call @sa3d_gltf_document_summary_from_json(&JSON_DOC_SUMMARY, 364, &summary)
+    scenes = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_scene_count as i64
+    nodes = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_node_count as i64
+    meshes = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_mesh_count as i64
+    materials = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_material_count as i64
+    images = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_image_count as i64
+    textures = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_texture_count as i64
+    animations = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_animation_count as i64
+    skins = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_skin_count as i64
+    buffers = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_buffer_count as i64
+    buffer_views = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_buffer_view_count as i64
+    accessors = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_accessor_count as i64
+    field_status = load summary+SA3D_GLTF_DOCUMENT_SUMMARY_status as i32
+    meshes_direct = call @sa3d_gltf_json_root_array_item_count(&JSON_DOC_SUMMARY, 364, &SA3D_GLTF_JSON_KEY_MESHES, 6)
+    bad_status = call @sa3d_gltf_document_summary_from_json(&JSON_DOC_BAD, 1, &bad_summary)
+    bad_field_status = load bad_summary+SA3D_GLTF_DOCUMENT_SUMMARY_status as i32
+
+    status_ok = eq status, SA3D_GLTF_DOCUMENT_STATUS_OK
+    scenes_ok = eq scenes, 2
+    nodes_ok = eq nodes, 2
+    meshes_ok = eq meshes, 1
+    materials_ok = eq materials, 2
+    images_ok = eq images, 1
+    textures_ok = eq textures, 1
+    animations_ok = eq animations, 0
+    skins_ok = eq skins, 1
+    buffers_ok = eq buffers, 1
+    buffer_views_ok = eq buffer_views, 2
+    accessors_ok = eq accessors, 3
+    field_status_ok = eq field_status, SA3D_GLTF_DOCUMENT_STATUS_OK
+    meshes_direct_ok = eq meshes_direct, 1
+    bad_status_ok = eq bad_status, SA3D_GLTF_DOCUMENT_STATUS_MALFORMED_JSON
+    bad_field_status_ok = eq bad_field_status, SA3D_GLTF_DOCUMENT_STATUS_MALFORMED_JSON
+
+    p0 = and status_ok, scenes_ok
+    p1 = and nodes_ok, meshes_ok
+    p2 = and materials_ok, images_ok
+    p3 = and textures_ok, animations_ok
+    p4 = and skins_ok, buffers_ok
+    p5 = and buffer_views_ok, accessors_ok
+    p6 = and field_status_ok, meshes_direct_ok
+    p7 = and bad_status_ok, bad_field_status_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    r0 = and q0, q1
+    r1 = and q2, q3
+    ok = and r0, r1
+
+    !bad_summary
+    !summary
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3190)
+
+@test "3d_gltf Bevy JSON buffer bufferView accessor tables"():
+L_ENTRY:
+    buffer0 = alloc SA3D_GLTF_BUFFER_TABLE_SIZE
+    buffer1 = alloc SA3D_GLTF_BUFFER_TABLE_SIZE
+    view0 = alloc SA3D_GLTF_BUFFER_VIEW_TABLE_SIZE
+    view1 = alloc SA3D_GLTF_BUFFER_VIEW_TABLE_SIZE
+    accessor0 = alloc SA3D_GLTF_ACCESSOR_TABLE_SIZE
+    accessor1 = alloc SA3D_GLTF_ACCESSOR_TABLE_SIZE
+    accessor2 = alloc SA3D_GLTF_ACCESSOR_TABLE_SIZE
+
+    buffer0_status = call @sa3d_gltf_json_buffer_parse(&JSON_TABLES, 393, 0, &buffer0)
+    buffer0_uri = load buffer0+SA3D_GLTF_BUFFER_TABLE_URI_ptr as ptr
+    buffer0_uri_len = load buffer0+SA3D_GLTF_BUFFER_TABLE_URI_len as i64
+    buffer0_byte_len = load buffer0+SA3D_GLTF_BUFFER_TABLE_byte_len as i64
+    buffer0_has_uri = load buffer0+SA3D_GLTF_BUFFER_TABLE_has_uri as i32
+    buffer0_uri_eq = call @gltf_test_bytes_eq(&buffer0_uri, buffer0_uri_len, &EXPECT_BUFFER_BIN, 10)
+    buffer1_status = call @sa3d_gltf_json_buffer_parse(&JSON_TABLES, 393, 1, &buffer1)
+    buffer1_byte_len = load buffer1+SA3D_GLTF_BUFFER_TABLE_byte_len as i64
+    buffer1_has_uri = load buffer1+SA3D_GLTF_BUFFER_TABLE_has_uri as i32
+
+    view0_status = call @sa3d_gltf_json_buffer_view_parse(&JSON_TABLES, 393, 0, &view0)
+    view0_buffer = load view0+SA3D_GLTF_BUFFER_VIEW_TABLE_buffer as i64
+    view0_offset = load view0+SA3D_GLTF_BUFFER_VIEW_TABLE_byte_offset as i64
+    view0_len = load view0+SA3D_GLTF_BUFFER_VIEW_TABLE_byte_len as i64
+    view0_stride = load view0+SA3D_GLTF_BUFFER_VIEW_TABLE_byte_stride as i64
+    view0_has_stride = load view0+SA3D_GLTF_BUFFER_VIEW_TABLE_has_stride as i32
+    view1_status = call @sa3d_gltf_json_buffer_view_parse(&JSON_TABLES, 393, 1, &view1)
+    view1_buffer = load view1+SA3D_GLTF_BUFFER_VIEW_TABLE_buffer as i64
+    view1_offset = load view1+SA3D_GLTF_BUFFER_VIEW_TABLE_byte_offset as i64
+    view1_len = load view1+SA3D_GLTF_BUFFER_VIEW_TABLE_byte_len as i64
+    view1_stride = load view1+SA3D_GLTF_BUFFER_VIEW_TABLE_byte_stride as i64
+    view1_has_stride = load view1+SA3D_GLTF_BUFFER_VIEW_TABLE_has_stride as i32
+
+    accessor0_status = call @sa3d_gltf_json_accessor_parse(&JSON_TABLES, 393, 0, &accessor0)
+    accessor0_bv = load accessor0+SA3D_GLTF_ACCESSOR_TABLE_buffer_view as i32
+    accessor0_has_bv = load accessor0+SA3D_GLTF_ACCESSOR_TABLE_has_buffer_view as i32
+    accessor0_offset = load accessor0+SA3D_GLTF_ACCESSOR_TABLE_byte_offset as i64
+    accessor0_count = load accessor0+SA3D_GLTF_ACCESSOR_TABLE_count as i64
+    accessor0_component = load accessor0+SA3D_GLTF_ACCESSOR_TABLE_component_type as i32
+    accessor0_dim = load accessor0+SA3D_GLTF_ACCESSOR_TABLE_dimension as i32
+    accessor0_norm = load accessor0+SA3D_GLTF_ACCESSOR_TABLE_normalized as i32
+    accessor0_format = load accessor0+SA3D_GLTF_ACCESSOR_TABLE_accessor_format as i32
+
+    accessor1_status = call @sa3d_gltf_json_accessor_parse(&JSON_TABLES, 393, 1, &accessor1)
+    accessor1_bv = load accessor1+SA3D_GLTF_ACCESSOR_TABLE_buffer_view as i32
+    accessor1_count = load accessor1+SA3D_GLTF_ACCESSOR_TABLE_count as i64
+    accessor1_component = load accessor1+SA3D_GLTF_ACCESSOR_TABLE_component_type as i32
+    accessor1_dim = load accessor1+SA3D_GLTF_ACCESSOR_TABLE_dimension as i32
+    accessor1_norm = load accessor1+SA3D_GLTF_ACCESSOR_TABLE_normalized as i32
+    accessor1_format = load accessor1+SA3D_GLTF_ACCESSOR_TABLE_accessor_format as i32
+
+    accessor2_status = call @sa3d_gltf_json_accessor_parse(&JSON_TABLES, 393, 2, &accessor2)
+    accessor2_has_bv = load accessor2+SA3D_GLTF_ACCESSOR_TABLE_has_buffer_view as i32
+    accessor2_count = load accessor2+SA3D_GLTF_ACCESSOR_TABLE_count as i64
+    accessor2_dim = load accessor2+SA3D_GLTF_ACCESSOR_TABLE_dimension as i32
+    accessor2_format = load accessor2+SA3D_GLTF_ACCESSOR_TABLE_accessor_format as i32
+
+    buffer0_status_ok = eq buffer0_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    buffer0_uri_eq_ok = eq buffer0_uri_eq, 1
+    buffer0_byte_len_ok = eq buffer0_byte_len, 96
+    buffer0_has_uri_ok = eq buffer0_has_uri, 1
+    buffer1_status_ok = eq buffer1_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    buffer1_byte_len_ok = eq buffer1_byte_len, 32
+    buffer1_has_uri_ok = eq buffer1_has_uri, 0
+
+    view0_status_ok = eq view0_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    view0_buffer_ok = eq view0_buffer, 0
+    view0_offset_ok = eq view0_offset, 4
+    view0_len_ok = eq view0_len, 48
+    view0_stride_ok = eq view0_stride, 12
+    view0_has_stride_ok = eq view0_has_stride, 1
+    view1_status_ok = eq view1_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    view1_buffer_ok = eq view1_buffer, 1
+    view1_offset_ok = eq view1_offset, 0
+    view1_len_ok = eq view1_len, 16
+    view1_stride_ok = eq view1_stride, 0
+    view1_has_stride_ok = eq view1_has_stride, 0
+
+    accessor0_status_ok = eq accessor0_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    accessor0_bv_ok = eq accessor0_bv, 0
+    accessor0_has_bv_ok = eq accessor0_has_bv, 1
+    accessor0_offset_ok = eq accessor0_offset, 4
+    accessor0_count_ok = eq accessor0_count, 3
+    accessor0_component_ok = eq accessor0_component, SA3D_GLTF_COMPONENT_F32
+    accessor0_dim_ok = eq accessor0_dim, SA3D_GLTF_DIM_VEC3
+    accessor0_norm_ok = eq accessor0_norm, 0
+    accessor0_format_ok = eq accessor0_format, SA3D_GLTF_ACCESSOR_F32X3
+
+    accessor1_status_ok = eq accessor1_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    accessor1_bv_ok = eq accessor1_bv, 1
+    accessor1_count_ok = eq accessor1_count, 4
+    accessor1_component_ok = eq accessor1_component, SA3D_GLTF_COMPONENT_U8
+    accessor1_dim_ok = eq accessor1_dim, SA3D_GLTF_DIM_VEC4
+    accessor1_norm_ok = eq accessor1_norm, 1
+    accessor1_format_ok = eq accessor1_format, SA3D_GLTF_ACCESSOR_U8X4
+
+    accessor2_status_ok = eq accessor2_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    accessor2_has_bv_ok = eq accessor2_has_bv, 0
+    accessor2_count_ok = eq accessor2_count, 6
+    accessor2_dim_ok = eq accessor2_dim, SA3D_GLTF_DIM_SCALAR
+    accessor2_format_ok = eq accessor2_format, SA3D_GLTF_ACCESSOR_U16_SCALAR
+
+    p0 = and buffer0_status_ok, buffer0_uri_eq_ok
+    p1 = and buffer0_byte_len_ok, buffer0_has_uri_ok
+    p2 = and buffer1_status_ok, buffer1_byte_len_ok
+    p3 = and buffer1_has_uri_ok, view0_status_ok
+    p4 = and view0_buffer_ok, view0_offset_ok
+    p5 = and view0_len_ok, view0_stride_ok
+    p6 = and view0_has_stride_ok, view1_status_ok
+    p7 = and view1_buffer_ok, view1_offset_ok
+    p8 = and view1_len_ok, view1_stride_ok
+    p9 = and view1_has_stride_ok, accessor0_status_ok
+    p10 = and accessor0_bv_ok, accessor0_has_bv_ok
+    p11 = and accessor0_offset_ok, accessor0_count_ok
+    p12 = and accessor0_component_ok, accessor0_dim_ok
+    p13 = and accessor0_norm_ok, accessor0_format_ok
+    p14 = and accessor1_status_ok, accessor1_bv_ok
+    p15 = and accessor1_count_ok, accessor1_component_ok
+    p16 = and accessor1_dim_ok, accessor1_norm_ok
+    p17 = and accessor1_format_ok, accessor2_status_ok
+    p18 = and accessor2_has_bv_ok, accessor2_count_ok
+    p19 = and accessor2_dim_ok, accessor2_format_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    q8 = and p16, p17
+    q9 = and p18, p19
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    r4 = and q8, q9
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and s0, s1
+    ok = and s2, r4
+
+    !accessor2
+    !accessor1
+    !accessor0
+    !view1
+    !view0
+    !buffer1
+    !buffer0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3191)
+
+@test "3d_gltf Bevy JSON primitive table drives mesh assembly"():
+L_ENTRY:
+    primitive = alloc SA3D_GLTF_PRIMITIVE_TABLE_SIZE
+    mesh = alloc SA3D_GLTF_PRIMITIVE_MESH_SIZE
+    accessor = alloc SA3D_GLTF_ACCESSOR_TABLE_SIZE
+    view = alloc SA3D_GLTF_BUFFER_VIEW_TABLE_SIZE
+    layout = alloc SA3D_GLTF_ACCESSOR_LAYOUT_SIZE
+    buf = alloc 80
+
+    store buf+72, 0 as u8
+    store buf+73, 1 as u8
+    store buf+74, 2 as u8
+    store buf+75, 0 as u8
+    store buf+76, 2 as u8
+    store buf+77, 1 as u8
+
+    parse_status = call @sa3d_gltf_json_primitive_parse(&JSON_PRIMITIVE_MESH, 485, 0, 0, &primitive)
+    mode = load primitive+SA3D_GLTF_PRIMITIVE_TABLE_mode as i32
+    has_indices = load primitive+SA3D_GLTF_PRIMITIVE_TABLE_has_indices as i32
+    indices = load primitive+SA3D_GLTF_PRIMITIVE_TABLE_indices as i64
+    has_material = load primitive+SA3D_GLTF_PRIMITIVE_TABLE_has_material as i32
+    material = load primitive+SA3D_GLTF_PRIMITIVE_TABLE_material as i64
+    attrs = ptr_add primitive, SA3D_GLTF_PRIMITIVE_TABLE_attributes
+    attr_count = load attrs+SA3D_GLTF_PRIMITIVE_ATTR_TABLE_count as i64
+    has_position = load attrs+SA3D_GLTF_PRIMITIVE_ATTR_TABLE_has_position as i32
+    position_accessor = load attrs+SA3D_GLTF_PRIMITIVE_ATTR_TABLE_position as i64
+    has_normal = load attrs+SA3D_GLTF_PRIMITIVE_ATTR_TABLE_has_normal as i32
+    normal_accessor = load attrs+SA3D_GLTF_PRIMITIVE_ATTR_TABLE_normal as i64
+
+    resolve_pos = call @sa3d_gltf_json_resolve_accessor_layout(&JSON_PRIMITIVE_MESH, 485, 0, 0, 80, &accessor, &view, &layout)
+    pos_layout_offset = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_offset as i64
+    pos_layout_len = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_len as i64
+    pos_layout_stride = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_stride as i64
+    pos_accessor_format = load accessor+SA3D_GLTF_ACCESSOR_TABLE_accessor_format as i32
+
+    resolve_idx = call @sa3d_gltf_json_resolve_accessor_layout(&JSON_PRIMITIVE_MESH, 485, 2, 0, 80, &accessor, &view, &layout)
+    idx_layout_offset = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_offset as i64
+    idx_layout_len = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_len as i64
+    idx_layout_stride = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_stride as i64
+    idx_component = load accessor+SA3D_GLTF_ACCESSOR_TABLE_component_type as i32
+    idx_format = load accessor+SA3D_GLTF_ACCESSOR_TABLE_accessor_format as i32
+
+    mesh_status = call @sa3d_gltf_json_primitive_mesh_from_tables(&JSON_PRIMITIVE_MESH, 485, 0, 0, 0, &buf, 80, 1, 1, SA3D_GLTF_SKINNED_BOUNDS_DYNAMIC, 0, 0, &mesh)
+    mesh_topology = load mesh+SA3D_GLTF_PRIMITIVE_MESH_topology as i32
+    mesh_attr_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_attribute_count as i64
+    mesh_vertex_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_vertex_count as i64
+    mesh_has_position = load mesh+SA3D_GLTF_PRIMITIVE_MESH_has_position as i32
+    mesh_has_normal = load mesh+SA3D_GLTF_PRIMITIVE_MESH_has_normal as i32
+    mesh_has_indices = load mesh+SA3D_GLTF_PRIMITIVE_MESH_has_indices as i32
+    mesh_index_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_index_count as i64
+    mesh_index_max = load mesh+SA3D_GLTF_PRIMITIVE_MESH_index_max as i64
+    mesh_source_index_format = load mesh+SA3D_GLTF_PRIMITIVE_MESH_source_index_format as i32
+    mesh_stored_index_format = load mesh+SA3D_GLTF_PRIMITIVE_MESH_stored_index_format as i32
+    mesh_compute_normals = load mesh+SA3D_GLTF_PRIMITIVE_MESH_compute_flat_normals as i32
+    mesh_generate_tangents = load mesh+SA3D_GLTF_PRIMITIVE_MESH_generate_tangents as i32
+    mesh_generate_bounds = load mesh+SA3D_GLTF_PRIMITIVE_MESH_generate_skinned_bounds as i32
+    mesh_draw_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_draw_count as i64
+    mesh_triangle_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_triangle_count as i64
+
+    parse_ok = eq parse_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    mode_ok = eq mode, SA3D_GLTF_MODE_TRIANGLES
+    has_indices_ok = eq has_indices, 1
+    indices_ok = eq indices, 2
+    has_material_ok = eq has_material, 1
+    material_ok = eq material, 0
+    attr_count_ok = eq attr_count, 2
+    position_has_ok = eq has_position, 1
+    position_accessor_ok = eq position_accessor, 0
+    normal_has_ok = eq has_normal, 1
+    normal_accessor_ok = eq normal_accessor, 1
+
+    resolve_pos_ok = eq resolve_pos, SA3D_GLTF_JSON_RESOLVE_STATUS_OK
+    pos_layout_offset_ok = eq pos_layout_offset, 0
+    pos_layout_len_ok = eq pos_layout_len, 36
+    pos_layout_stride_ok = eq pos_layout_stride, 12
+    pos_accessor_format_ok = eq pos_accessor_format, SA3D_GLTF_ACCESSOR_F32X3
+
+    resolve_idx_ok = eq resolve_idx, SA3D_GLTF_JSON_RESOLVE_STATUS_OK
+    idx_layout_offset_ok = eq idx_layout_offset, 72
+    idx_layout_len_ok = eq idx_layout_len, 6
+    idx_layout_stride_ok = eq idx_layout_stride, 1
+    idx_component_ok = eq idx_component, SA3D_GLTF_COMPONENT_U8
+    idx_format_ok = eq idx_format, SA3D_GLTF_ACCESSOR_U8_SCALAR
+
+    mesh_status_ok = eq mesh_status, SA3D_GLTF_PRIMITIVE_MESH_STATUS_OK
+    mesh_topology_ok = eq mesh_topology, SA3D_GLTF_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    mesh_attr_count_ok = eq mesh_attr_count, 2
+    mesh_vertex_count_ok = eq mesh_vertex_count, 3
+    mesh_has_position_ok = eq mesh_has_position, 1
+    mesh_has_normal_ok = eq mesh_has_normal, 1
+    mesh_has_indices_ok = eq mesh_has_indices, 1
+    mesh_index_count_ok = eq mesh_index_count, 6
+    mesh_index_max_ok = eq mesh_index_max, 2
+    mesh_source_index_format_ok = eq mesh_source_index_format, SA3D_GLTF_INDEX_FORMAT_U8
+    mesh_stored_index_format_ok = eq mesh_stored_index_format, SA3D_GLTF_INDEX_FORMAT_U16
+    mesh_compute_normals_ok = eq mesh_compute_normals, 0
+    mesh_generate_tangents_ok = eq mesh_generate_tangents, 1
+    mesh_generate_bounds_ok = eq mesh_generate_bounds, 0
+    mesh_draw_count_ok = eq mesh_draw_count, 6
+    mesh_triangle_count_ok = eq mesh_triangle_count, 2
+
+    p0 = and parse_ok, mode_ok
+    p1 = and has_indices_ok, indices_ok
+    p2 = and has_material_ok, material_ok
+    p3 = and attr_count_ok, position_has_ok
+    p4 = and position_accessor_ok, normal_has_ok
+    p5 = and normal_accessor_ok, resolve_pos_ok
+    p6 = and pos_layout_offset_ok, pos_layout_len_ok
+    p7 = and pos_layout_stride_ok, pos_accessor_format_ok
+    p8 = and resolve_idx_ok, idx_layout_offset_ok
+    p9 = and idx_layout_len_ok, idx_layout_stride_ok
+    p10 = and idx_component_ok, idx_format_ok
+    p11 = and mesh_status_ok, mesh_topology_ok
+    p12 = and mesh_attr_count_ok, mesh_vertex_count_ok
+    p13 = and mesh_has_position_ok, mesh_has_normal_ok
+    p14 = and mesh_has_indices_ok, mesh_index_count_ok
+    p15 = and mesh_index_max_ok, mesh_source_index_format_ok
+    p16 = and mesh_stored_index_format_ok, mesh_compute_normals_ok
+    p17 = and mesh_generate_tangents_ok, mesh_generate_bounds_ok
+    p18 = and mesh_draw_count_ok, mesh_triangle_count_ok
+
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    q8 = and p16, p17
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and s0, s1
+    s3 = and q8, p18
+    ok = and s2, s3
+
+    !buf
+    !layout
+    !view
+    !accessor
+    !attrs
+    !mesh
+    !primitive
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3192)
+
+@test "3d_gltf Bevy material JSON needs tangents"():
+L_ENTRY:
+    index_out = alloc 8
+    tex_out = alloc 8
+
+    normal_info = call @sa3d_gltf_json_material_texture_info_parse(&JSON_MATERIAL_TANGENTS, 143, 0, &SA3D_GLTF_JSON_KEY_NORMAL_TEXTURE, 13, &index_out, &tex_out)
+    normal_index = load index_out+0 as i64
+    normal_tex = load tex_out+0 as i64
+    missing_info = call @sa3d_gltf_json_material_texture_info_parse(&JSON_MATERIAL_TANGENTS, 143, 2, &SA3D_GLTF_JSON_KEY_NORMAL_TEXTURE, 13, &index_out, &tex_out)
+
+    need_normal = call @sa3d_gltf_json_material_needs_tangents(&JSON_MATERIAL_TANGENTS, 143, 1, 0)
+    need_clearcoat = call @sa3d_gltf_json_material_needs_tangents(&JSON_MATERIAL_TANGENTS, 143, 1, 1)
+    need_none = call @sa3d_gltf_json_material_needs_tangents(&JSON_MATERIAL_TANGENTS, 143, 1, 2)
+    need_default = call @sa3d_gltf_json_material_needs_tangents(&JSON_MATERIAL_TANGENTS, 143, 0, 0)
+
+    normal_info_ok = eq normal_info, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    normal_index_ok = eq normal_index, 0
+    normal_tex_ok = eq normal_tex, 1
+    missing_info_ok = eq missing_info, SA3D_GLTF_JSON_TABLE_STATUS_MISSING_REQUIRED
+    need_normal_ok = eq need_normal, 1
+    need_clearcoat_ok = eq need_clearcoat, 1
+    need_none_ok = eq need_none, 0
+    need_default_ok = eq need_default, 0
+
+    p0 = and normal_info_ok, normal_index_ok
+    p1 = and normal_tex_ok, missing_info_ok
+    p2 = and need_normal_ok, need_clearcoat_ok
+    p3 = and need_none_ok, need_default_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    ok = and q0, q1
+
+    !tex_out
+    !index_out
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3193)
+
+@test "3d_gltf Bevy material JSON texture table"():
+L_ENTRY:
+    material = alloc SA3D_GLTF_MATERIAL_TABLE_SIZE
+    missing = alloc SA3D_GLTF_MATERIAL_TABLE_SIZE
+
+    status = call @sa3d_gltf_json_material_table_parse(&JSON_MATERIAL_TABLE, 243, 0, &material)
+    missing_status = call @sa3d_gltf_json_material_table_parse(&JSON_MATERIAL_TABLE, 243, 1, &missing)
+
+    has_base = load material+SA3D_GLTF_MATERIAL_TABLE_has_base_color_texture as i32
+    base_idx = load material+SA3D_GLTF_MATERIAL_TABLE_base_color_texture as i64
+    base_uv = load material+SA3D_GLTF_MATERIAL_TABLE_base_color_uv as i32
+    has_mr = load material+SA3D_GLTF_MATERIAL_TABLE_has_metallic_roughness_texture as i32
+    mr_idx = load material+SA3D_GLTF_MATERIAL_TABLE_metallic_roughness_texture as i64
+    mr_uv = load material+SA3D_GLTF_MATERIAL_TABLE_metallic_roughness_uv as i32
+    has_normal = load material+SA3D_GLTF_MATERIAL_TABLE_has_normal_texture as i32
+    normal_idx = load material+SA3D_GLTF_MATERIAL_TABLE_normal_texture as i64
+    normal_uv = load material+SA3D_GLTF_MATERIAL_TABLE_normal_uv as i32
+    has_occ = load material+SA3D_GLTF_MATERIAL_TABLE_has_occlusion_texture as i32
+    occ_idx = load material+SA3D_GLTF_MATERIAL_TABLE_occlusion_texture as i64
+    occ_uv = load material+SA3D_GLTF_MATERIAL_TABLE_occlusion_uv as i32
+    has_emissive = load material+SA3D_GLTF_MATERIAL_TABLE_has_emissive_texture as i32
+    emissive_idx = load material+SA3D_GLTF_MATERIAL_TABLE_emissive_texture as i64
+    emissive_uv = load material+SA3D_GLTF_MATERIAL_TABLE_emissive_uv as i32
+    texture_mask = load material+SA3D_GLTF_MATERIAL_TABLE_texture_mask as i32
+    linear_mask = load material+SA3D_GLTF_MATERIAL_TABLE_linear_texture_mask as i32
+    needs = load material+SA3D_GLTF_MATERIAL_TABLE_needs_tangents as i32
+    table_status = load material+SA3D_GLTF_MATERIAL_TABLE_status as i32
+    missing_mask = load missing+SA3D_GLTF_MATERIAL_TABLE_texture_mask as i32
+    missing_needs = load missing+SA3D_GLTF_MATERIAL_TABLE_needs_tangents as i32
+
+    status_ok = eq status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    table_status_ok = eq table_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    missing_status_ok = eq missing_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    missing_mask_ok = eq missing_mask, 0
+    missing_needs_ok = eq missing_needs, 0
+    has_base_ok = eq has_base, 1
+    base_idx_ok = eq base_idx, 0
+    base_uv_ok = eq base_uv, SA3D_GLTF_UV_CHANNEL_UV1
+    has_mr_ok = eq has_mr, 1
+    mr_idx_ok = eq mr_idx, 2
+    mr_uv_ok = eq mr_uv, SA3D_GLTF_UV_CHANNEL_UV0
+    has_normal_ok = eq has_normal, 1
+    normal_idx_ok = eq normal_idx, 3
+    normal_uv_ok = eq normal_uv, SA3D_GLTF_UV_CHANNEL_UV0
+    has_occ_ok = eq has_occ, 1
+    occ_idx_ok = eq occ_idx, 4
+    occ_uv_ok = eq occ_uv, SA3D_GLTF_UV_CHANNEL_UV1
+    has_emissive_ok = eq has_emissive, 1
+    emissive_idx_ok = eq emissive_idx, 5
+    emissive_uv_ok = eq emissive_uv, SA3D_GLTF_UV_CHANNEL_UV0
+    texture_mask_ok = eq texture_mask, 31
+    linear_mask_ok = eq linear_mask, 14
+    needs_ok = eq needs, 1
+
+    p0 = and status_ok, table_status_ok
+    p1 = and missing_status_ok, missing_mask_ok
+    p2 = and missing_needs_ok, has_base_ok
+    p3 = and base_idx_ok, base_uv_ok
+    p4 = and has_mr_ok, mr_idx_ok
+    p5 = and mr_uv_ok, has_normal_ok
+    p6 = and normal_idx_ok, normal_uv_ok
+    p7 = and has_occ_ok, occ_idx_ok
+    p8 = and occ_uv_ok, has_emissive_ok
+    p9 = and emissive_idx_ok, emissive_uv_ok
+    p10 = and texture_mask_ok, linear_mask_ok
+    p11 = and needs_ok, p10
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, p11
+    s0 = and r0, r1
+    ok = and s0, r2
+
+    !missing
+    !material
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3195)
+
+@test "3d_gltf Bevy material JSON direct fields"():
+L_ENTRY:
+    material0 = alloc SA3D_GLTF_MATERIAL_TABLE_SIZE
+    material1 = alloc SA3D_GLTF_MATERIAL_TABLE_SIZE
+    material2 = alloc SA3D_GLTF_MATERIAL_TABLE_SIZE
+
+    status0 = call @sa3d_gltf_json_material_table_parse(&JSON_MATERIAL_DIRECT, 158, 0, &material0)
+    status1 = call @sa3d_gltf_json_material_table_parse(&JSON_MATERIAL_DIRECT, 158, 1, &material1)
+    status2 = call @sa3d_gltf_json_material_table_parse(&JSON_MATERIAL_DIRECT, 158, 2, &material2)
+
+    double0 = load material0+SA3D_GLTF_MATERIAL_TABLE_double_sided as i32
+    unlit0 = load material0+SA3D_GLTF_MATERIAL_TABLE_unlit as i32
+    gltf_alpha0 = load material0+SA3D_GLTF_MATERIAL_TABLE_gltf_alpha_mode as i32
+    alpha0 = load material0+SA3D_GLTF_MATERIAL_TABLE_alpha_mode as i32
+    has_cutoff0 = load material0+SA3D_GLTF_MATERIAL_TABLE_has_alpha_cutoff as i32
+    cutoff0 = load material0+SA3D_GLTF_MATERIAL_TABLE_alpha_cutoff_bits as i32
+
+    double1 = load material1+SA3D_GLTF_MATERIAL_TABLE_double_sided as i32
+    unlit1 = load material1+SA3D_GLTF_MATERIAL_TABLE_unlit as i32
+    gltf_alpha1 = load material1+SA3D_GLTF_MATERIAL_TABLE_gltf_alpha_mode as i32
+    alpha1 = load material1+SA3D_GLTF_MATERIAL_TABLE_alpha_mode as i32
+    has_cutoff1 = load material1+SA3D_GLTF_MATERIAL_TABLE_has_alpha_cutoff as i32
+    cutoff1 = load material1+SA3D_GLTF_MATERIAL_TABLE_alpha_cutoff_bits as i32
+
+    double2 = load material2+SA3D_GLTF_MATERIAL_TABLE_double_sided as i32
+    unlit2 = load material2+SA3D_GLTF_MATERIAL_TABLE_unlit as i32
+    gltf_alpha2 = load material2+SA3D_GLTF_MATERIAL_TABLE_gltf_alpha_mode as i32
+    alpha2 = load material2+SA3D_GLTF_MATERIAL_TABLE_alpha_mode as i32
+    has_cutoff2 = load material2+SA3D_GLTF_MATERIAL_TABLE_has_alpha_cutoff as i32
+    cutoff2 = load material2+SA3D_GLTF_MATERIAL_TABLE_alpha_cutoff_bits as i32
+
+    cull0 = call @sa3d_gltf_material_cull_mode(double0, 0)
+    cull2_front = call @sa3d_gltf_material_cull_mode(double2, 1)
+    cull2_back = call @sa3d_gltf_material_cull_mode(double2, 0)
+
+    status0_ok = eq status0, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    status1_ok = eq status1, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    status2_ok = eq status2, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    double0_ok = eq double0, 1
+    unlit0_ok = eq unlit0, 1
+    gltf_alpha0_ok = eq gltf_alpha0, SA3D_GLTF_ALPHA_MODE_MASK
+    alpha0_ok = eq alpha0, SA3D_ALPHA_MODE_MASK
+    has_cutoff0_ok = eq has_cutoff0, 1
+    cutoff0_ok = eq cutoff0, 1048576000
+    cull0_ok = eq cull0, SA3D_FACE_NONE
+
+    double1_ok = eq double1, 0
+    unlit1_ok = eq unlit1, 0
+    gltf_alpha1_ok = eq gltf_alpha1, SA3D_GLTF_ALPHA_MODE_BLEND
+    alpha1_ok = eq alpha1, SA3D_ALPHA_MODE_BLEND
+    has_cutoff1_ok = eq has_cutoff1, 0
+    cutoff1_ok = eq cutoff1, 0
+
+    double2_ok = eq double2, 0
+    unlit2_ok = eq unlit2, 0
+    gltf_alpha2_ok = eq gltf_alpha2, SA3D_GLTF_ALPHA_MODE_OPAQUE
+    alpha2_ok = eq alpha2, SA3D_ALPHA_MODE_OPAQUE
+    has_cutoff2_ok = eq has_cutoff2, 0
+    cutoff2_ok = eq cutoff2, 0
+    cull2_front_ok = eq cull2_front, SA3D_FACE_FRONT
+    cull2_back_ok = eq cull2_back, SA3D_FACE_BACK
+
+    p0 = and status0_ok, status1_ok
+    p1 = and status2_ok, double0_ok
+    p2 = and unlit0_ok, gltf_alpha0_ok
+    p3 = and alpha0_ok, has_cutoff0_ok
+    p4 = and cutoff0_ok, cull0_ok
+    p5 = and double1_ok, unlit1_ok
+    p6 = and gltf_alpha1_ok, alpha1_ok
+    p7 = and has_cutoff1_ok, cutoff1_ok
+    p8 = and double2_ok, unlit2_ok
+    p9 = and gltf_alpha2_ok, alpha2_ok
+    p10 = and has_cutoff2_ok, cutoff2_ok
+    p11 = and cull2_front_ok, cull2_back_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    ok = and s0, r2
+
+    !material2
+    !material1
+    !material0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3196)
+
+@test "3d_gltf Bevy material JSON numeric factors"():
+L_ENTRY:
+    material0 = alloc SA3D_GLTF_MATERIAL_TABLE_SIZE
+    material1 = alloc SA3D_GLTF_MATERIAL_TABLE_SIZE
+
+    status0 = call @sa3d_gltf_json_material_table_parse(&JSON_MATERIAL_FACTORS, 159, 0, &material0)
+    status1 = call @sa3d_gltf_json_material_table_parse(&JSON_MATERIAL_FACTORS, 159, 1, &material1)
+
+    base0_r = load material0+SA3D_GLTF_MATERIAL_TABLE_base_color_r as i32
+    base0_g = load material0+SA3D_GLTF_MATERIAL_TABLE_base_color_g as i32
+    base0_b = load material0+SA3D_GLTF_MATERIAL_TABLE_base_color_b as i32
+    base0_a = load material0+SA3D_GLTF_MATERIAL_TABLE_base_color_a as i32
+    metallic0 = load material0+SA3D_GLTF_MATERIAL_TABLE_metallic as i32
+    roughness0 = load material0+SA3D_GLTF_MATERIAL_TABLE_roughness as i32
+    emissive0_r = load material0+SA3D_GLTF_MATERIAL_TABLE_emissive_r as i32
+    emissive0_g = load material0+SA3D_GLTF_MATERIAL_TABLE_emissive_g as i32
+    emissive0_b = load material0+SA3D_GLTF_MATERIAL_TABLE_emissive_b as i32
+    has_base0 = load material0+SA3D_GLTF_MATERIAL_TABLE_has_base_color_factor as i32
+    has_metallic0 = load material0+SA3D_GLTF_MATERIAL_TABLE_has_metallic_factor as i32
+    has_roughness0 = load material0+SA3D_GLTF_MATERIAL_TABLE_has_roughness_factor as i32
+    has_emissive0 = load material0+SA3D_GLTF_MATERIAL_TABLE_has_emissive_factor as i32
+
+    base1_r = load material1+SA3D_GLTF_MATERIAL_TABLE_base_color_r as i32
+    base1_a = load material1+SA3D_GLTF_MATERIAL_TABLE_base_color_a as i32
+    metallic1 = load material1+SA3D_GLTF_MATERIAL_TABLE_metallic as i32
+    roughness1 = load material1+SA3D_GLTF_MATERIAL_TABLE_roughness as i32
+    emissive1_r = load material1+SA3D_GLTF_MATERIAL_TABLE_emissive_r as i32
+    has_base1 = load material1+SA3D_GLTF_MATERIAL_TABLE_has_base_color_factor as i32
+    has_metallic1 = load material1+SA3D_GLTF_MATERIAL_TABLE_has_metallic_factor as i32
+    has_roughness1 = load material1+SA3D_GLTF_MATERIAL_TABLE_has_roughness_factor as i32
+    has_emissive1 = load material1+SA3D_GLTF_MATERIAL_TABLE_has_emissive_factor as i32
+
+    status0_ok = eq status0, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    status1_ok = eq status1, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    base0_r_ok = eq base0_r, 1048576000
+    base0_g_ok = eq base0_g, SA3D_GLTF_ALPHA_CUTOFF_DEFAULT_BITS
+    base0_b_ok = eq base0_b, 1061158912
+    base0_a_ok = eq base0_a, SA3D_F32_ONE_BITS
+    metallic0_ok = eq metallic0, SA3D_GLTF_ALPHA_CUTOFF_DEFAULT_BITS
+    roughness0_ok = eq roughness0, 1048576000
+    emissive0_r_ok = eq emissive0_r, SA3D_F32_ONE_BITS
+    emissive0_g_ok = eq emissive0_g, SA3D_GLTF_ALPHA_CUTOFF_DEFAULT_BITS
+    emissive0_b_ok = eq emissive0_b, 1048576000
+    has_base0_ok = eq has_base0, 1
+    has_metallic0_ok = eq has_metallic0, 1
+    has_roughness0_ok = eq has_roughness0, 1
+    has_emissive0_ok = eq has_emissive0, 1
+
+    base1_r_ok = eq base1_r, SA3D_F32_ONE_BITS
+    base1_a_ok = eq base1_a, SA3D_F32_ONE_BITS
+    metallic1_ok = eq metallic1, SA3D_F32_ONE_BITS
+    roughness1_ok = eq roughness1, SA3D_F32_ONE_BITS
+    emissive1_r_ok = eq emissive1_r, 0
+    has_base1_ok = eq has_base1, 0
+    has_metallic1_ok = eq has_metallic1, 0
+    has_roughness1_ok = eq has_roughness1, 0
+    has_emissive1_ok = eq has_emissive1, 0
+
+    p0 = and status0_ok, status1_ok
+    p1 = and base0_r_ok, base0_g_ok
+    p2 = and base0_b_ok, base0_a_ok
+    p3 = and metallic0_ok, roughness0_ok
+    p4 = and emissive0_r_ok, emissive0_g_ok
+    p5 = and emissive0_b_ok, has_base0_ok
+    p6 = and has_metallic0_ok, has_roughness0_ok
+    p7 = and has_emissive0_ok, base1_r_ok
+    p8 = and base1_a_ok, metallic1_ok
+    p9 = and roughness1_ok, emissive1_r_ok
+    p10 = and has_base1_ok, has_metallic1_ok
+    p11 = and has_roughness1_ok, has_emissive1_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    ok = and s0, r2
+
+    !material1
+    !material0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3199)
+
+@test "3d_gltf Bevy sampler and texture JSON tables"():
+L_ENTRY:
+    sampler0 = alloc SA3D_GLTF_SAMPLER_TABLE_SIZE
+    sampler1 = alloc SA3D_GLTF_SAMPLER_TABLE_SIZE
+    texture0 = alloc SA3D_GLTF_TEXTURE_TABLE_SIZE
+    texture1 = alloc SA3D_GLTF_TEXTURE_TABLE_SIZE
+
+    sampler0_status = call @sa3d_gltf_json_sampler_table_parse(&JSON_SAMPLER_TEXTURE_TABLE, 132, 0, &sampler0)
+    sampler1_status = call @sa3d_gltf_json_sampler_table_parse(&JSON_SAMPLER_TEXTURE_TABLE, 132, 1, &sampler1)
+    texture0_status = call @sa3d_gltf_json_texture_table_parse(&JSON_SAMPLER_TEXTURE_TABLE, 132, 0, &texture0)
+    texture1_status = call @sa3d_gltf_json_texture_table_parse(&JSON_SAMPLER_TEXTURE_TABLE, 132, 1, &texture1)
+
+    sampler0_table_status = load sampler0+SA3D_GLTF_SAMPLER_TABLE_status as i32
+    sampler0_has_mag = load sampler0+SA3D_GLTF_SAMPLER_TABLE_has_mag_filter as i32
+    sampler0_has_min = load sampler0+SA3D_GLTF_SAMPLER_TABLE_has_min_filter as i32
+    sampler0_address_u = load sampler0+SA3D_GLTF_SAMPLER_TABLE_address_u as i32
+    sampler0_address_v = load sampler0+SA3D_GLTF_SAMPLER_TABLE_address_v as i32
+    sampler0_address_w = load sampler0+SA3D_GLTF_SAMPLER_TABLE_address_w as i32
+    sampler0_mag = load sampler0+SA3D_GLTF_SAMPLER_TABLE_mag_filter as i32
+    sampler0_min = load sampler0+SA3D_GLTF_SAMPLER_TABLE_min_filter as i32
+    sampler0_mip = load sampler0+SA3D_GLTF_SAMPLER_TABLE_mipmap_filter as i32
+    sampler0_wrap_s = load sampler0+SA3D_GLTF_SAMPLER_TABLE_wrap_s as i32
+    sampler0_wrap_t = load sampler0+SA3D_GLTF_SAMPLER_TABLE_wrap_t as i32
+
+    sampler1_table_status = load sampler1+SA3D_GLTF_SAMPLER_TABLE_status as i32
+    sampler1_has_mag = load sampler1+SA3D_GLTF_SAMPLER_TABLE_has_mag_filter as i32
+    sampler1_has_min = load sampler1+SA3D_GLTF_SAMPLER_TABLE_has_min_filter as i32
+    sampler1_address_u = load sampler1+SA3D_GLTF_SAMPLER_TABLE_address_u as i32
+    sampler1_address_v = load sampler1+SA3D_GLTF_SAMPLER_TABLE_address_v as i32
+    sampler1_mag = load sampler1+SA3D_GLTF_SAMPLER_TABLE_mag_filter as i32
+    sampler1_min = load sampler1+SA3D_GLTF_SAMPLER_TABLE_min_filter as i32
+    sampler1_mip = load sampler1+SA3D_GLTF_SAMPLER_TABLE_mipmap_filter as i32
+
+    texture0_table_status = load texture0+SA3D_GLTF_TEXTURE_TABLE_status as i32
+    texture0_source = load texture0+SA3D_GLTF_TEXTURE_TABLE_source as i64
+    texture0_has_source = load texture0+SA3D_GLTF_TEXTURE_TABLE_has_source as i32
+    texture0_sampler = load texture0+SA3D_GLTF_TEXTURE_TABLE_sampler as i64
+    texture0_has_sampler = load texture0+SA3D_GLTF_TEXTURE_TABLE_has_sampler as i32
+    texture1_table_status = load texture1+SA3D_GLTF_TEXTURE_TABLE_status as i32
+    texture1_source = load texture1+SA3D_GLTF_TEXTURE_TABLE_source as i64
+    texture1_has_source = load texture1+SA3D_GLTF_TEXTURE_TABLE_has_source as i32
+    texture1_sampler = load texture1+SA3D_GLTF_TEXTURE_TABLE_sampler as i64
+    texture1_has_sampler = load texture1+SA3D_GLTF_TEXTURE_TABLE_has_sampler as i32
+
+    sampler0_status_ok = eq sampler0_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    sampler1_status_ok = eq sampler1_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    texture0_status_ok = eq texture0_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    texture1_status_ok = eq texture1_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    sampler0_table_ok = eq sampler0_table_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    sampler0_has_mag_ok = eq sampler0_has_mag, 1
+    sampler0_has_min_ok = eq sampler0_has_min, 1
+    sampler0_address_u_ok = eq sampler0_address_u, SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE
+    sampler0_address_v_ok = eq sampler0_address_v, SA3D_SAMPLER_ADDRESS_MIRROR_REPEAT
+    sampler0_address_w_ok = eq sampler0_address_w, SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE
+    sampler0_mag_ok = eq sampler0_mag, SA3D_SAMPLER_FILTER_NEAREST
+    sampler0_min_ok = eq sampler0_min, SA3D_SAMPLER_FILTER_LINEAR
+    sampler0_mip_ok = eq sampler0_mip, SA3D_SAMPLER_FILTER_LINEAR
+    sampler0_wrap_s_ok = eq sampler0_wrap_s, SA3D_GLTF_WRAP_CLAMP_TO_EDGE
+    sampler0_wrap_t_ok = eq sampler0_wrap_t, SA3D_GLTF_WRAP_MIRRORED_REPEAT
+
+    sampler1_table_ok = eq sampler1_table_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    sampler1_has_mag_ok = eq sampler1_has_mag, 0
+    sampler1_has_min_ok = eq sampler1_has_min, 0
+    sampler1_address_u_ok = eq sampler1_address_u, SA3D_SAMPLER_ADDRESS_REPEAT
+    sampler1_address_v_ok = eq sampler1_address_v, SA3D_SAMPLER_ADDRESS_REPEAT
+    sampler1_mag_ok = eq sampler1_mag, SA3D_SAMPLER_FILTER_LINEAR
+    sampler1_min_ok = eq sampler1_min, SA3D_SAMPLER_FILTER_LINEAR
+    sampler1_mip_ok = eq sampler1_mip, SA3D_SAMPLER_FILTER_LINEAR
+
+    texture0_table_ok = eq texture0_table_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    texture0_source_ok = eq texture0_source, 2
+    texture0_has_source_ok = eq texture0_has_source, 1
+    texture0_sampler_ok = eq texture0_sampler, 0
+    texture0_has_sampler_ok = eq texture0_has_sampler, 1
+    texture1_table_ok = eq texture1_table_status, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    texture1_source_ok = eq texture1_source, 3
+    texture1_has_source_ok = eq texture1_has_source, 1
+    texture1_sampler_ok = eq texture1_sampler, 0
+    texture1_has_sampler_ok = eq texture1_has_sampler, 0
+
+    p0 = and sampler0_status_ok, sampler1_status_ok
+    p1 = and texture0_status_ok, texture1_status_ok
+    p2 = and sampler0_table_ok, sampler0_has_mag_ok
+    p3 = and sampler0_has_min_ok, sampler0_address_u_ok
+    p4 = and sampler0_address_v_ok, sampler0_address_w_ok
+    p5 = and sampler0_mag_ok, sampler0_min_ok
+    p6 = and sampler0_mip_ok, sampler0_wrap_s_ok
+    p7 = and sampler0_wrap_t_ok, sampler1_table_ok
+    p8 = and sampler1_has_mag_ok, sampler1_has_min_ok
+    p9 = and sampler1_address_u_ok, sampler1_address_v_ok
+    p10 = and sampler1_mag_ok, sampler1_min_ok
+    p11 = and sampler1_mip_ok, texture0_table_ok
+    p12 = and texture0_source_ok, texture0_has_source_ok
+    p13 = and texture0_sampler_ok, texture0_has_sampler_ok
+    p14 = and texture1_table_ok, texture1_source_ok
+    p15 = and texture1_has_source_ok, texture1_sampler_ok
+    p16 = and texture1_has_sampler_ok, p15
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p16
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    s0 = and r0, r1
+    s1 = and r2, r3
+    ok = and s0, s1
+
+    !texture1
+    !texture0
+    !sampler1
+    !sampler0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3197)
+
+@test "3d_gltf Bevy image source JSON table"():
+L_ENTRY:
+    image0 = alloc SA3D_GLTF_IMAGE_TABLE_SIZE
+    image1 = alloc SA3D_GLTF_IMAGE_TABLE_SIZE
+    image2 = alloc SA3D_GLTF_IMAGE_TABLE_SIZE
+
+    status0 = call @sa3d_gltf_json_image_table_parse(&JSON_IMAGE_TABLE, 95, 0, &image0)
+    status1 = call @sa3d_gltf_json_image_table_parse(&JSON_IMAGE_TABLE, 95, 1, &image1)
+    status2 = call @sa3d_gltf_json_image_table_parse(&JSON_IMAGE_TABLE, 95, 2, &image2)
+
+    kind0 = load image0+SA3D_GLTF_IMAGE_TABLE_source_kind as i32
+    uri0 = load image0+SA3D_GLTF_IMAGE_TABLE_uri_ptr as ptr
+    uri0_len = load image0+SA3D_GLTF_IMAGE_TABLE_uri_len as i64
+    mime0 = load image0+SA3D_GLTF_IMAGE_TABLE_mime_ptr as ptr
+    mime0_len = load image0+SA3D_GLTF_IMAGE_TABLE_mime_len as i64
+    has_uri0 = load image0+SA3D_GLTF_IMAGE_TABLE_has_uri as i32
+    has_view0 = load image0+SA3D_GLTF_IMAGE_TABLE_has_buffer_view as i32
+    has_mime0 = load image0+SA3D_GLTF_IMAGE_TABLE_has_mime as i32
+    table_status0 = load image0+SA3D_GLTF_IMAGE_TABLE_status as i32
+
+    kind1 = load image1+SA3D_GLTF_IMAGE_TABLE_source_kind as i32
+    view1 = load image1+SA3D_GLTF_IMAGE_TABLE_buffer_view as i64
+    mime1 = load image1+SA3D_GLTF_IMAGE_TABLE_mime_ptr as ptr
+    mime1_len = load image1+SA3D_GLTF_IMAGE_TABLE_mime_len as i64
+    has_uri1 = load image1+SA3D_GLTF_IMAGE_TABLE_has_uri as i32
+    has_view1 = load image1+SA3D_GLTF_IMAGE_TABLE_has_buffer_view as i32
+    has_mime1 = load image1+SA3D_GLTF_IMAGE_TABLE_has_mime as i32
+    table_status1 = load image1+SA3D_GLTF_IMAGE_TABLE_status as i32
+
+    table_status2 = load image2+SA3D_GLTF_IMAGE_TABLE_status as i32
+    has_uri2 = load image2+SA3D_GLTF_IMAGE_TABLE_has_uri as i32
+    has_view2 = load image2+SA3D_GLTF_IMAGE_TABLE_has_buffer_view as i32
+
+    uri0_eq = call @gltf_test_bytes_eq(&uri0, uri0_len, &EXPECT_A_PNG, 5)
+    mime0_eq = call @gltf_test_bytes_eq(&mime0, mime0_len, &EXPECT_IMAGE_PNG, 9)
+    mime1_eq = call @gltf_test_bytes_eq(&mime1, mime1_len, &EXPECT_IMAGE_JPEG, 10)
+
+    status0_ok = eq status0, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    status1_ok = eq status1, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    status2_ok = eq status2, SA3D_GLTF_JSON_TABLE_STATUS_MISSING_REQUIRED
+    table0_ok = eq table_status0, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    kind0_ok = eq kind0, SA3D_GLTF_IMAGE_SOURCE_URI
+    has_uri0_ok = eq has_uri0, 1
+    has_view0_ok = eq has_view0, 0
+    has_mime0_ok = eq has_mime0, 1
+    uri0_ok = eq uri0_eq, 1
+    mime0_ok = eq mime0_eq, 1
+
+    table1_ok = eq table_status1, SA3D_GLTF_JSON_TABLE_STATUS_OK
+    kind1_ok = eq kind1, SA3D_GLTF_IMAGE_SOURCE_VIEW
+    view1_ok = eq view1, 1
+    has_uri1_ok = eq has_uri1, 0
+    has_view1_ok = eq has_view1, 1
+    has_mime1_ok = eq has_mime1, 1
+    mime1_ok = eq mime1_eq, 1
+
+    table2_ok = eq table_status2, SA3D_GLTF_JSON_TABLE_STATUS_MISSING_REQUIRED
+    has_uri2_ok = eq has_uri2, 0
+    has_view2_ok = eq has_view2, 0
+
+    p0 = and status0_ok, status1_ok
+    p1 = and status2_ok, table0_ok
+    p2 = and kind0_ok, has_uri0_ok
+    p3 = and has_view0_ok, has_mime0_ok
+    p4 = and uri0_ok, mime0_ok
+    p5 = and table1_ok, kind1_ok
+    p6 = and view1_ok, has_uri1_ok
+    p7 = and has_view1_ok, has_mime1_ok
+    p8 = and mime1_ok, table2_ok
+    p9 = and has_uri2_ok, has_view2_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    r0 = and q0, q1
+    r1 = and q2, q3
+    s0 = and r0, r1
+    ok = and s0, q4
+
+    !image2
+    !image1
+    !image0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3198)
+
+@test "3d_gltf Bevy primitive mesh auto material tangents"():
+L_ENTRY:
+    mesh = alloc SA3D_GLTF_PRIMITIVE_MESH_SIZE
+    buf = alloc 80
+
+    store buf+72, 0 as u8
+    store buf+73, 1 as u8
+    store buf+74, 2 as u8
+    store buf+75, 0 as u8
+    store buf+76, 2 as u8
+    store buf+77, 1 as u8
+
+    status = call @sa3d_gltf_json_primitive_mesh_from_tables(&JSON_PRIMITIVE_MESH_WITH_MATERIAL, 529, 0, 0, 0, &buf, 80, 1, -1, SA3D_GLTF_SKINNED_BOUNDS_DYNAMIC, 0, 0, &mesh)
+    generate_tangents = load mesh+SA3D_GLTF_PRIMITIVE_MESH_generate_tangents as i32
+    draw_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_draw_count as i64
+    triangle_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_triangle_count as i64
+
+    status_ok = eq status, SA3D_GLTF_PRIMITIVE_MESH_STATUS_OK
+    tangents_ok = eq generate_tangents, 1
+    draw_ok = eq draw_count, 6
+    tri_ok = eq triangle_count, 2
+    a = and status_ok, tangents_ok
+    b = and draw_ok, tri_ok
+    ok = and a, b
+
+    !buf
+    !mesh
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3194)
+
+@test "3d_gltf Bevy asset labels render exactly"():
+L_ENTRY:
+    label = alloc SA3D_GLTF_ASSET_LABEL_SIZE
+    buf = alloc 96
+
+    call @sa3d_gltf_asset_label_scene(&label, 7)
+    len_scene = call @sa3d_gltf_asset_label_to_bytes(&label, &buf, 96)
+    scene_eq = call @gltf_test_bytes_eq(&buf, len_scene, &EXPECT_SCENE7, 6)
+    scene_ok = eq scene_eq, 1
+    br scene_ok -> L_PRIMITIVE, L_ERR_SCENE
+
+L_PRIMITIVE:
+    call @sa3d_gltf_asset_label_primitive(&label, 2, 5)
+    len_primitive = call @sa3d_gltf_asset_label_to_bytes(&label, &buf, 96)
+    primitive_eq = call @gltf_test_bytes_eq(&buf, len_primitive, &EXPECT_PRIMITIVE, 16)
+    primitive_ok = eq primitive_eq, 1
+    br primitive_ok -> L_MATERIAL, L_ERR_PRIMITIVE
+
+L_MATERIAL:
+    call @sa3d_gltf_asset_label_material(&label, 3, 1)
+    len_material = call @sa3d_gltf_asset_label_to_bytes(&label, &buf, 96)
+    material_eq = call @gltf_test_bytes_eq(&buf, len_material, &EXPECT_MATERIAL_INVERTED, 20)
+    material_ok = eq material_eq, 1
+    br material_ok -> L_DEFAULT, L_ERR_MATERIAL
+
+L_DEFAULT:
+    call @sa3d_gltf_asset_label_default_material(&label)
+    len_default = call @sa3d_gltf_asset_label_to_bytes(&label, &buf, 96)
+    default_eq = call @gltf_test_bytes_eq(&buf, len_default, &EXPECT_DEFAULT_MATERIAL, 15)
+    default_ok = eq default_eq, 1
+    br default_ok -> L_IBM, L_ERR_DEFAULT
+
+L_IBM:
+    call @sa3d_gltf_asset_label_inverse_bind_matrices(&label, 4)
+    len_ibm = call @sa3d_gltf_asset_label_to_bytes(&label, &buf, 96)
+    ibm_eq = call @gltf_test_bytes_eq(&buf, len_ibm, &EXPECT_IBM, 25)
+    ibm_ok = eq ibm_eq, 1
+    !label
+    !buf
+    br ibm_ok -> L_OK, L_ERR_IBM
+
+L_OK:
+    return 0
+L_ERR_SCENE:
+    !label
+    !buf
+    panic(3156)
+L_ERR_PRIMITIVE:
+    !label
+    !buf
+    panic(3157)
+L_ERR_MATERIAL:
+    !label
+    !buf
+    panic(3158)
+L_ERR_DEFAULT:
+    !label
+    !buf
+    panic(3159)
+L_ERR_IBM:
+    panic(3160)
+
+@test "3d_gltf Bevy asset label from_asset path"():
+L_ENTRY:
+    label = alloc SA3D_GLTF_ASSET_LABEL_SIZE
+    buf = alloc 96
+    call @sa3d_gltf_asset_label_scene(&label, 0)
+    out_len = call @sa3d_gltf_asset_label_from_asset(&label, &GLTF_PATH_FOX, 14, &buf, 96)
+    path_eq = call @gltf_test_bytes_eq(&buf, out_len, &EXPECT_FROM_ASSET, 21)
+    ok = eq path_eq, 1
+    !label
+    !buf
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3161)
+
+@test "3d_gltf coordinate conversion matches Bevy"():
+L_ENTRY:
+    vec = alloc SA3D_VEC4_SIZE
+    out = alloc SA3D_VEC4_SIZE
+    conv = alloc SA3D_GLTF_CONVERT_COORDINATES_SIZE
+    transform = alloc SA3D_TRANSFORM3D_SIZE
+    mat = alloc SA3D_MAT4_SIZE
+
+    store vec+SA3D_VEC4_x, SA3D_F32_ONE_BITS as i32
+    store vec+SA3D_VEC4_y, 1073741824 as i32
+    store vec+SA3D_VEC4_z, 1077936128 as i32
+    store vec+SA3D_VEC4_w, 1082130432 as i32
+    call @sa3d_gltf_vec4_convert_coordinates(&out, &vec)
+    x = load out+SA3D_VEC4_x as i32
+    y = load out+SA3D_VEC4_y as i32
+    z = load out+SA3D_VEC4_z as i32
+    w = load out+SA3D_VEC4_w as i32
+    x_ok = eq x, SA3D_F32_NEG_ONE_BITS
+    y_ok = eq y, 1073741824
+    z_ok = eq z, -1069547520
+    w_ok = eq w, 1082130432
+
+    call @sa3d_gltf_convert_coordinates_init(&conv)
+    call @sa3d_gltf_convert_coordinates_scene_transform(&transform, &conv)
+    rotation0 = ptr_add transform, SA3D_TRANSFORM3D_rotation
+    rot_identity_w = load rotation0+SA3D_QUAT_w as i32
+    rot_identity_ok = eq rot_identity_w, SA3D_F32_ONE_BITS
+    call @sa3d_gltf_convert_coordinates_set_rotate_scene_entity(&conv, 1)
+    call @sa3d_gltf_convert_coordinates_scene_transform(&transform, &conv)
+    rotation1 = ptr_add transform, SA3D_TRANSFORM3D_rotation
+    rot_y = load rotation1+SA3D_QUAT_y as i32
+    rot_w = load rotation1+SA3D_QUAT_w as i32
+    rot_y_ok = eq rot_y, SA3D_F32_ONE_BITS
+    rot_w_ok = eq rot_w, SA3D_F32_ZERO_BITS
+
+    call @sa3d_gltf_convert_coordinates_set_rotate_meshes(&conv, 1)
+    call @sa3d_gltf_convert_coordinates_mesh_mat4(&mat, &conv)
+    m00 = load mat+0 as i32
+    m11 = load mat+20 as i32
+    m22 = load mat+40 as i32
+    m33 = load mat+60 as i32
+    m00_ok = eq m00, SA3D_F32_NEG_ONE_BITS
+    m11_ok = eq m11, SA3D_F32_ONE_BITS
+    m22_ok = eq m22, SA3D_F32_NEG_ONE_BITS
+    m33_ok = eq m33, SA3D_F32_ONE_BITS
+
+    !rotation1
+    !rotation0
+    !mat
+    !transform
+    !conv
+    !out
+    !vec
+    br x_ok -> L_CHECK_Y, L_ERR_X
+
+L_CHECK_Y:
+    br y_ok -> L_CHECK_Z, L_ERR_Y
+
+L_CHECK_Z:
+    br z_ok -> L_CHECK_W, L_ERR_Z
+
+L_CHECK_W:
+    br w_ok -> L_CHECK_ROT_ID, L_ERR_W
+
+L_CHECK_ROT_ID:
+    br rot_identity_ok -> L_CHECK_ROT_Y, L_ERR_ROT_ID
+
+L_CHECK_ROT_Y:
+    br rot_y_ok -> L_CHECK_ROT_W, L_ERR_ROT_Y
+
+L_CHECK_ROT_W:
+    br rot_w_ok -> L_CHECK_M00, L_ERR_ROT_W
+
+L_CHECK_M00:
+    br m00_ok -> L_CHECK_M11, L_ERR_M00
+
+L_CHECK_M11:
+    br m11_ok -> L_CHECK_M22, L_ERR_M11
+
+L_CHECK_M22:
+    br m22_ok -> L_CHECK_M33, L_ERR_M22
+
+L_CHECK_M33:
+    br m33_ok -> L_OK, L_ERR_M33
+
+L_OK:
+    return 0
+L_ERR_X:
+    panic(3162)
+L_ERR_Y:
+    panic(3163)
+L_ERR_Z:
+    panic(3164)
+L_ERR_W:
+    panic(3165)
+L_ERR_ROT_ID:
+    panic(3166)
+L_ERR_ROT_Y:
+    panic(3167)
+L_ERR_ROT_W:
+    panic(3168)
+L_ERR_M00:
+    panic(3169)
+L_ERR_M11:
+    panic(3170)
+L_ERR_M22:
+    panic(3171)
+L_ERR_M33:
+    panic(3172)
+
+@test "3d_gltf Bevy gltf_ext topology material alpha uv sampler"():
+L_ENTRY:
+    label = alloc SA3D_GLTF_ASSET_LABEL_SIZE
+    cutoff = alloc 4
+
+    top_points = call @sa3d_gltf_primitive_topology(SA3D_GLTF_MODE_POINTS)
+    top_lines = call @sa3d_gltf_primitive_topology(SA3D_GLTF_MODE_LINES)
+    top_line_strip = call @sa3d_gltf_primitive_topology(SA3D_GLTF_MODE_LINE_STRIP)
+    top_triangles = call @sa3d_gltf_primitive_topology(SA3D_GLTF_MODE_TRIANGLES)
+    top_triangle_strip = call @sa3d_gltf_primitive_topology(SA3D_GLTF_MODE_TRIANGLE_STRIP)
+    top_line_loop = call @sa3d_gltf_primitive_topology(SA3D_GLTF_MODE_LINE_LOOP)
+    top_triangle_fan = call @sa3d_gltf_primitive_topology(SA3D_GLTF_MODE_TRIANGLE_FAN)
+    top_points_ok = eq top_points, SA3D_GLTF_PRIMITIVE_TOPOLOGY_POINT_LIST
+    top_lines_ok = eq top_lines, SA3D_GLTF_PRIMITIVE_TOPOLOGY_LINE_LIST
+    top_line_strip_ok = eq top_line_strip, SA3D_GLTF_PRIMITIVE_TOPOLOGY_LINE_STRIP
+    top_triangles_ok = eq top_triangles, SA3D_GLTF_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    top_triangle_strip_ok = eq top_triangle_strip, SA3D_GLTF_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP
+    top_line_loop_ok = eq top_line_loop, SA3D_GLTF_PRIMITIVE_TOPOLOGY_UNSUPPORTED
+    top_triangle_fan_ok = eq top_triangle_fan, SA3D_GLTF_PRIMITIVE_TOPOLOGY_UNSUPPORTED
+
+    call @sa3d_gltf_material_label_from_index(&label, 1, 9, 1)
+    mat_kind = load label+SA3D_GLTF_ASSET_LABEL_kind as i32
+    mat_index = load label+SA3D_GLTF_ASSET_LABEL_index as i64
+    mat_inv = load label+SA3D_GLTF_ASSET_LABEL_is_scale_inverted as i32
+    mat_kind_ok = eq mat_kind, SA3D_GLTF_LABEL_MATERIAL
+    mat_index_ok = eq mat_index, 9
+    mat_inv_ok = eq mat_inv, 1
+    call @sa3d_gltf_material_label_from_index(&label, 0, 9, 1)
+    default_kind = load label+SA3D_GLTF_ASSET_LABEL_kind as i32
+    default_kind_ok = eq default_kind, SA3D_GLTF_LABEL_DEFAULT_MATERIAL
+
+    alpha_mask = call @sa3d_gltf_alpha_mode_to_sa3d(SA3D_GLTF_ALPHA_MODE_MASK, 0, 0, &cutoff)
+    cutoff_default = load cutoff+0 as i32
+    alpha_mask_ok = eq alpha_mask, SA3D_ALPHA_MODE_MASK
+    cutoff_default_ok = eq cutoff_default, SA3D_GLTF_ALPHA_CUTOFF_DEFAULT_BITS
+    alpha_mask_custom = call @sa3d_gltf_alpha_mode_to_sa3d(SA3D_GLTF_ALPHA_MODE_MASK, 1, 1048576000, &cutoff)
+    cutoff_custom = load cutoff+0 as i32
+    alpha_mask_custom_ok = eq alpha_mask_custom, SA3D_ALPHA_MODE_MASK
+    cutoff_custom_ok = eq cutoff_custom, 1048576000
+    alpha_blend = call @sa3d_gltf_alpha_mode_to_sa3d(SA3D_GLTF_ALPHA_MODE_BLEND, 0, 0, &cutoff)
+    alpha_blend_ok = eq alpha_blend, SA3D_ALPHA_MODE_BLEND
+    alpha_opaque = call @sa3d_gltf_alpha_mode_to_sa3d(SA3D_GLTF_ALPHA_MODE_OPAQUE, 0, 0, &cutoff)
+    alpha_opaque_ok = eq alpha_opaque, SA3D_ALPHA_MODE_OPAQUE
+
+    uv0 = call @sa3d_gltf_uv_channel(0)
+    uv1 = call @sa3d_gltf_uv_channel(1)
+    uv_bad = call @sa3d_gltf_uv_channel(7)
+    uv0_ok = eq uv0, SA3D_GLTF_UV_CHANNEL_UV0
+    uv1_ok = eq uv1, SA3D_GLTF_UV_CHANNEL_UV1
+    uv_bad_ok = eq uv_bad, SA3D_GLTF_UV_CHANNEL_UV0
+
+    addr_clamp = call @sa3d_gltf_texture_address_mode(SA3D_GLTF_WRAP_CLAMP_TO_EDGE)
+    addr_repeat = call @sa3d_gltf_texture_address_mode(SA3D_GLTF_WRAP_REPEAT)
+    addr_mirror = call @sa3d_gltf_texture_address_mode(SA3D_GLTF_WRAP_MIRRORED_REPEAT)
+    addr_clamp_ok = eq addr_clamp, SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE
+    addr_repeat_ok = eq addr_repeat, SA3D_SAMPLER_ADDRESS_REPEAT
+    addr_mirror_ok = eq addr_mirror, SA3D_SAMPLER_ADDRESS_MIRROR_REPEAT
+    mag_linear = call @sa3d_gltf_mag_filter_mode(SA3D_GLTF_FILTER_LINEAR)
+    mag_nearest = call @sa3d_gltf_mag_filter_mode(SA3D_GLTF_FILTER_NEAREST)
+    min_linear = call @sa3d_gltf_min_filter_mode(SA3D_GLTF_FILTER_LINEAR_MIPMAP_NEAREST)
+    min_nearest = call @sa3d_gltf_min_filter_mode(SA3D_GLTF_FILTER_NEAREST_MIPMAP_LINEAR)
+    mip_linear = call @sa3d_gltf_mipmap_filter_mode(SA3D_GLTF_FILTER_NEAREST_MIPMAP_LINEAR)
+    mip_nearest = call @sa3d_gltf_mipmap_filter_mode(SA3D_GLTF_FILTER_LINEAR_MIPMAP_NEAREST)
+    mag_linear_ok = eq mag_linear, SA3D_SAMPLER_FILTER_LINEAR
+    mag_nearest_ok = eq mag_nearest, SA3D_SAMPLER_FILTER_NEAREST
+    min_linear_ok = eq min_linear, SA3D_SAMPLER_FILTER_LINEAR
+    min_nearest_ok = eq min_nearest, SA3D_SAMPLER_FILTER_NEAREST
+    mip_linear_ok = eq mip_linear, SA3D_SAMPLER_FILTER_LINEAR
+    mip_nearest_ok = eq mip_nearest, SA3D_SAMPLER_FILTER_NEAREST
+
+    p0 = and top_points_ok, top_lines_ok
+    p1 = and top_line_strip_ok, top_triangles_ok
+    p2 = and top_triangle_strip_ok, top_line_loop_ok
+    p3 = and top_triangle_fan_ok, mat_kind_ok
+    p4 = and mat_index_ok, mat_inv_ok
+    p5 = and default_kind_ok, alpha_mask_ok
+    p6 = and cutoff_default_ok, alpha_mask_custom_ok
+    p7 = and cutoff_custom_ok, alpha_blend_ok
+    p8 = and alpha_opaque_ok, uv0_ok
+    p9 = and uv1_ok, uv_bad_ok
+    p10 = and addr_clamp_ok, addr_repeat_ok
+    p11 = and addr_mirror_ok, mag_linear_ok
+    p12 = and mag_nearest_ok, min_linear_ok
+    p13 = and min_nearest_ok, mip_linear_ok
+    p14 = and mip_nearest_ok, p13
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p14
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and r0, r1
+    r4 = and r2, q6
+    ok = and r3, r4
+    !cutoff
+    !label
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3173)
+
+@test "3d_gltf Bevy gltf_ext names render exactly"():
+L_ENTRY:
+    buf = alloc 96
+
+    node_fallback_len = call @sa3d_gltf_node_name_to_bytes(12, 0, 0, &buf, 96)
+    node_fallback_eq = call @gltf_test_bytes_eq(&buf, node_fallback_len, &EXPECT_NODE_FALLBACK, 10)
+    node_fallback_ok = eq node_fallback_eq, 1
+    br node_fallback_ok -> L_NODE_NAME, L_ERR_NODE_FALLBACK
+
+L_NODE_NAME:
+    node_name_len = call @sa3d_gltf_node_name_to_bytes(12, NAME_CAMERA, 6, &buf, 96)
+    node_name_eq = call @gltf_test_bytes_eq(&buf, node_name_len, &EXPECT_NODE_NAME, 6)
+    node_name_ok = eq node_name_eq, 1
+    br node_name_ok -> L_PRIMITIVE_NAME, L_ERR_NODE_NAME
+
+L_PRIMITIVE_NAME:
+    primitive_name_len = call @sa3d_gltf_primitive_name_to_bytes(NAME_HELMET, 6, NAME_GOLD, 4, &buf, 96)
+    primitive_name_eq = call @gltf_test_bytes_eq(&buf, primitive_name_len, &EXPECT_PRIMITIVE_NAME, 11)
+    primitive_name_ok = eq primitive_name_eq, 1
+    br primitive_name_ok -> L_PRIMITIVE_FALLBACK, L_ERR_PRIMITIVE_NAME
+
+L_PRIMITIVE_FALLBACK:
+    primitive_fallback_len = call @sa3d_gltf_primitive_name_to_bytes(0, 0, NAME_GOLD, 4, &buf, 96)
+    primitive_fallback_eq = call @gltf_test_bytes_eq(&buf, primitive_fallback_len, &EXPECT_PRIMITIVE_NAME_FALLBACK, 9)
+    primitive_fallback_ok = eq primitive_fallback_eq, 1
+    !buf
+    br primitive_fallback_ok -> L_OK, L_ERR_PRIMITIVE_FALLBACK
+
+L_OK:
+    return 0
+L_ERR_NODE_FALLBACK:
+    !buf
+    panic(3174)
+L_ERR_NODE_NAME:
+    !buf
+    panic(3175)
+L_ERR_PRIMITIVE_NAME:
+    !buf
+    panic(3176)
+L_ERR_PRIMITIVE_FALLBACK:
+    panic(3177)
+
+@test "3d_gltf loader settings default and overrides match Bevy"():
+L_ENTRY:
+    settings = alloc SA3D_GLTF_LOADER_SETTINGS_SIZE
+    default_convert = alloc SA3D_GLTF_CONVERT_COORDINATES_SIZE
+    effective = alloc SA3D_GLTF_CONVERT_COORDINATES_SIZE
+
+    call @sa3d_gltf_loader_settings_default(&settings)
+    load_meshes = load settings+SA3D_GLTF_LOADER_SETTINGS_load_meshes as i32
+    load_materials = load settings+SA3D_GLTF_LOADER_SETTINGS_load_materials as i32
+    load_cameras = load settings+SA3D_GLTF_LOADER_SETTINGS_load_cameras as i32
+    load_lights = load settings+SA3D_GLTF_LOADER_SETTINGS_load_lights as i32
+    load_animations = load settings+SA3D_GLTF_LOADER_SETTINGS_load_animations as i32
+    include_source = load settings+SA3D_GLTF_LOADER_SETTINGS_include_source as i32
+    sampler_present = load settings+SA3D_GLTF_LOADER_SETTINGS_default_sampler_present as i32
+    override_sampler = load settings+SA3D_GLTF_LOADER_SETTINGS_override_sampler as i32
+    validate = load settings+SA3D_GLTF_LOADER_SETTINGS_validate as i32
+    convert_present = load settings+SA3D_GLTF_LOADER_SETTINGS_convert_coordinates_present as i32
+    bounds_present = load settings+SA3D_GLTF_LOADER_SETTINGS_skinned_mesh_bounds_policy_present as i32
+    bounds_value = load settings+SA3D_GLTF_LOADER_SETTINGS_skinned_mesh_bounds_policy as i32
+
+    meshes_default_ok = eq load_meshes, SA3D_GLTF_RENDER_ASSET_USAGE_DEFAULT
+    materials_default_ok = eq load_materials, SA3D_GLTF_RENDER_ASSET_USAGE_DEFAULT
+    cameras_ok = eq load_cameras, 1
+    lights_ok = eq load_lights, 1
+    animations_ok = eq load_animations, 1
+    include_ok = eq include_source, 0
+    sampler_ok = eq sampler_present, 0
+    override_ok = eq override_sampler, 0
+    validate_ok = eq validate, 1
+    convert_present_ok = eq convert_present, 0
+    bounds_present_ok = eq bounds_present, 0
+    bounds_value_ok = eq bounds_value, SA3D_GLTF_SKINNED_BOUNDS_DYNAMIC
+
+    call @sa3d_gltf_convert_coordinates_init(&default_convert)
+    call @sa3d_gltf_convert_coordinates_set_rotate_scene_entity(&default_convert, 1)
+    call @sa3d_gltf_loader_settings_effective_convert_coordinates(&effective, &settings, &default_convert)
+    eff_scene0 = load effective+SA3D_GLTF_CONVERT_COORDINATES_rotate_scene_entity as i32
+    eff_mesh0 = load effective+SA3D_GLTF_CONVERT_COORDINATES_rotate_meshes as i32
+    eff_default_scene_ok = eq eff_scene0, 1
+    eff_default_mesh_ok = eq eff_mesh0, 0
+
+    call @sa3d_gltf_loader_settings_set_convert_coordinates(&settings, 0, 1)
+    call @sa3d_gltf_loader_settings_effective_convert_coordinates(&effective, &settings, &default_convert)
+    eff_scene1 = load effective+SA3D_GLTF_CONVERT_COORDINATES_rotate_scene_entity as i32
+    eff_mesh1 = load effective+SA3D_GLTF_CONVERT_COORDINATES_rotate_meshes as i32
+    eff_override_scene_ok = eq eff_scene1, 0
+    eff_override_mesh_ok = eq eff_mesh1, 1
+
+    call @sa3d_gltf_loader_settings_set_load_meshes(&settings, 0)
+    meshes_enabled = call @sa3d_gltf_loader_settings_meshes_enabled(&settings)
+    meshes_disabled_ok = eq meshes_enabled, 0
+    call @sa3d_gltf_loader_settings_set_load_materials(&settings, SA3D_GLTF_RENDER_ASSET_USAGE_RENDER_WORLD)
+    materials_enabled = call @sa3d_gltf_loader_settings_materials_enabled(&settings)
+    materials_enabled_ok = eq materials_enabled, 1
+
+    effective_policy0 = call @sa3d_gltf_loader_settings_effective_skinned_bounds_policy(&settings, SA3D_GLTF_SKINNED_BOUNDS_NO_FRUSTUM_CULLING)
+    policy_default_ok = eq effective_policy0, SA3D_GLTF_SKINNED_BOUNDS_NO_FRUSTUM_CULLING
+    call @sa3d_gltf_loader_settings_set_skinned_bounds_policy(&settings, SA3D_GLTF_SKINNED_BOUNDS_BIND_POSE)
+    effective_policy1 = call @sa3d_gltf_loader_settings_effective_skinned_bounds_policy(&settings, SA3D_GLTF_SKINNED_BOUNDS_NO_FRUSTUM_CULLING)
+    policy_override_ok = eq effective_policy1, SA3D_GLTF_SKINNED_BOUNDS_BIND_POSE
+
+    p0 = and meshes_default_ok, materials_default_ok
+    p1 = and cameras_ok, lights_ok
+    p2 = and animations_ok, include_ok
+    p3 = and sampler_ok, override_ok
+    p4 = and validate_ok, convert_present_ok
+    p5 = and bounds_present_ok, bounds_value_ok
+    p6 = and eff_default_scene_ok, eff_default_mesh_ok
+    p7 = and eff_override_scene_ok, eff_override_mesh_ok
+    p8 = and meshes_disabled_ok, materials_enabled_ok
+    p9 = and policy_default_ok, policy_override_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and r0, r1
+    ok = and r2, q4
+    !effective
+    !default_convert
+    !settings
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3178)
+
+@test "3d_gltf Bevy vertex attribute semantic and accessor mapping"():
+L_ENTRY:
+    desc = alloc SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_SIZE
+
+    pos_ok = call @sa3d_gltf_vertex_attribute_from_semantic(&desc, SA3D_GLTF_SEMANTIC_POSITIONS, 1, 0)
+    pos_attr = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_attribute as i32
+    pos_conv = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_conversion as i32
+    pos_coord = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_convert_coordinates as i32
+    pos_known = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_known as i32
+    pos_ok2 = eq pos_ok, 1
+    pos_attr_ok = eq pos_attr, SA3D_GLTF_ATTRIBUTE_POSITION
+    pos_conv_ok = eq pos_conv, SA3D_GLTF_CONVERSION_ANY
+    pos_coord_ok = eq pos_coord, 1
+    pos_known_ok = eq pos_known, 1
+
+    color_ok = call @sa3d_gltf_vertex_attribute_from_semantic(&desc, SA3D_GLTF_SEMANTIC_COLORS_0, 1, 0)
+    color_attr = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_attribute as i32
+    color_conv = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_conversion as i32
+    color_coord = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_convert_coordinates as i32
+    color_ok2 = eq color_ok, 1
+    color_attr_ok = eq color_attr, SA3D_GLTF_ATTRIBUTE_COLOR
+    color_conv_ok = eq color_conv, SA3D_GLTF_CONVERSION_RGBA
+    color_coord_ok = eq color_coord, 0
+
+    uv_ok = call @sa3d_gltf_vertex_attribute_from_semantic(&desc, SA3D_GLTF_SEMANTIC_TEXCOORDS_1, 1, 0)
+    uv_attr = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_attribute as i32
+    uv_conv = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_conversion as i32
+    uv_attr_ok = eq uv_attr, SA3D_GLTF_ATTRIBUTE_UV_1
+    uv_conv_ok = eq uv_conv, SA3D_GLTF_CONVERSION_TEX_COORD
+    uv_ok2 = eq uv_ok, 1
+
+    joints_ok = call @sa3d_gltf_vertex_attribute_from_semantic(&desc, SA3D_GLTF_SEMANTIC_JOINTS_0, 1, 0)
+    joints_attr = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_attribute as i32
+    joints_conv = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_conversion as i32
+    joints_attr_ok = eq joints_attr, SA3D_GLTF_ATTRIBUTE_JOINT_INDEX
+    joints_conv_ok = eq joints_conv, SA3D_GLTF_CONVERSION_JOINT_INDEX
+    joints_ok2 = eq joints_ok, 1
+
+    custom_ok = call @sa3d_gltf_vertex_attribute_from_semantic(&desc, SA3D_GLTF_SEMANTIC_EXTRAS, 0, 1234)
+    custom_attr = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_attribute as i32
+    custom_attr_ok = eq custom_attr, 1234
+    custom_ok2 = eq custom_ok, 1
+
+    unknown_ok = call @sa3d_gltf_vertex_attribute_from_semantic(&desc, 99, 0, 0)
+    unknown_known = load desc+SA3D_GLTF_VERTEX_ATTRIBUTE_DESC_known as i32
+    unknown_ok2 = eq unknown_ok, 0
+    unknown_known_ok = eq unknown_known, 0
+
+    any_f32x3 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_ANY, SA3D_GLTF_ACCESSOR_F32X3, 0)
+    any_f32x3_norm = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_ANY, SA3D_GLTF_ACCESSOR_F32X3, 1)
+    any_u16x2_norm = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_ANY, SA3D_GLTF_ACCESSOR_U16X2, 1)
+    rgba_u8x3 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_RGBA, SA3D_GLTF_ACCESSOR_U8X3, 1)
+    rgba_u8x3_bad = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_RGBA, SA3D_GLTF_ACCESSOR_U8X3, 0)
+    rgba_f32x4 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_RGBA, SA3D_GLTF_ACCESSOR_F32X4, 0)
+    tex_u16x2 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_TEX_COORD, SA3D_GLTF_ACCESSOR_U16X2, 1)
+    tex_u16x2_bad = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_TEX_COORD, SA3D_GLTF_ACCESSOR_U16X2, 0)
+    tex_f32x2 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_TEX_COORD, SA3D_GLTF_ACCESSOR_F32X2, 0)
+    joint_u8x4 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_JOINT_INDEX, SA3D_GLTF_ACCESSOR_U8X4, 0)
+    joint_u8x4_bad = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_JOINT_INDEX, SA3D_GLTF_ACCESSOR_U8X4, 1)
+    joint_u16x4 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_JOINT_INDEX, SA3D_GLTF_ACCESSOR_U16X4, 0)
+    joint_u32x4_bad = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_JOINT_INDEX, SA3D_GLTF_ACCESSOR_U32X4, 0)
+    weight_u8x4 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_JOINT_WEIGHT, SA3D_GLTF_ACCESSOR_U8X4, 1)
+    weight_f32x4 = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_JOINT_WEIGHT, SA3D_GLTF_ACCESSOR_F32X4, 0)
+    weight_u16x4_bad = call @sa3d_gltf_accessor_conversion_supported(SA3D_GLTF_CONVERSION_JOINT_WEIGHT, SA3D_GLTF_ACCESSOR_U16X4, 0)
+
+    any_f32x3_ok = eq any_f32x3, 1
+    any_f32x3_norm_ok = eq any_f32x3_norm, 0
+    any_u16x2_norm_ok = eq any_u16x2_norm, 1
+    rgba_u8x3_ok = eq rgba_u8x3, 1
+    rgba_u8x3_bad_ok = eq rgba_u8x3_bad, 0
+    rgba_f32x4_ok = eq rgba_f32x4, 1
+    tex_u16x2_ok = eq tex_u16x2, 1
+    tex_u16x2_bad_ok = eq tex_u16x2_bad, 0
+    tex_f32x2_ok = eq tex_f32x2, 1
+    joint_u8x4_ok = eq joint_u8x4, 1
+    joint_u8x4_bad_ok = eq joint_u8x4_bad, 0
+    joint_u16x4_ok = eq joint_u16x4, 1
+    joint_u32x4_bad_ok = eq joint_u32x4_bad, 0
+    weight_u8x4_ok = eq weight_u8x4, 1
+    weight_f32x4_ok = eq weight_f32x4, 1
+    weight_u16x4_bad_ok = eq weight_u16x4_bad, 0
+
+    p0 = and pos_ok2, pos_attr_ok
+    p1 = and pos_conv_ok, pos_coord_ok
+    p2 = and pos_known_ok, color_ok2
+    p3 = and color_attr_ok, color_conv_ok
+    p4 = and color_coord_ok, uv_ok2
+    p5 = and uv_attr_ok, uv_conv_ok
+    p6 = and joints_ok2, joints_attr_ok
+    p7 = and joints_conv_ok, custom_ok2
+    p8 = and custom_attr_ok, unknown_ok2
+    p9 = and unknown_known_ok, any_f32x3_ok
+    p10 = and any_f32x3_norm_ok, any_u16x2_norm_ok
+    p11 = and rgba_u8x3_ok, rgba_u8x3_bad_ok
+    p12 = and rgba_f32x4_ok, tex_u16x2_ok
+    p13 = and tex_u16x2_bad_ok, tex_f32x2_ok
+    p14 = and joint_u8x4_ok, joint_u8x4_bad_ok
+    p15 = and joint_u16x4_ok, joint_u32x4_bad_ok
+    p16 = and weight_u8x4_ok, weight_f32x4_ok
+    p17 = and weight_u16x4_bad_ok, p16
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and s0, s1
+    ok = and s2, p17
+    !desc
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3179)
+
+@test "3d_gltf accessor bufferView layout validation"():
+L_ENTRY:
+    layout = alloc SA3D_GLTF_ACCESSOR_LAYOUT_SIZE
+
+    size_f32x3 = call @sa3d_gltf_accessor_format_byte_size(SA3D_GLTF_ACCESSOR_F32X3)
+    size_u8x3 = call @sa3d_gltf_accessor_format_byte_size(SA3D_GLTF_ACCESSOR_U8X3)
+    size_bad = call @sa3d_gltf_accessor_format_byte_size(99)
+
+    tight_status = call @sa3d_gltf_accessor_layout_validate(128, 16, 72, 0, 4, 5, SA3D_GLTF_ACCESSOR_F32X3, &layout)
+    tight_offset = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_offset as i64
+    tight_len = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_len as i64
+    tight_stride = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_stride as i64
+    tight_element = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_element_size as i64
+
+    stride_status = call @sa3d_gltf_accessor_layout_validate(200, 8, 100, 20, 4, 4, SA3D_GLTF_ACCESSOR_F32X3, &layout)
+    stride_offset = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_offset as i64
+    stride_len = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_len as i64
+    stride_stride = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_stride as i64
+
+    zero_status = call @sa3d_gltf_accessor_layout_validate(64, 10, 10, 0, 10, 0, SA3D_GLTF_ACCESSOR_F32_SCALAR, &layout)
+    zero_offset = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_offset as i64
+    zero_len = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_byte_len as i64
+    zero_stride = load layout+SA3D_GLTF_ACCESSOR_LAYOUT_stride as i64
+
+    bad_stride_status = call @sa3d_gltf_accessor_layout_validate(128, 0, 64, 8, 0, 4, SA3D_GLTF_ACCESSOR_F32X3, &layout)
+    bad_view_status = call @sa3d_gltf_accessor_layout_validate(64, 32, 40, 0, 0, 4, SA3D_GLTF_ACCESSOR_F32X3, &layout)
+    unsupported_status = call @sa3d_gltf_accessor_layout_validate(64, 0, 64, 0, 0, 4, 99, &layout)
+
+    size_f32x3_ok = eq size_f32x3, 12
+    size_u8x3_ok = eq size_u8x3, 3
+    size_bad_ok = eq size_bad, 0
+    tight_status_ok = eq tight_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    tight_offset_ok = eq tight_offset, 20
+    tight_len_ok = eq tight_len, 60
+    tight_stride_ok = eq tight_stride, 12
+    tight_element_ok = eq tight_element, 12
+    stride_status_ok = eq stride_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    stride_offset_ok = eq stride_offset, 12
+    stride_len_ok = eq stride_len, 72
+    stride_stride_ok = eq stride_stride, 20
+    zero_status_ok = eq zero_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    zero_offset_ok = eq zero_offset, 20
+    zero_len_ok = eq zero_len, 0
+    zero_stride_ok = eq zero_stride, 4
+    bad_stride_ok = eq bad_stride_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_MALFORMED_DATA
+    bad_view_ok = eq bad_view_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_MALFORMED_DATA
+    unsupported_ok = eq unsupported_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_UNSUPPORTED_FORMAT
+
+    p0 = and size_f32x3_ok, size_u8x3_ok
+    p1 = and size_bad_ok, tight_status_ok
+    p2 = and tight_offset_ok, tight_len_ok
+    p3 = and tight_stride_ok, tight_element_ok
+    p4 = and stride_status_ok, stride_offset_ok
+    p5 = and stride_len_ok, stride_stride_ok
+    p6 = and zero_status_ok, zero_offset_ok
+    p7 = and zero_len_ok, zero_stride_ok
+    p8 = and bad_stride_ok, bad_view_ok
+    p9 = and unsupported_ok, p8
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and r0, r1
+    ok = and r2, p9
+
+    !layout
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3184)
+
+@test "3d_gltf Bevy ReadIndices accessor scan"():
+L_ENTRY:
+    buf = alloc 40
+    result = alloc SA3D_GLTF_INDEX_SCAN_RESULT_SIZE
+
+    store buf+2, 1 as u8
+    store buf+3, 4 as u8
+    store buf+4, 2 as u8
+    store buf+5, 9 as u8
+
+    store buf+8, 5 as u8
+    store buf+9, 0 as u8
+    store buf+10, 44 as u8
+    store buf+11, 1 as u8
+    store buf+12, 2 as u8
+    store buf+13, 0 as u8
+
+    store buf+16, 7 as u8
+    store buf+17, 0 as u8
+    store buf+18, 0 as u8
+    store buf+19, 0 as u8
+    store buf+24, 1 as u8
+    store buf+25, 0 as u8
+    store buf+26, 1 as u8
+    store buf+27, 0 as u8
+
+    u8_status = call @sa3d_gltf_index_accessor_scan(&buf, 40, 2, 4, 0, 0, 4, SA3D_GLTF_INDEX_FORMAT_U8, &result)
+    u8_count = load result+SA3D_GLTF_INDEX_SCAN_RESULT_count as i64
+    u8_max = load result+SA3D_GLTF_INDEX_SCAN_RESULT_max_index as i64
+    u8_offset = load result+SA3D_GLTF_INDEX_SCAN_RESULT_byte_offset as i64
+    u8_len = load result+SA3D_GLTF_INDEX_SCAN_RESULT_byte_len as i64
+    u8_stride = load result+SA3D_GLTF_INDEX_SCAN_RESULT_stride as i64
+    u8_size = load result+SA3D_GLTF_INDEX_SCAN_RESULT_index_size as i64
+
+    u16_status = call @sa3d_gltf_index_accessor_scan(&buf, 40, 8, 6, 0, 0, 3, SA3D_GLTF_INDEX_FORMAT_U16, &result)
+    u16_max = load result+SA3D_GLTF_INDEX_SCAN_RESULT_max_index as i64
+    u16_len = load result+SA3D_GLTF_INDEX_SCAN_RESULT_byte_len as i64
+
+    u32_status = call @sa3d_gltf_index_accessor_scan(&buf, 40, 16, 16, 8, 0, 2, SA3D_GLTF_INDEX_FORMAT_U32, &result)
+    u32_max = load result+SA3D_GLTF_INDEX_SCAN_RESULT_max_index as i64
+    u32_len = load result+SA3D_GLTF_INDEX_SCAN_RESULT_byte_len as i64
+    u32_stride = load result+SA3D_GLTF_INDEX_SCAN_RESULT_stride as i64
+
+    bad_stride_status = call @sa3d_gltf_index_accessor_scan(&buf, 40, 16, 16, 2, 0, 2, SA3D_GLTF_INDEX_FORMAT_U32, &result)
+    bad_bounds_status = call @sa3d_gltf_index_accessor_scan(&buf, 40, 38, 4, 0, 0, 1, SA3D_GLTF_INDEX_FORMAT_U32, &result)
+    unsupported_status = call @sa3d_gltf_index_accessor_scan(&buf, 40, 0, 4, 0, 0, 1, 99, &result)
+
+    u8_status_ok = eq u8_status, SA3D_GLTF_INDEX_SCAN_STATUS_OK
+    u8_count_ok = eq u8_count, 4
+    u8_max_ok = eq u8_max, 9
+    u8_offset_ok = eq u8_offset, 2
+    u8_len_ok = eq u8_len, 4
+    u8_stride_ok = eq u8_stride, 1
+    u8_size_ok = eq u8_size, 1
+    u16_status_ok = eq u16_status, SA3D_GLTF_INDEX_SCAN_STATUS_OK
+    u16_max_ok = eq u16_max, 300
+    u16_len_ok = eq u16_len, 6
+    u32_status_ok = eq u32_status, SA3D_GLTF_INDEX_SCAN_STATUS_OK
+    u32_max_ok = eq u32_max, 65537
+    u32_len_ok = eq u32_len, 12
+    u32_stride_ok = eq u32_stride, 8
+    bad_stride_ok = eq bad_stride_status, SA3D_GLTF_INDEX_SCAN_STATUS_MALFORMED_DATA
+    bad_bounds_ok = eq bad_bounds_status, SA3D_GLTF_INDEX_SCAN_STATUS_MALFORMED_DATA
+    unsupported_ok = eq unsupported_status, SA3D_GLTF_INDEX_SCAN_STATUS_UNSUPPORTED_FORMAT
+
+    p0 = and u8_status_ok, u8_count_ok
+    p1 = and u8_max_ok, u8_offset_ok
+    p2 = and u8_len_ok, u8_stride_ok
+    p3 = and u8_size_ok, u16_status_ok
+    p4 = and u16_max_ok, u16_len_ok
+    p5 = and u32_status_ok, u32_max_ok
+    p6 = and u32_len_ok, u32_stride_ok
+    p7 = and bad_stride_ok, bad_bounds_ok
+    p8 = and unsupported_ok, p7
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p8
+    r0 = and q0, q1
+    r1 = and q2, q3
+    ok = and r0, r1
+
+    !result
+    !buf
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3185)
+
+@test "3d_gltf Bevy F32 vertex attribute materialize"():
+L_ENTRY:
+    buf = alloc 96
+    out = alloc 96
+    out_len = alloc 8
+    layout = alloc SA3D_GLTF_ACCESSOR_LAYOUT_SIZE
+
+    store buf+0, 1065353216 as i32
+    store buf+4, 1073741824 as i32
+    store buf+8, 1077936128 as i32
+    store buf+12, -1065353216 as i32
+    store buf+16, 1084227584 as i32
+    store buf+20, 1086324736 as i32
+
+    layout_status = call @sa3d_gltf_accessor_layout_validate(96, 0, 24, 0, 0, 2, SA3D_GLTF_ACCESSOR_F32X3, &layout)
+    pos_status = call @sa3d_gltf_f32_attribute_materialize(&buf, 2, SA3D_GLTF_ACCESSOR_F32X3, 1, &layout, &out, 96, &out_len)
+    pos_len = load out_len+0 as i64
+    pos0x = load out+0 as i32
+    pos0y = load out+4 as i32
+    pos0z = load out+8 as i32
+    pos1x = load out+12 as i32
+    pos1y = load out+16 as i32
+    pos1z = load out+20 as i32
+
+    store buf+32, 1065353216 as i32
+    store buf+36, 1073741824 as i32
+    store buf+48, 1077936128 as i32
+    store buf+52, 1082130432 as i32
+    uv_layout_status = call @sa3d_gltf_accessor_layout_validate(96, 32, 32, 16, 0, 2, SA3D_GLTF_ACCESSOR_F32X2, &layout)
+    uv_status = call @sa3d_gltf_f32_attribute_materialize(&buf, 2, SA3D_GLTF_ACCESSOR_F32X2, 1, &layout, &out, 96, &out_len)
+    uv_len = load out_len+0 as i64
+    uv0x = load out+0 as i32
+    uv0y = load out+4 as i32
+    uv1x = load out+8 as i32
+    uv1y = load out+12 as i32
+
+    store buf+64, 1065353216 as i32
+    store buf+68, 1073741824 as i32
+    store buf+72, 1077936128 as i32
+    store buf+76, 1082130432 as i32
+    tan_layout_status = call @sa3d_gltf_accessor_layout_validate(96, 64, 16, 0, 0, 1, SA3D_GLTF_ACCESSOR_F32X4, &layout)
+    tan_status = call @sa3d_gltf_f32_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_F32X4, 1, &layout, &out, 96, &out_len)
+    tan_len = load out_len+0 as i64
+    tan_x = load out+0 as i32
+    tan_y = load out+4 as i32
+    tan_z = load out+8 as i32
+    tan_w = load out+12 as i32
+
+    small_status = call @sa3d_gltf_f32_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_F32X4, 0, &layout, &out, 8, &out_len)
+    unsupported_status = call @sa3d_gltf_f32_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U32X2, 0, &layout, &out, 96, &out_len)
+
+    layout_ok = eq layout_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    pos_status_ok = eq pos_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    pos_len_ok = eq pos_len, 24
+    pos0x_ok = eq pos0x, -1082130432
+    pos0y_ok = eq pos0y, 1073741824
+    pos0z_ok = eq pos0z, -1069547520
+    pos1x_ok = eq pos1x, 1082130432
+    pos1y_ok = eq pos1y, 1084227584
+    pos1z_ok = eq pos1z, -1061158912
+    uv_layout_ok = eq uv_layout_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    uv_status_ok = eq uv_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    uv_len_ok = eq uv_len, 16
+    uv0x_ok = eq uv0x, 1065353216
+    uv0y_ok = eq uv0y, 1073741824
+    uv1x_ok = eq uv1x, 1077936128
+    uv1y_ok = eq uv1y, 1082130432
+    tan_layout_ok = eq tan_layout_status, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    tan_status_ok = eq tan_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    tan_len_ok = eq tan_len, 16
+    tan_x_ok = eq tan_x, -1082130432
+    tan_y_ok = eq tan_y, 1073741824
+    tan_z_ok = eq tan_z, -1069547520
+    tan_w_ok = eq tan_w, 1082130432
+    small_ok = eq small_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OUTPUT_TOO_SMALL
+    unsupported_ok = eq unsupported_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_UNSUPPORTED_FORMAT
+
+    p0 = and layout_ok, pos_status_ok
+    p1 = and pos_len_ok, pos0x_ok
+    p2 = and pos0y_ok, pos0z_ok
+    p3 = and pos1x_ok, pos1y_ok
+    p4 = and pos1z_ok, uv_layout_ok
+    p5 = and uv_status_ok, uv_len_ok
+    p6 = and uv0x_ok, uv0y_ok
+    p7 = and uv1x_ok, uv1y_ok
+    p8 = and tan_layout_ok, tan_status_ok
+    p9 = and tan_len_ok, tan_x_ok
+    p10 = and tan_y_ok, tan_z_ok
+    p11 = and tan_w_ok, small_ok
+    p12 = and unsupported_ok, p11
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p12
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    ok = and s0, r2
+
+    !layout
+    !out_len
+    !out
+    !buf
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3186)
+
+@test "3d_gltf Bevy converted vertex attribute materialize"():
+L_ENTRY:
+    buf = alloc 160
+    out = alloc 160
+    out_len = alloc 8
+    layout = alloc SA3D_GLTF_ACCESSOR_LAYOUT_SIZE
+
+    store buf+0, 1065353216 as i32
+    store buf+4, 1073741824 as i32
+    store buf+8, 1077936128 as i32
+    rgba_f32_layout = call @sa3d_gltf_accessor_layout_validate(160, 0, 12, 0, 0, 1, SA3D_GLTF_ACCESSOR_F32X3, &layout)
+    rgba_f32_status = call @sa3d_gltf_rgba_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_F32X3, 0, &layout, &out, 160, &out_len)
+    rgba_f32_len = load out_len+0 as i64
+    rgba_f32_r = load out+0 as i32
+    rgba_f32_g = load out+4 as i32
+    rgba_f32_b = load out+8 as i32
+    rgba_f32_a = load out+12 as i32
+
+    store buf+16, 0 as u8
+    store buf+17, 128 as u8
+    store buf+18, 255 as u8
+    store buf+19, 1 as u8
+    rgba_u8_layout = call @sa3d_gltf_accessor_layout_validate(160, 16, 4, 0, 0, 1, SA3D_GLTF_ACCESSOR_U8X4, &layout)
+    rgba_u8_status = call @sa3d_gltf_rgba_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U8X4, 1, &layout, &out, 160, &out_len)
+    rgba_u8_len = load out_len+0 as i64
+    rgba_u8_r = load out+0 as i32
+    rgba_u8_g = load out+4 as i32
+    rgba_u8_b = load out+8 as i32
+    rgba_u8_a = load out+12 as i32
+
+    store buf+32, 0 as u16
+    store buf+34, 32768 as u16
+    store buf+36, 65535 as u16
+    rgba_u16_layout = call @sa3d_gltf_accessor_layout_validate(160, 32, 6, 0, 0, 1, SA3D_GLTF_ACCESSOR_U16X3, &layout)
+    rgba_u16_status = call @sa3d_gltf_rgba_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U16X3, 1, &layout, &out, 160, &out_len)
+    rgba_u16_len = load out_len+0 as i64
+    rgba_u16_r = load out+0 as i32
+    rgba_u16_g = load out+4 as i32
+    rgba_u16_b = load out+8 as i32
+    rgba_u16_a = load out+12 as i32
+
+    store buf+48, 255 as u8
+    store buf+49, 128 as u8
+    tex_u8_layout = call @sa3d_gltf_accessor_layout_validate(160, 48, 2, 0, 0, 1, SA3D_GLTF_ACCESSOR_U8X2, &layout)
+    tex_u8_status = call @sa3d_gltf_tex_coord_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U8X2, 1, &layout, &out, 160, &out_len)
+    tex_u8_len = load out_len+0 as i64
+    tex_u8_x = load out+0 as i32
+    tex_u8_y = load out+4 as i32
+
+    store buf+56, 32768 as u16
+    store buf+58, 65535 as u16
+    tex_u16_layout = call @sa3d_gltf_accessor_layout_validate(160, 56, 4, 0, 0, 1, SA3D_GLTF_ACCESSOR_U16X2, &layout)
+    tex_u16_status = call @sa3d_gltf_tex_coord_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U16X2, 1, &layout, &out, 160, &out_len)
+    tex_u16_len = load out_len+0 as i64
+    tex_u16_x = load out+0 as i32
+    tex_u16_y = load out+4 as i32
+
+    store buf+64, 1 as u8
+    store buf+65, 2 as u8
+    store buf+66, 255 as u8
+    store buf+67, 128 as u8
+    joint_u8_layout = call @sa3d_gltf_accessor_layout_validate(160, 64, 4, 0, 0, 1, SA3D_GLTF_ACCESSOR_U8X4, &layout)
+    joint_u8_status = call @sa3d_gltf_joint_index_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U8X4, 0, &layout, &out, 160, &out_len)
+    joint_u8_len = load out_len+0 as i64
+    joint_u8_0 = load out+0 as u16
+    joint_u8_1 = load out+2 as u16
+    joint_u8_2 = load out+4 as u16
+    joint_u8_3 = load out+6 as u16
+
+    store buf+72, 1 as u16
+    store buf+74, 2 as u16
+    store buf+76, 300 as u16
+    store buf+78, 65535 as u16
+    joint_u16_layout = call @sa3d_gltf_accessor_layout_validate(160, 72, 8, 0, 0, 1, SA3D_GLTF_ACCESSOR_U16X4, &layout)
+    joint_u16_status = call @sa3d_gltf_joint_index_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U16X4, 0, &layout, &out, 160, &out_len)
+    joint_u16_len = load out_len+0 as i64
+    joint_u16_2 = load out+4 as u16
+    joint_u16_3 = load out+6 as u16
+
+    store buf+88, 0 as u8
+    store buf+89, 128 as u8
+    store buf+90, 255 as u8
+    store buf+91, 1 as u8
+    weight_u8_layout = call @sa3d_gltf_accessor_layout_validate(160, 88, 4, 0, 0, 1, SA3D_GLTF_ACCESSOR_U8X4, &layout)
+    weight_u8_status = call @sa3d_gltf_joint_weight_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U8X4, 1, &layout, &out, 160, &out_len)
+    weight_u8_len = load out_len+0 as i64
+    weight_u8_0 = load out+0 as i32
+    weight_u8_1 = load out+4 as i32
+    weight_u8_2 = load out+8 as i32
+    weight_u8_3 = load out+12 as i32
+
+    store buf+96, 0 as u16
+    store buf+98, 32768 as u16
+    store buf+100, 65535 as u16
+    store buf+102, 1 as u16
+    weight_u16_layout = call @sa3d_gltf_accessor_layout_validate(160, 96, 8, 0, 0, 1, SA3D_GLTF_ACCESSOR_U16X4, &layout)
+    weight_u16_status = call @sa3d_gltf_joint_weight_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U16X4, 1, &layout, &out, 160, &out_len)
+    weight_u16_len = load out_len+0 as i64
+    weight_u16_0 = load out+0 as i32
+    weight_u16_1 = load out+4 as i32
+    weight_u16_2 = load out+8 as i32
+    weight_u16_3 = load out+12 as i32
+
+    unsupported_rgba_status = call @sa3d_gltf_rgba_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U8X4, 0, &layout, &out, 160, &out_len)
+    small_tex_layout = call @sa3d_gltf_accessor_layout_validate(160, 56, 4, 0, 0, 1, SA3D_GLTF_ACCESSOR_U16X2, &layout)
+    small_tex_status = call @sa3d_gltf_tex_coord_attribute_materialize(&buf, 1, SA3D_GLTF_ACCESSOR_U16X2, 1, &layout, &out, 4, &out_len)
+
+    rgba_f32_layout_ok = eq rgba_f32_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    rgba_f32_status_ok = eq rgba_f32_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    rgba_f32_len_ok = eq rgba_f32_len, 16
+    rgba_f32_r_ok = eq rgba_f32_r, 1065353216
+    rgba_f32_g_ok = eq rgba_f32_g, 1073741824
+    rgba_f32_b_ok = eq rgba_f32_b, 1077936128
+    rgba_f32_a_ok = eq rgba_f32_a, 1065353216
+
+    rgba_u8_layout_ok = eq rgba_u8_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    rgba_u8_status_ok = eq rgba_u8_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    rgba_u8_len_ok = eq rgba_u8_len, 16
+    rgba_u8_r_ok = eq rgba_u8_r, 0
+    rgba_u8_g_ok = eq rgba_u8_g, 1056997505
+    rgba_u8_b_ok = eq rgba_u8_b, 1065353216
+    rgba_u8_a_ok = eq rgba_u8_a, 998277249
+
+    rgba_u16_layout_ok = eq rgba_u16_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    rgba_u16_status_ok = eq rgba_u16_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    rgba_u16_len_ok = eq rgba_u16_len, 16
+    rgba_u16_r_ok = eq rgba_u16_r, 0
+    rgba_u16_g_ok = eq rgba_u16_g, 1056964736
+    rgba_u16_b_ok = eq rgba_u16_b, 1065353216
+    rgba_u16_a_ok = eq rgba_u16_a, 1065353216
+
+    tex_u8_layout_ok = eq tex_u8_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    tex_u8_status_ok = eq tex_u8_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    tex_u8_len_ok = eq tex_u8_len, 8
+    tex_u8_x_ok = eq tex_u8_x, 1065353216
+    tex_u8_y_ok = eq tex_u8_y, 1056997505
+    tex_u16_layout_ok = eq tex_u16_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    tex_u16_status_ok = eq tex_u16_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    tex_u16_len_ok = eq tex_u16_len, 8
+    tex_u16_x_ok = eq tex_u16_x, 1056964736
+    tex_u16_y_ok = eq tex_u16_y, 1065353216
+
+    joint_u8_layout_ok = eq joint_u8_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    joint_u8_status_ok = eq joint_u8_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    joint_u8_len_ok = eq joint_u8_len, 8
+    joint_u8_0_ok = eq joint_u8_0, 1
+    joint_u8_1_ok = eq joint_u8_1, 2
+    joint_u8_2_ok = eq joint_u8_2, 255
+    joint_u8_3_ok = eq joint_u8_3, 128
+    joint_u16_layout_ok = eq joint_u16_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    joint_u16_status_ok = eq joint_u16_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    joint_u16_len_ok = eq joint_u16_len, 8
+    joint_u16_2_ok = eq joint_u16_2, 300
+    joint_u16_3_ok = eq joint_u16_3, 65535
+
+    weight_u8_layout_ok = eq weight_u8_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    weight_u8_status_ok = eq weight_u8_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    weight_u8_len_ok = eq weight_u8_len, 16
+    weight_u8_0_ok = eq weight_u8_0, 0
+    weight_u8_1_ok = eq weight_u8_1, 1056997505
+    weight_u8_2_ok = eq weight_u8_2, 1065353216
+    weight_u8_3_ok = eq weight_u8_3, 998277249
+    weight_u16_layout_ok = eq weight_u16_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    weight_u16_status_ok = eq weight_u16_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK
+    weight_u16_len_ok = eq weight_u16_len, 16
+    weight_u16_0_ok = eq weight_u16_0, 0
+    weight_u16_1_ok = eq weight_u16_1, 1056964736
+    weight_u16_2_ok = eq weight_u16_2, 1065353216
+    weight_u16_3_ok = eq weight_u16_3, 931135616
+
+    unsupported_rgba_ok = eq unsupported_rgba_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_UNSUPPORTED_FORMAT
+    small_tex_layout_ok = eq small_tex_layout, SA3D_GLTF_ACCESSOR_LAYOUT_STATUS_OK
+    small_tex_ok = eq small_tex_status, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OUTPUT_TOO_SMALL
+
+    p0 = and rgba_f32_layout_ok, rgba_f32_status_ok
+    p1 = and rgba_f32_len_ok, rgba_f32_r_ok
+    p2 = and rgba_f32_g_ok, rgba_f32_b_ok
+    p3 = and rgba_f32_a_ok, rgba_u8_layout_ok
+    p4 = and rgba_u8_status_ok, rgba_u8_len_ok
+    p5 = and rgba_u8_r_ok, rgba_u8_g_ok
+    p6 = and rgba_u8_b_ok, rgba_u8_a_ok
+    p7 = and rgba_u16_layout_ok, rgba_u16_status_ok
+    p8 = and rgba_u16_len_ok, rgba_u16_r_ok
+    p9 = and rgba_u16_g_ok, rgba_u16_b_ok
+    p10 = and rgba_u16_a_ok, tex_u8_layout_ok
+    p11 = and tex_u8_status_ok, tex_u8_len_ok
+    p12 = and tex_u8_x_ok, tex_u8_y_ok
+    p13 = and tex_u16_layout_ok, tex_u16_status_ok
+    p14 = and tex_u16_len_ok, tex_u16_x_ok
+    p15 = and tex_u16_y_ok, joint_u8_layout_ok
+    p16 = and joint_u8_status_ok, joint_u8_len_ok
+    p17 = and joint_u8_0_ok, joint_u8_1_ok
+    p18 = and joint_u8_2_ok, joint_u8_3_ok
+    p19 = and joint_u16_layout_ok, joint_u16_status_ok
+    p20 = and joint_u16_len_ok, joint_u16_2_ok
+    p21 = and joint_u16_3_ok, weight_u8_layout_ok
+    p22 = and weight_u8_status_ok, weight_u8_len_ok
+    p23 = and weight_u8_0_ok, weight_u8_1_ok
+    p24 = and weight_u8_2_ok, weight_u8_3_ok
+    p25 = and weight_u16_layout_ok, weight_u16_status_ok
+    p26 = and weight_u16_len_ok, weight_u16_0_ok
+    p27 = and weight_u16_1_ok, weight_u16_2_ok
+    p28 = and weight_u16_3_ok, unsupported_rgba_ok
+    p29 = and small_tex_layout_ok, small_tex_ok
+
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    q8 = and p16, p17
+    q9 = and p18, p19
+    q10 = and p20, p21
+    q11 = and p22, p23
+    q12 = and p24, p25
+    q13 = and p26, p27
+    q14 = and p28, p29
+
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    r3 = and q6, q7
+    r4 = and q8, q9
+    r5 = and q10, q11
+    r6 = and q12, q13
+    s0 = and r0, r1
+    s1 = and r2, r3
+    s2 = and r4, r5
+    s3 = and s0, s1
+    s4 = and s2, r6
+    ok0 = and s3, s4
+    ok = and ok0, q14
+
+    !layout
+    !out_len
+    !out
+    !buf
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3187)
+
+@test "3d_gltf Bevy primitive mesh assembly metadata"():
+L_ENTRY:
+    mesh = alloc SA3D_GLTF_PRIMITIVE_MESH_SIZE
+    unsupported_mesh = alloc SA3D_GLTF_PRIMITIVE_MESH_SIZE
+    scan = alloc SA3D_GLTF_INDEX_SCAN_RESULT_SIZE
+    buf = alloc 16
+
+    store buf+0, 0 as u8
+    store buf+1, 1 as u8
+    store buf+2, 2 as u8
+    store buf+3, 0 as u8
+    store buf+4, 2 as u8
+    store buf+5, 3 as u8
+
+    begin_status = call @sa3d_gltf_primitive_mesh_begin(&mesh, SA3D_GLTF_MODE_TRIANGLES)
+    pos_inserted = call @sa3d_gltf_primitive_mesh_add_attribute(&mesh, SA3D_GLTF_ATTRIBUTE_POSITION, 4, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK, 0, 0)
+    joint_skipped = call @sa3d_gltf_primitive_mesh_add_attribute(&mesh, SA3D_GLTF_ATTRIBUTE_JOINT_INDEX, 4, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK, 0, 0)
+    weight_inserted = call @sa3d_gltf_primitive_mesh_add_attribute(&mesh, SA3D_GLTF_ATTRIBUTE_JOINT_WEIGHT, 4, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_OK, 1, 1)
+    bad_attr_skipped = call @sa3d_gltf_primitive_mesh_add_attribute(&mesh, SA3D_GLTF_ATTRIBUTE_COLOR, 4, SA3D_GLTF_ATTR_MATERIALIZE_STATUS_UNSUPPORTED_FORMAT, 0, 0)
+
+    scan_status = call @sa3d_gltf_index_accessor_scan(&buf, 16, 0, 6, 0, 0, 6, SA3D_GLTF_INDEX_FORMAT_U8, &scan)
+    indices_set = call @sa3d_gltf_primitive_mesh_set_indices(&mesh, &scan, SA3D_GLTF_INDEX_FORMAT_U8)
+    finalize_status = call @sa3d_gltf_primitive_mesh_finalize(&mesh, 1, SA3D_GLTF_SKINNED_BOUNDS_DYNAMIC, 1)
+
+    topology = load mesh+SA3D_GLTF_PRIMITIVE_MESH_topology as i32
+    status = load mesh+SA3D_GLTF_PRIMITIVE_MESH_status as i32
+    attr_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_attribute_count as i64
+    vertex_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_vertex_count as i64
+    has_position = load mesh+SA3D_GLTF_PRIMITIVE_MESH_has_position as i32
+    has_joint_index = load mesh+SA3D_GLTF_PRIMITIVE_MESH_has_joint_index as i32
+    has_joint_weight = load mesh+SA3D_GLTF_PRIMITIVE_MESH_has_joint_weight as i32
+    ignored_skin = load mesh+SA3D_GLTF_PRIMITIVE_MESH_ignored_skinned_attributes as i32
+    mixed_skin = load mesh+SA3D_GLTF_PRIMITIVE_MESH_mixed_skinned_usage as i32
+    has_indices = load mesh+SA3D_GLTF_PRIMITIVE_MESH_has_indices as i32
+    index_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_index_count as i64
+    index_max = load mesh+SA3D_GLTF_PRIMITIVE_MESH_index_max as i64
+    source_index_format = load mesh+SA3D_GLTF_PRIMITIVE_MESH_source_index_format as i32
+    stored_index_format = load mesh+SA3D_GLTF_PRIMITIVE_MESH_stored_index_format as i32
+    compute_normals = load mesh+SA3D_GLTF_PRIMITIVE_MESH_compute_flat_normals as i32
+    generate_tangents = load mesh+SA3D_GLTF_PRIMITIVE_MESH_generate_tangents as i32
+    generate_bounds = load mesh+SA3D_GLTF_PRIMITIVE_MESH_generate_skinned_bounds as i32
+    draw_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_draw_count as i64
+    triangle_count = load mesh+SA3D_GLTF_PRIMITIVE_MESH_triangle_count as i64
+
+    unsupported_status = call @sa3d_gltf_primitive_mesh_begin(&unsupported_mesh, SA3D_GLTF_MODE_LINE_LOOP)
+    unsupported_field = load unsupported_mesh+SA3D_GLTF_PRIMITIVE_MESH_status as i32
+
+    begin_ok = eq begin_status, SA3D_GLTF_PRIMITIVE_MESH_STATUS_OK
+    pos_inserted_ok = eq pos_inserted, 1
+    joint_skipped_ok = eq joint_skipped, 0
+    weight_inserted_ok = eq weight_inserted, 1
+    bad_attr_skipped_ok = eq bad_attr_skipped, 0
+    scan_ok = eq scan_status, SA3D_GLTF_INDEX_SCAN_STATUS_OK
+    indices_set_ok = eq indices_set, 1
+    finalize_ok = eq finalize_status, SA3D_GLTF_PRIMITIVE_MESH_STATUS_OK
+    topology_ok = eq topology, SA3D_GLTF_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    status_ok = eq status, SA3D_GLTF_PRIMITIVE_MESH_STATUS_OK
+    attr_count_ok = eq attr_count, 2
+    vertex_count_ok = eq vertex_count, 4
+    has_position_ok = eq has_position, 1
+    has_joint_index_ok = eq has_joint_index, 0
+    has_joint_weight_ok = eq has_joint_weight, 1
+    ignored_skin_ok = eq ignored_skin, 1
+    mixed_skin_ok = eq mixed_skin, 1
+    has_indices_ok = eq has_indices, 1
+    index_count_ok = eq index_count, 6
+    index_max_ok = eq index_max, 3
+    source_index_format_ok = eq source_index_format, SA3D_GLTF_INDEX_FORMAT_U8
+    stored_index_format_ok = eq stored_index_format, SA3D_GLTF_INDEX_FORMAT_U16
+    compute_normals_ok = eq compute_normals, 1
+    generate_tangents_ok = eq generate_tangents, 1
+    generate_bounds_ok = eq generate_bounds, 1
+    draw_count_ok = eq draw_count, 6
+    triangle_count_ok = eq triangle_count, 2
+    unsupported_status_ok = eq unsupported_status, SA3D_GLTF_PRIMITIVE_MESH_STATUS_UNSUPPORTED_PRIMITIVE
+    unsupported_field_ok = eq unsupported_field, SA3D_GLTF_PRIMITIVE_MESH_STATUS_UNSUPPORTED_PRIMITIVE
+
+    p0 = and begin_ok, pos_inserted_ok
+    p1 = and joint_skipped_ok, weight_inserted_ok
+    p2 = and bad_attr_skipped_ok, scan_ok
+    p3 = and indices_set_ok, finalize_ok
+    p4 = and topology_ok, status_ok
+    p5 = and attr_count_ok, vertex_count_ok
+    p6 = and has_position_ok, has_joint_index_ok
+    p7 = and has_joint_weight_ok, ignored_skin_ok
+    p8 = and mixed_skin_ok, has_indices_ok
+    p9 = and index_count_ok, index_max_ok
+    p10 = and source_index_format_ok, stored_index_format_ok
+    p11 = and compute_normals_ok, generate_tangents_ok
+    p12 = and generate_bounds_ok, draw_count_ok
+    p13 = and triangle_count_ok, unsupported_status_ok
+    p14 = and unsupported_field_ok, p13
+
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    q5 = and p10, p11
+    q6 = and p12, p14
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, q5
+    s0 = and r0, r1
+    s1 = and r2, q6
+    ok = and s0, s1
+
+    !buf
+    !scan
+    !unsupported_mesh
+    !mesh
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3188)
+
+@test "3d_gltf Bevy ReadIndices materialize"():
+L_ENTRY:
+    buf = alloc 48
+    out = alloc 32
+    out_len = alloc 8
+    out_format = alloc 4
+
+    store buf+2, 1 as u8
+    store buf+3, 4 as u8
+    store buf+4, 2 as u8
+    store buf+5, 9 as u8
+
+    store buf+8, 5 as u16
+    store buf+10, 300 as u16
+    store buf+12, 2 as u16
+
+    store buf+16, 7 as u32
+    store buf+24, 65537 as u32
+
+    u8_status = call @sa3d_gltf_index_accessor_materialize(&buf, 48, 2, 4, 0, 0, 4, SA3D_GLTF_INDEX_FORMAT_U8, &out, 32, &out_len, &out_format)
+    u8_len = load out_len+0 as i64
+    u8_format = load out_format+0 as i32
+    u8_0 = load out+0 as u16
+    u8_1 = load out+2 as u16
+    u8_2 = load out+4 as u16
+    u8_3 = load out+6 as u16
+
+    u16_status = call @sa3d_gltf_index_accessor_materialize(&buf, 48, 8, 6, 0, 0, 3, SA3D_GLTF_INDEX_FORMAT_U16, &out, 32, &out_len, &out_format)
+    u16_len = load out_len+0 as i64
+    u16_format = load out_format+0 as i32
+    u16_0 = load out+0 as u16
+    u16_1 = load out+2 as u16
+    u16_2 = load out+4 as u16
+
+    u32_status = call @sa3d_gltf_index_accessor_materialize(&buf, 48, 16, 16, 8, 0, 2, SA3D_GLTF_INDEX_FORMAT_U32, &out, 32, &out_len, &out_format)
+    u32_len = load out_len+0 as i64
+    u32_format = load out_format+0 as i32
+    u32_0 = load out+0 as u32
+    u32_1 = load out+4 as u32
+
+    small_status = call @sa3d_gltf_index_accessor_materialize(&buf, 48, 8, 6, 0, 0, 3, SA3D_GLTF_INDEX_FORMAT_U16, &out, 4, &out_len, &out_format)
+    bad_status = call @sa3d_gltf_index_accessor_materialize(&buf, 48, 44, 4, 0, 0, 2, SA3D_GLTF_INDEX_FORMAT_U32, &out, 32, &out_len, &out_format)
+    unsupported_status = call @sa3d_gltf_index_accessor_materialize(&buf, 48, 0, 4, 0, 0, 1, 99, &out, 32, &out_len, &out_format)
+
+    u8_status_ok = eq u8_status, SA3D_GLTF_INDEX_MATERIALIZE_STATUS_OK
+    u8_len_ok = eq u8_len, 8
+    u8_format_ok = eq u8_format, SA3D_GLTF_INDEX_FORMAT_U16
+    u8_0_ok = eq u8_0, 1
+    u8_1_ok = eq u8_1, 4
+    u8_2_ok = eq u8_2, 2
+    u8_3_ok = eq u8_3, 9
+
+    u16_status_ok = eq u16_status, SA3D_GLTF_INDEX_MATERIALIZE_STATUS_OK
+    u16_len_ok = eq u16_len, 6
+    u16_format_ok = eq u16_format, SA3D_GLTF_INDEX_FORMAT_U16
+    u16_0_ok = eq u16_0, 5
+    u16_1_ok = eq u16_1, 300
+    u16_2_ok = eq u16_2, 2
+
+    u32_status_ok = eq u32_status, SA3D_GLTF_INDEX_MATERIALIZE_STATUS_OK
+    u32_len_ok = eq u32_len, 8
+    u32_format_ok = eq u32_format, SA3D_GLTF_INDEX_FORMAT_U32
+    u32_0_ok = eq u32_0, 7
+    u32_1_ok = eq u32_1, 65537
+
+    small_ok = eq small_status, SA3D_GLTF_INDEX_MATERIALIZE_STATUS_OUTPUT_TOO_SMALL
+    bad_ok = eq bad_status, SA3D_GLTF_INDEX_MATERIALIZE_STATUS_MALFORMED_DATA
+    unsupported_ok = eq unsupported_status, SA3D_GLTF_INDEX_MATERIALIZE_STATUS_UNSUPPORTED_FORMAT
+
+    p0 = and u8_status_ok, u8_len_ok
+    p1 = and u8_format_ok, u8_0_ok
+    p2 = and u8_1_ok, u8_2_ok
+    p3 = and u8_3_ok, u16_status_ok
+    p4 = and u16_len_ok, u16_format_ok
+    p5 = and u16_0_ok, u16_1_ok
+    p6 = and u16_2_ok, u32_status_ok
+    p7 = and u32_len_ok, u32_format_ok
+    p8 = and u32_0_ok, u32_1_ok
+    p9 = and small_ok, bad_ok
+    p10 = and unsupported_ok, p9
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p10
+    r0 = and q0, q1
+    r1 = and q2, q3
+    s0 = and r0, r1
+    ok = and s0, q4
+
+    !out_format
+    !out_len
+    !out
+    !buf
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return 0
+L_ERR:
+    panic(3189)

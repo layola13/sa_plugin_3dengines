@@ -1,0 +1,413 @@
+@import "../3d_material.sal"
+
+@test "3d_material unlit desc init defaults"():
+L_ENTRY:
+    d = alloc SA3D_MATERIAL_DESC_SIZE
+    call @sa3d_material_desc_init(&d)
+    model = call @sa3d_material_desc_get_model(&d)
+    r = call @sa3d_material_desc_get_base_color_r(&d)
+    g = call @sa3d_material_desc_get_base_color_g(&d)
+    rough = call @sa3d_material_desc_get_roughness(&d)
+    model_ok = eq model, SA3D_MATERIAL_MODEL_UNLIT
+    r_ok = eq r, 1065353216
+    g_ok = eq g, 1065353216
+    rough_ok = eq rough, 1065353216
+    pa = and model_ok, r_ok
+    pb = and g_ok, rough_ok
+    ok = and pa, pb
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3060)
+
+@test "3d_material pbr desc init"():
+L_ENTRY:
+    d = alloc SA3D_MATERIAL_DESC_SIZE
+    call @sa3d_material_desc_init_pbr(&d)
+    model = call @sa3d_material_desc_get_model(&d)
+    m = call @sa3d_material_desc_get_metallic(&d)
+    model_ok = eq model, SA3D_MATERIAL_MODEL_PBR
+    m_ok = eq m, 0
+    ok = and model_ok, m_ok
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3061)
+
+@test "3d_material color flags textures and shaders"():
+L_ENTRY:
+    d = alloc SA3D_MATERIAL_DESC_SIZE
+    call @sa3d_material_desc_init_pbr(&d)
+    call @sa3d_material_desc_set_base_color(&d, 11, 22, 33, 44)
+    r = call @sa3d_material_desc_get_base_color_r(&d)
+    g = call @sa3d_material_desc_get_base_color_g(&d)
+    b = call @sa3d_material_desc_get_base_color_b(&d)
+    a = call @sa3d_material_desc_get_base_color_a(&d)
+    call @sa3d_material_desc_set_emissive(&d, 5, 6, 7)
+    e0 = load d+SA3D_MATERIAL_DESC_emissive as i32
+    e1 = load d+28 as i32
+    e2 = load d+32 as i32
+    call @sa3d_material_desc_set_metallic_roughness(&d, 8, 9)
+    m = call @sa3d_material_desc_get_metallic(&d)
+    rough = call @sa3d_material_desc_get_roughness(&d)
+    call @sa3d_material_desc_enable_flag(&d, SA3D_MATERIAL_FLAG_ALPHA_BLEND)
+    call @sa3d_material_desc_enable_flag(&d, SA3D_MATERIAL_FLAG_DOUBLE_SIDED)
+    has_blend0 = call @sa3d_material_desc_has_flag(&d, SA3D_MATERIAL_FLAG_ALPHA_BLEND)
+    needs_blend = call @sa3d_material_desc_requires_blend(&d)
+    call @sa3d_material_desc_disable_flag(&d, SA3D_MATERIAL_FLAG_ALPHA_BLEND)
+    has_blend1 = call @sa3d_material_desc_has_flag(&d, SA3D_MATERIAL_FLAG_ALPHA_BLEND)
+    flags = call @sa3d_material_desc_get_flags(&d)
+    set_base = call @sa3d_material_desc_set_texture(&d, SA3D_TEXTURE_SLOT_BASE_COLOR, 101)
+    set_normal = call @sa3d_material_desc_set_texture(&d, SA3D_TEXTURE_SLOT_NORMAL, 202)
+    set_bad = call @sa3d_material_desc_set_texture(&d, 99, 303)
+    base_tex = call @sa3d_material_desc_get_texture(&d, SA3D_TEXTURE_SLOT_BASE_COLOR)
+    normal_tex = call @sa3d_material_desc_get_texture(&d, SA3D_TEXTURE_SLOT_NORMAL)
+    missing_tex = call @sa3d_material_desc_get_texture(&d, SA3D_TEXTURE_SLOT_EMISSIVE)
+    has_base = call @sa3d_material_desc_has_texture(&d, SA3D_TEXTURE_SLOT_BASE_COLOR)
+    has_emissive = call @sa3d_material_desc_has_texture(&d, SA3D_TEXTURE_SLOT_EMISSIVE)
+    off_base = call @sa3d_material_desc_texture_offset(SA3D_TEXTURE_SLOT_BASE_COLOR)
+    off_bad = call @sa3d_material_desc_texture_offset(99)
+    shader0 = call @sa3d_material_desc_has_shader_pair(&d)
+    call @sa3d_material_desc_set_shader_handles(&d, 700, 800)
+    shader1 = call @sa3d_material_desc_has_shader_pair(&d)
+    valid = call @sa3d_material_desc_validate(&d)
+    is_pbr = call @sa3d_material_desc_is_pbr(&d)
+    r_ok = eq r, 11
+    g_ok = eq g, 22
+    b_ok = eq b, 33
+    a_ok = eq a, 44
+    e0_ok = eq e0, 5
+    e1_ok = eq e1, 6
+    e2_ok = eq e2, 7
+    m_ok = eq m, 8
+    rough_ok = eq rough, 9
+    has_blend0_ok = eq has_blend0, 1
+    needs_blend_ok = eq needs_blend, 1
+    has_blend1_ok = eq has_blend1, 0
+    flags_ok = eq flags, SA3D_MATERIAL_FLAG_DOUBLE_SIDED
+    set_base_ok = eq set_base, 1
+    set_normal_ok = eq set_normal, 1
+    set_bad_ok = eq set_bad, 0
+    base_tex_ok = eq base_tex, 101
+    normal_tex_ok = eq normal_tex, 202
+    missing_tex_ok = eq missing_tex, 0
+    has_base_ok = eq has_base, 1
+    has_emissive_ok = eq has_emissive, 0
+    off_base_ok = eq off_base, SA3D_MATERIAL_DESC_base_color_texture
+    off_bad_ok = eq off_bad, 0
+    shader0_ok = eq shader0, 0
+    shader1_ok = eq shader1, 1
+    valid_ok = eq valid, 1
+    is_pbr_ok = eq is_pbr, 1
+    p1 = and r_ok, g_ok
+    p2 = and b_ok, a_ok
+    p3 = and e0_ok, e1_ok
+    p4 = and e2_ok, m_ok
+    p5 = and rough_ok, has_blend0_ok
+    p6 = and needs_blend_ok, has_blend1_ok
+    p7 = and flags_ok, set_base_ok
+    p8 = and set_normal_ok, set_bad_ok
+    p9 = and base_tex_ok, normal_tex_ok
+    p10 = and missing_tex_ok, has_base_ok
+    p11 = and has_emissive_ok, off_base_ok
+    p12 = and off_bad_ok, shader0_ok
+    p13 = and shader1_ok, valid_ok
+    p14 = and is_pbr_ok, p13
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    s1 = and r1, r2
+    s2 = and r3, p14
+    ok = and s1, s2
+    br ok -> L_BEHAVIOR_OK, L_BEHAVIOR_ERR
+
+L_BEHAVIOR_OK:
+    !d
+    return
+
+L_BEHAVIOR_ERR:
+    !d
+    panic(3062)
+
+@test "3d_material validation rejects bad model and roughness"():
+L_ENTRY:
+    d = alloc SA3D_MATERIAL_DESC_SIZE
+    call @sa3d_material_desc_init(&d)
+    valid0 = call @sa3d_material_desc_validate(&d)
+    store d+SA3D_MATERIAL_DESC_model, 99 as i32
+    valid_bad_model = call @sa3d_material_desc_validate(&d)
+    store d+SA3D_MATERIAL_DESC_model, SA3D_MATERIAL_MODEL_PBR as i32
+    store d+SA3D_MATERIAL_DESC_roughness, -1 as i32
+    valid_bad_rough = call @sa3d_material_desc_validate(&d)
+    valid0_ok = eq valid0, 1
+    bad_model_ok = eq valid_bad_model, 0
+    bad_rough_ok = eq valid_bad_rough, 0
+    p = and valid0_ok, bad_model_ok
+    ok = and p, bad_rough_ok
+    br ok -> L_VALIDATE_OK, L_VALIDATE_ERR
+
+L_VALIDATE_OK:
+    !d
+    return
+
+L_VALIDATE_ERR:
+    !d
+    panic(3063)
+
+@test "3d_material StandardMaterial defaults match Bevy"():
+L_ENTRY:
+    mat = alloc SA3D_STANDARD_MATERIAL_SIZE
+    call @sa3d_standard_material_default(&mat)
+    base_r = load mat+SA3D_STANDARD_MATERIAL_base_color as f32
+    base_a = load mat+12 as f32
+    emissive_r = load mat+SA3D_STANDARD_MATERIAL_emissive as f32
+    pr = load mat+SA3D_STANDARD_MATERIAL_perceptual_roughness as f32
+    metallic = load mat+SA3D_STANDARD_MATERIAL_metallic as f32
+    reflectance = load mat+SA3D_STANDARD_MATERIAL_reflectance as f32
+    ior = load mat+SA3D_STANDARD_MATERIAL_ior as f32
+    clearcoat_pr = load mat+SA3D_STANDARD_MATERIAL_clearcoat_perceptual_roughness as f32
+    double_sided = load mat+SA3D_STANDARD_MATERIAL_double_sided as i32
+    cull_mode = load mat+SA3D_STANDARD_MATERIAL_cull_mode as i32
+    unlit = load mat+SA3D_STANDARD_MATERIAL_unlit as i32
+    fog = load mat+SA3D_STANDARD_MATERIAL_fog_enabled as i32
+    alpha_mode = load mat+SA3D_STANDARD_MATERIAL_alpha_mode as i32
+    alpha_cutoff = load mat+SA3D_STANDARD_MATERIAL_alpha_cutoff as f32
+    parallax = load mat+SA3D_STANDARD_MATERIAL_parallax_depth_scale as f32
+    max_layers = load mat+SA3D_STANDARD_MATERIAL_max_parallax_layer_count as f32
+    lightmap = load mat+SA3D_STANDARD_MATERIAL_lightmap_exposure as f32
+    opaque_method = load mat+SA3D_STANDARD_MATERIAL_opaque_render_method as i32
+    rough = call @sa3d_standard_material_roughness(&mat)
+    f0 = call @sa3d_standard_material_dielectric_f0(&mat)
+    flags = call @sa3d_standard_material_flags(&mat)
+    valid = call @sa3d_standard_material_validate(&mat)
+    base_r_ok = fcmp_eq base_r, 1.0
+    base_a_ok = fcmp_eq base_a, 1.0
+    emissive_ok = fcmp_eq emissive_r, 0.0
+    pr_ok = fcmp_eq pr, 0.5
+    metallic_ok = fcmp_eq metallic, 0.0
+    reflectance_ok = fcmp_eq reflectance, 0.5
+    ior_ok = fcmp_eq ior, 1.5
+    clearcoat_ok = fcmp_eq clearcoat_pr, 0.5
+    double_sided_ok = eq double_sided, 0
+    cull_ok = eq cull_mode, SA3D_FACE_BACK
+    unlit_ok = eq unlit, 0
+    fog_ok = eq fog, 1
+    alpha_mode_ok = eq alpha_mode, SA3D_ALPHA_MODE_OPAQUE
+    alpha_cutoff_ok = fcmp_eq alpha_cutoff, 0.5
+    parallax_ok = fcmp_gt parallax, 0.099
+    parallax_ok2 = fcmp_lt parallax, 0.101
+    max_layers_ok = fcmp_eq max_layers, 16.0
+    lightmap_ok = fcmp_eq lightmap, 1.0
+    opaque_ok = eq opaque_method, SA3D_OPAQUE_RENDER_AUTO
+    rough_ok = fcmp_eq rough, 0.25
+    f0_ok = fcmp_gt f0, 0.0399
+    f0_ok2 = fcmp_lt f0, 0.0401
+    flags_ok = eq flags, SA3D_STANDARD_MATERIAL_FLAG_FOG_ENABLED
+    valid_ok = eq valid, 1
+    p1 = and base_r_ok, base_a_ok
+    p2 = and emissive_ok, pr_ok
+    p3 = and metallic_ok, reflectance_ok
+    p4 = and ior_ok, clearcoat_ok
+    p5 = and double_sided_ok, cull_ok
+    p6 = and unlit_ok, fog_ok
+    p7 = and alpha_mode_ok, alpha_cutoff_ok
+    p8 = and parallax_ok, parallax_ok2
+    p9 = and max_layers_ok, lightmap_ok
+    p10 = and opaque_ok, rough_ok
+    p11 = and f0_ok, f0_ok2
+    p12 = and flags_ok, valid_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    s1 = and r1, r2
+    ok = and s1, r3
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mat
+    return
+
+L_ERR:
+    !mat
+    panic(3064)
+
+@test "3d_material StandardMaterial alpha flags and BRDF helpers"():
+L_ENTRY:
+    mat = alloc SA3D_STANDARD_MATERIAL_SIZE
+    call @sa3d_standard_material_from_base_color(&mat, 0.8, 0.7, 0.6, 0.25)
+    alpha_from_color = load mat+SA3D_STANDARD_MATERIAL_alpha_mode as i32
+    transparent0 = call @sa3d_standard_material_is_transparent(&mat)
+    depth0 = call @sa3d_standard_material_depth_write_enabled(&mat)
+    ok_set_mask = call @sa3d_standard_material_set_alpha_mode(&mat, SA3D_ALPHA_MODE_MASK, 0.4)
+    pass_mask0 = call @sa3d_standard_material_alpha_accepts(&mat, 0.39, 1)
+    pass_mask1 = call @sa3d_standard_material_alpha_accepts(&mat, 0.4, 1)
+    transparent_mask = call @sa3d_standard_material_is_transparent(&mat)
+    depth_mask = call @sa3d_standard_material_depth_write_enabled(&mat)
+    call @sa3d_standard_material_set_depth_bias(&mat, 0.25)
+    depth_bias = call @sa3d_standard_material_depth_bias(&mat)
+    call @sa3d_standard_material_set_diffuse_transmission(&mat, 0.75)
+    opaque_auto = call @sa3d_standard_material_opaque_render_method(&mat)
+    call @sa3d_standard_material_set_opaque_render_method(&mat, SA3D_OPAQUE_RENDER_DEFERRED)
+    opaque_deferred = call @sa3d_standard_material_opaque_render_method(&mat)
+    call @sa3d_standard_material_set_specular_transmission(&mat, 0.6)
+    reads_view = call @sa3d_standard_material_reads_view_transmission_texture(&mat)
+    ok_set_a2c = call @sa3d_standard_material_set_alpha_mode(&mat, SA3D_ALPHA_MODE_ALPHA_TO_COVERAGE, 0.0)
+    a2c_off0 = call @sa3d_standard_material_alpha_accepts(&mat, 0.49, 1)
+    a2c_off1 = call @sa3d_standard_material_alpha_accepts(&mat, 0.5, 1)
+    a2c_on = call @sa3d_standard_material_alpha_accepts(&mat, 0.1, 4)
+    call @sa3d_standard_material_set_metallic_roughness(&mat, 1.5, -0.25)
+    metallic = load mat+SA3D_STANDARD_MATERIAL_metallic as f32
+    pr = load mat+SA3D_STANDARD_MATERIAL_perceptual_roughness as f32
+    call @sa3d_standard_material_set_reflectance(&mat, 2.0)
+    reflectance = load mat+SA3D_STANDARD_MATERIAL_reflectance as f32
+    f0 = call @sa3d_standard_material_dielectric_f0(&mat)
+    store mat+SA3D_STANDARD_MATERIAL_double_sided, 1 as i32
+    store mat+SA3D_STANDARD_MATERIAL_unlit, 1 as i32
+    store mat+SA3D_STANDARD_MATERIAL_texture_flags, SA3D_STANDARD_MATERIAL_FLAG_BASE_COLOR_TEXTURE as i32
+    flags = call @sa3d_standard_material_flags(&mat)
+    invalid_alpha = call @sa3d_standard_material_set_alpha_mode(&mat, 99, 0.0)
+    valid = call @sa3d_standard_material_validate(&mat)
+    alpha_color_ok = eq alpha_from_color, SA3D_ALPHA_MODE_BLEND
+    transparent0_ok = eq transparent0, 1
+    depth0_ok = eq depth0, 0
+    ok_set_mask_ok = eq ok_set_mask, 1
+    mask0_ok = eq pass_mask0, 0
+    mask1_ok = eq pass_mask1, 1
+    transparent_mask_ok = eq transparent_mask, 0
+    depth_mask_ok = eq depth_mask, 1
+    depth_bias_ok = fcmp_eq depth_bias, 0.25
+    opaque_auto_ok = eq opaque_auto, SA3D_OPAQUE_RENDER_FORWARD
+    opaque_deferred_ok = eq opaque_deferred, SA3D_OPAQUE_RENDER_DEFERRED
+    reads_view_ok = eq reads_view, 1
+    ok_set_a2c_ok = eq ok_set_a2c, 1
+    a2c_off0_ok = eq a2c_off0, 0
+    a2c_off1_ok = eq a2c_off1, 1
+    a2c_on_ok = eq a2c_on, 1
+    metallic_ok = fcmp_eq metallic, 1.0
+    pr_ok = fcmp_eq pr, 0.0
+    reflectance_ok = fcmp_eq reflectance, 1.0
+    f0_ok = fcmp_gt f0, 0.159
+    f0_ok2 = fcmp_lt f0, 0.161
+    flags_base_ok = ne flags, 0
+    has_base_flag = and flags, SA3D_STANDARD_MATERIAL_FLAG_BASE_COLOR_TEXTURE
+    has_ds_flag = and flags, SA3D_STANDARD_MATERIAL_FLAG_DOUBLE_SIDED
+    has_unlit_flag = and flags, SA3D_STANDARD_MATERIAL_FLAG_UNLIT
+    has_fog_flag = and flags, SA3D_STANDARD_MATERIAL_FLAG_FOG_ENABLED
+    base_flag_ok = ne has_base_flag, 0
+    ds_flag_ok = ne has_ds_flag, 0
+    unlit_flag_ok = ne has_unlit_flag, 0
+    fog_flag_ok = ne has_fog_flag, 0
+    invalid_alpha_ok = eq invalid_alpha, 0
+    valid_ok = eq valid, 1
+    p1 = and alpha_color_ok, transparent0_ok
+    p2 = and depth0_ok, ok_set_mask_ok
+    p3 = and mask0_ok, mask1_ok
+    p4 = and transparent_mask_ok, depth_mask_ok
+    p5 = and depth_bias_ok, opaque_auto_ok
+    p6 = and opaque_deferred_ok, reads_view_ok
+    p7 = and ok_set_a2c_ok, a2c_off0_ok
+    p8 = and a2c_off1_ok, a2c_on_ok
+    p9 = and metallic_ok, pr_ok
+    p10 = and reflectance_ok, f0_ok
+    p11 = and f0_ok2, flags_base_ok
+    p12 = and base_flag_ok, ds_flag_ok
+    p13 = and unlit_flag_ok, fog_flag_ok
+    p14 = and invalid_alpha_ok, valid_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    s1 = and r1, r2
+    s2 = and r3, q7
+    ok = and s1, s2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mat
+    return
+
+L_ERR:
+    !mat
+    panic(3065)
+
+@test "3d_material StandardMaterial alpha flags match Bevy shader values"():
+L_ENTRY:
+    opaque_bits = call @sa3d_standard_material_alpha_flag_bits(SA3D_ALPHA_MODE_OPAQUE)
+    mask_bits = call @sa3d_standard_material_alpha_flag_bits(SA3D_ALPHA_MODE_MASK)
+    blend_bits = call @sa3d_standard_material_alpha_flag_bits(SA3D_ALPHA_MODE_BLEND)
+    pre_bits = call @sa3d_standard_material_alpha_flag_bits(SA3D_ALPHA_MODE_PREMULTIPLIED)
+    add_bits = call @sa3d_standard_material_alpha_flag_bits(SA3D_ALPHA_MODE_ADD)
+    mul_bits = call @sa3d_standard_material_alpha_flag_bits(SA3D_ALPHA_MODE_MULTIPLY)
+    a2c_bits = call @sa3d_standard_material_alpha_flag_bits(SA3D_ALPHA_MODE_ALPHA_TO_COVERAGE)
+    opaque_ok = eq opaque_bits, 0
+    mask_ok = eq mask_bits, 536870912
+    blend_ok = eq blend_bits, 1073741824
+    pre_ok = eq pre_bits, 1610612736
+    add_ok = eq add_bits, -2147483648
+    mul_ok = eq mul_bits, -1610612736
+    a2c_ok = eq a2c_bits, -1073741824
+    br opaque_ok -> L_MASK, L_ERR_OPAQUE
+
+L_MASK:
+    br mask_ok -> L_BLEND, L_ERR_MASK
+
+L_BLEND:
+    br blend_ok -> L_PRE, L_ERR_BLEND
+
+L_PRE:
+    br pre_ok -> L_ADD, L_ERR_PRE
+
+L_ADD:
+    br add_ok -> L_MUL, L_ERR_ADD
+
+L_MUL:
+    br mul_ok -> L_A2C, L_ERR_MUL
+
+L_A2C:
+    br a2c_ok -> L_OK, L_ERR_A2C
+
+L_OK:
+    return
+
+L_ERR_OPAQUE:
+    panic(3067)
+
+L_ERR_MASK:
+    panic(3068)
+
+L_ERR_BLEND:
+    panic(3069)
+
+L_ERR_PRE:
+    panic(3070)
+
+L_ERR_ADD:
+    panic(3071)
+
+L_ERR_MUL:
+    panic(3072)
+
+L_ERR_A2C:
+    panic(3066)

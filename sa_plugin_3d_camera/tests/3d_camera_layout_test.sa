@@ -1,0 +1,480 @@
+@import "../3d_camera.sal"
+
+@extern sa3d_camera_selftest() -> i32
+
+@test "3d_camera layout sizes"():
+L_ENTRY:
+    desc_size_ok = eq SA3D_CAMERA_DESC_SIZE, 24
+    uniform_size_ok = eq SA3D_CAMERA_UNIFORM_SIZE, 208
+    ok = and desc_size_ok, uniform_size_ok
+    br ok -> L_SIZES_OK, L_SIZES_ERR
+L_SIZES_OK:
+    return
+L_SIZES_ERR:
+    panic(3030)
+
+@test "3d_camera perspective desc init"():
+L_ENTRY:
+    desc = alloc SA3D_CAMERA_DESC_SIZE
+    call @sa3d_camera_desc_init_perspective(&desc, 1078530011, 1069547520, 1036831949, 1120403456)
+    proj = call @sa3d_camera_desc_get_projection(&desc)
+    fovy = call @sa3d_camera_desc_get_fovy(&desc)
+    aspect = call @sa3d_camera_desc_get_aspect(&desc)
+    near_val = call @sa3d_camera_desc_get_near(&desc)
+    far_val = call @sa3d_camera_desc_get_far(&desc)
+    ortho = call @sa3d_camera_desc_get_ortho_height(&desc)
+    proj_ok = eq proj, 0
+    fovy_ok = eq fovy, 1078530011
+    aspect_ok = eq aspect, 1069547520
+    near_ok = eq near_val, 1036831949
+    far_ok = eq far_val, 1120403456
+    ortho_ok = eq ortho, 0
+    p1 = and proj_ok, fovy_ok
+    p2 = and aspect_ok, near_ok
+    p3 = and far_ok, ortho_ok
+    q = and p1, p2
+    ok = and q, p3
+    !desc
+    br ok -> L_PERSP_OK, L_PERSP_ERR
+L_PERSP_OK:
+    return
+L_PERSP_ERR:
+    panic(3031)
+
+@test "3d_camera orthographic desc init"():
+L_ENTRY:
+    desc = alloc SA3D_CAMERA_DESC_SIZE
+    call @sa3d_camera_desc_init_orthographic(&desc, 1082130432, 1069547520, 0, 1120403456)
+    proj = call @sa3d_camera_desc_get_projection(&desc)
+    ortho = call @sa3d_camera_desc_get_ortho_height(&desc)
+    near_val = call @sa3d_camera_desc_get_near(&desc)
+    far_val = call @sa3d_camera_desc_get_far(&desc)
+    proj_ok = eq proj, 1
+    ortho_ok = eq ortho, 1082130432
+    near_ok = eq near_val, 0
+    far_ok = eq far_val, 1120403456
+    p1 = and proj_ok, ortho_ok
+    p2 = and near_ok, far_ok
+    ok = and p1, p2
+    !desc
+    br ok -> L_ORTHO_OK, L_ORTHO_ERR
+L_ORTHO_OK:
+    return
+L_ORTHO_ERR:
+    panic(3032)
+
+@test "3d_camera uniform position set get"():
+L_ENTRY:
+    u = alloc SA3D_CAMERA_UNIFORM_SIZE
+    call @sa3d_camera_uniform_init(&u)
+    call @sa3d_camera_uniform_set_position(&u, 1065353216, 1073741824, 1077936128)
+    x1 = call @sa3d_camera_uniform_get_position_x(&u)
+    y1 = call @sa3d_camera_uniform_get_position_y(&u)
+    z1 = call @sa3d_camera_uniform_get_position_z(&u)
+    x1_ok = eq x1, 1065353216
+    y1_ok = eq y1, 1073741824
+    z1_ok = eq z1, 1077936128
+    pa = and x1_ok, y1_ok
+    ok = and pa, z1_ok
+    !u
+    br ok -> L_POS_OK, L_POS_ERR
+L_POS_OK:
+    return
+L_POS_ERR:
+    panic(3033)
+
+@test "3d_camera uniform copy view"():
+L_ENTRY:
+    u = alloc SA3D_CAMERA_UNIFORM_SIZE
+    s = stack_alloc 64
+    store s+0, 1065353216 as i32
+    store s+20, 1073741824 as i32
+    store s+40, 1077936128 as i32
+    store s+60, 1082130432 as i32
+    call @sa3d_camera_uniform_copy_view(&u, &s)
+    v0 = load u+0 as i32
+    v20 = load u+20 as i32
+    v40 = load u+40 as i32
+    v60 = load u+60 as i32
+    v0_ok = eq v0, 1065353216
+    v20_ok = eq v20, 1073741824
+    v40_ok = eq v40, 1077936128
+    v60_ok = eq v60, 1082130432
+    pa = and v0_ok, v20_ok
+    pb = and v40_ok, v60_ok
+    ok = and pa, pb
+    !u
+    br ok -> L_VIEW_OK, L_VIEW_ERR
+L_VIEW_OK:
+    return
+L_VIEW_ERR:
+    panic(3034)
+
+@test "3d_camera uniform copy proj"():
+L_ENTRY:
+    u = alloc SA3D_CAMERA_UNIFORM_SIZE
+    s = stack_alloc 64
+    store s+0, 1082130432 as i32
+    store s+20, 1077936128 as i32
+    store s+40, 1073741824 as i32
+    store s+60, 1065353216 as i32
+    call @sa3d_camera_uniform_copy_proj(&u, &s)
+    p0 = load u+64 as i32
+    p20 = load u+84 as i32
+    p40 = load u+104 as i32
+    p60 = load u+124 as i32
+    p0_ok = eq p0, 1082130432
+    p20_ok = eq p20, 1077936128
+    p40_ok = eq p40, 1073741824
+    p60_ok = eq p60, 1065353216
+    pa = and p0_ok, p20_ok
+    pb = and p40_ok, p60_ok
+    ok = and pa, pb
+    !u
+    br ok -> L_PROJ_OK, L_PROJ_ERR
+L_PROJ_OK:
+    return
+L_PROJ_ERR:
+    panic(3035)
+
+@test "3d_camera uniform copy view_proj"():
+L_ENTRY:
+    u = alloc SA3D_CAMERA_UNIFORM_SIZE
+    s = stack_alloc 64
+    store s+0, 1084227584 as i32
+    store s+20, 1086324736 as i32
+    store s+40, 1088421888 as i32
+    store s+60, 1090519040 as i32
+    call @sa3d_camera_uniform_copy_view_proj(&u, &s)
+    vp0 = load u+128 as i32
+    vp20 = load u+148 as i32
+    vp40 = load u+168 as i32
+    vp60 = load u+188 as i32
+    vp0_ok = eq vp0, 1084227584
+    vp20_ok = eq vp20, 1086324736
+    vp40_ok = eq vp40, 1088421888
+    vp60_ok = eq vp60, 1090519040
+    pe = and vp0_ok, vp20_ok
+    pf = and vp40_ok, vp60_ok
+    ok = and pe, pf
+    !u
+    br ok -> L_VP_OK, L_VP_ERR
+L_VP_OK:
+    return
+L_VP_ERR:
+    panic(3036)
+
+@test "3d_camera projection kind and viewport helpers"():
+L_ENTRY:
+    persp = alloc SA3D_CAMERA_DESC_SIZE
+    ortho = alloc SA3D_CAMERA_DESC_SIZE
+    viewport = alloc SA3D_CAMERA_VIEWPORT_SIZE
+    outside = alloc SA3D_CAMERA_VIEWPORT_SIZE
+    call @sa3d_camera_desc_init_perspective(&persp, 1, 2, 3, 4)
+    call @sa3d_camera_desc_init_orthographic(&ortho, 5, 6, 7, 8)
+    persp_is_p = call @sa3d_camera_desc_is_perspective(&persp)
+    persp_is_o = call @sa3d_camera_desc_is_orthographic(&persp)
+    ortho_is_p = call @sa3d_camera_desc_is_perspective(&ortho)
+    ortho_is_o = call @sa3d_camera_desc_is_orthographic(&ortho)
+    call @sa3d_camera_viewport_init(&viewport, 10, 20, 640, 360)
+    call @sa3d_camera_viewport_set_depth_range(&viewport, 5, 900)
+    area = call @sa3d_camera_viewport_area(&viewport)
+    aspect = call @sa3d_camera_viewport_aspect_per_mille(&viewport)
+    depth_min = call @sa3d_camera_viewport_get_depth_min(&viewport)
+    depth_max = call @sa3d_camera_viewport_get_depth_max(&viewport)
+    inside = call @sa3d_camera_viewport_contains(&viewport, 20, 30)
+    edge_out = call @sa3d_camera_viewport_contains(&viewport, 650, 30)
+    call @sa3d_camera_viewport_clamp_to_size(&viewport, 320, 240)
+    clamped_w = load viewport+SA3D_CAMERA_VIEWPORT_width as i32
+    clamped_h = load viewport+SA3D_CAMERA_VIEWPORT_height as i32
+    call @sa3d_camera_viewport_init(&outside, 500, 300, 64, 64)
+    call @sa3d_camera_viewport_clamp_to_size(&outside, 320, 240)
+    out_x = load outside+SA3D_CAMERA_VIEWPORT_x as i32
+    out_y = load outside+SA3D_CAMERA_VIEWPORT_y as i32
+    out_w = load outside+SA3D_CAMERA_VIEWPORT_width as i32
+    out_h = load outside+SA3D_CAMERA_VIEWPORT_height as i32
+    persp_p_ok = eq persp_is_p, 1
+    persp_o_ok = eq persp_is_o, 0
+    ortho_p_ok = eq ortho_is_p, 0
+    ortho_o_ok = eq ortho_is_o, 1
+    area_ok = eq area, 230400
+    aspect_ok = eq aspect, 1777
+    depth_min_ok = eq depth_min, 5
+    depth_max_ok = eq depth_max, 900
+    inside_ok = eq inside, 1
+    edge_out_ok = eq edge_out, 0
+    clamped_w_ok = eq clamped_w, 310
+    clamped_h_ok = eq clamped_h, 220
+    out_x_ok = eq out_x, 319
+    out_y_ok = eq out_y, 239
+    out_w_ok = eq out_w, 1
+    out_h_ok = eq out_h, 1
+    p1 = and persp_p_ok, persp_o_ok
+    p2 = and ortho_p_ok, ortho_o_ok
+    p3 = and area_ok, aspect_ok
+    p33 = and depth_min_ok, depth_max_ok
+    p4 = and inside_ok, edge_out_ok
+    p5 = and clamped_w_ok, clamped_h_ok
+    p6 = and out_x_ok, out_y_ok
+    p7 = and out_w_ok, out_h_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q22 = and p33, q2
+    q3 = and p5, p6
+    r1 = and q1, q2
+    r2 = and q3, p7
+    r3 = and r1, r2
+    ok = and r3, q22
+    br ok -> L_VIEWPORT_OK, L_VIEWPORT_ERR
+
+L_VIEWPORT_OK:
+    !outside
+    !viewport
+    !ortho
+    !persp
+    return
+
+L_VIEWPORT_ERR:
+    !outside
+    !viewport
+    !ortho
+    !persp
+    panic(3037)
+
+@test "3d_camera bevy backed native selftest"():
+L_ENTRY:
+    status = call @sa3d_camera_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !status
+    !ok
+    return
+
+L_ERR:
+    !status
+    !ok
+    panic(3038)
+
+@test "3d_camera SA perspective projection matches Bevy infinite reverse RH"():
+L_ENTRY:
+    mat = alloc 64
+    ok0 = call @sa3d_camera_projection_perspective_from_focal_y_sa(&mat, 1.0, 1.7777778, 0.1)
+    m00 = load mat+0 as f32
+    m11 = load mat+20 as f32
+    m23 = load mat+44 as f32
+    m32 = load mat+56 as f32
+    m33 = load mat+60 as f32
+    ok0_ok = eq ok0, 1
+    m00_ok = fcmp_gt m00, 0.5624
+    m00_ok2 = fcmp_lt m00, 0.5626
+    m11_ok = fcmp_eq m11, 1.0
+    m23_ok = fcmp_eq m23, -1.0
+    m32_ok = fcmp_gt m32, 0.0999
+    m32_ok2 = fcmp_lt m32, 0.1001
+    m33_ok = fcmp_eq m33, 0.0
+    p1 = and ok0_ok, m00_ok
+    p2 = and m00_ok2, m11_ok
+    p3 = and m23_ok, m32_ok
+    q1 = and p1, p2
+    p4 = and m32_ok2, m33_ok
+    q2 = and p3, p4
+    ok = and q1, q2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mat
+    return
+
+L_ERR:
+    !mat
+    panic(3039)
+
+@test "3d_camera SA orthographic bounds matrix matches Bevy reversed depth"():
+L_ENTRY:
+    mat = alloc 64
+    ok0 = call @sa3d_camera_projection_orthographic_bounds_sa(&mat, -10.0, 10.0, -5.0, 5.0, 1000.0, 0.0)
+    m00 = load mat+0 as f32
+    m11 = load mat+20 as f32
+    m22 = load mat+40 as f32
+    m30 = load mat+48 as f32
+    m31 = load mat+52 as f32
+    m32 = load mat+56 as f32
+    m33 = load mat+60 as f32
+    ok0_ok = eq ok0, 1
+    m00_ok = fcmp_gt m00, 0.0999
+    m00_ok2 = fcmp_lt m00, 0.1001
+    m11_ok = fcmp_gt m11, 0.1999
+    m11_ok2 = fcmp_lt m11, 0.2001
+    m22_ok = fcmp_gt m22, 0.0009
+    m22_ok2 = fcmp_lt m22, 0.0011
+    m30_ok = fcmp_gt m30, -0.0001
+    m31_ok = fcmp_gt m31, -0.0001
+    m30_ok2 = fcmp_lt m30, 0.0001
+    m31_ok2 = fcmp_lt m31, 0.0001
+    m32_ok = fcmp_gt m32, 0.999
+    m32_ok2 = fcmp_lt m32, 1.001
+    m33_ok = fcmp_gt m33, 0.999
+    m33_ok2 = fcmp_lt m33, 1.001
+    p1 = and ok0_ok, m00_ok
+    p1b = and m00_ok2, m11_ok
+    p2 = and m11_ok2, m22_ok
+    p3a = and m22_ok2, m30_ok
+    p3b = and m31_ok, m30_ok2
+    p3 = and p3a, p3b
+    p4 = and m32_ok, m32_ok2
+    p5a = and m33_ok, m33_ok2
+    q1a = and p1, p1b
+    q1 = and q1a, p2
+    p5 = and m31_ok2, p4
+    p6 = and p5, p5a
+    q2 = and p3, p6
+    ok = and q1, q2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mat
+    return
+
+L_ERR:
+    !mat
+    panic(3040)
+
+@test "3d_camera SA orthographic update follows Bevy scaling modes"():
+L_ENTRY:
+    ortho = alloc SA3D_ORTHOGRAPHIC_SIZE
+    mat = alloc 64
+    call @sa3d_camera_orthographic_default_3d_sa(&ortho)
+    default_near = load ortho+SA3D_ORTHOGRAPHIC_near as f32
+    default_far = load ortho+SA3D_ORTHOGRAPHIC_far as f32
+    default_area_min_x = load ortho+SA3D_ORTHOGRAPHIC_area_min_x as f32
+    default_area_max_y = load ortho+SA3D_ORTHOGRAPHIC_area_max_y as f32
+    call @sa3d_camera_orthographic_set_scaling_sa(&ortho, SA3D_CAMERA_SCALING_FIXED_VERTICAL, 0.0, 10.0)
+    update0 = call @sa3d_camera_orthographic_update_sa(&ortho, 1920.0, 1080.0)
+    min_x0 = load ortho+SA3D_ORTHOGRAPHIC_area_min_x as f32
+    min_y0 = load ortho+SA3D_ORTHOGRAPHIC_area_min_y as f32
+    max_x0 = load ortho+SA3D_ORTHOGRAPHIC_area_max_x as f32
+    max_y0 = load ortho+SA3D_ORTHOGRAPHIC_area_max_y as f32
+    proj_ok = call @sa3d_camera_orthographic_projection_sa(&mat, &ortho)
+    pm00 = load mat+0 as f32
+    pm11 = load mat+20 as f32
+    pm32 = load mat+56 as f32
+    call @sa3d_camera_orthographic_set_scaling_sa(&ortho, SA3D_CAMERA_SCALING_AUTO_MIN, 4.0, 3.0)
+    update1 = call @sa3d_camera_orthographic_update_sa(&ortho, 16.0, 9.0)
+    min_x1 = load ortho+SA3D_ORTHOGRAPHIC_area_min_x as f32
+    max_y1 = load ortho+SA3D_ORTHOGRAPHIC_area_max_y as f32
+    default_near_ok = fcmp_eq default_near, 0.0
+    default_far_ok = fcmp_eq default_far, 1000.0
+    default_min_ok = fcmp_eq default_area_min_x, -1.0
+    default_max_ok = fcmp_eq default_area_max_y, 1.0
+    update0_ok = eq update0, 1
+    min_x0_ok = fcmp_gt min_x0, -8.889
+    min_x0_ok2 = fcmp_lt min_x0, -8.888
+    min_y0_ok = fcmp_gt min_y0, -5.001
+    min_y0_ok2 = fcmp_lt min_y0, -4.999
+    max_x0_ok = fcmp_gt max_x0, 8.888
+    max_x0_ok2 = fcmp_lt max_x0, 8.889
+    max_y0_ok = fcmp_gt max_y0, 4.999
+    max_y0_ok2 = fcmp_lt max_y0, 5.001
+    proj_ok2 = eq proj_ok, 1
+    pm00_ok = fcmp_gt pm00, 0.1124
+    pm00_ok2 = fcmp_lt pm00, 0.1126
+    pm11_ok = fcmp_gt pm11, 0.1999
+    pm11_ok2 = fcmp_lt pm11, 0.2001
+    pm32_ok = fcmp_gt pm32, 0.999
+    pm32_ok2 = fcmp_lt pm32, 1.001
+    update1_ok = eq update1, 1
+    min_x1_ok = fcmp_gt min_x1, -2.667
+    min_x1_ok2 = fcmp_lt min_x1, -2.666
+    max_y1_ok = fcmp_gt max_y1, 1.499
+    max_y1_ok2 = fcmp_lt max_y1, 1.501
+    p1 = and default_near_ok, default_far_ok
+    p2 = and default_min_ok, default_max_ok
+    p3 = and update0_ok, min_x0_ok
+    p4a = and min_x0_ok2, min_y0_ok
+    p4 = and p4a, min_y0_ok2
+    p5 = and max_x0_ok, max_x0_ok2
+    p6a = and max_y0_ok, max_y0_ok2
+    p6 = and p6a, proj_ok2
+    p7 = and pm00_ok, pm00_ok2
+    p8aa = and pm11_ok, pm11_ok2
+    p8a = and p8aa, pm32_ok
+    p8 = and p8a, pm32_ok2
+    p9a = and update1_ok, min_x1_ok
+    p9 = and p9a, min_x1_ok2
+    p10 = and max_y1_ok, max_y1_ok2
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and r1, r2
+    ok = and r3, q5
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !mat
+    !ortho
+    return
+
+L_ERR:
+    !mat
+    !ortho
+    panic(3041)
+
+@test "3d_camera Bevy Camera3d depth and exposure defaults"():
+L_ENTRY:
+    depth_op = call @sa3d_camera3d_depth_load_op_default()
+    depth_clear = call @sa3d_camera3d_depth_clear_value_default()
+    depth_usage = call @sa3d_camera3d_depth_texture_usages_default()
+    clear_valid = call @sa3d_camera3d_depth_load_op_is_valid(SA3D_CAMERA_DEPTH_LOAD_CLEAR)
+    load_valid = call @sa3d_camera3d_depth_load_op_is_valid(SA3D_CAMERA_DEPTH_LOAD_LOAD)
+    bad_valid = call @sa3d_camera3d_depth_load_op_is_valid(99)
+    blender_ev = call @sa3d_camera_exposure_default_ev100()
+    sunlight_ev = call @sa3d_camera_exposure_sunlight_ev100()
+    overcast_ev = call @sa3d_camera_exposure_overcast_ev100()
+    indoor_ev = call @sa3d_camera_exposure_indoor_ev100()
+    exposure = call @sa3d_camera_exposure_from_ev100(blender_ev)
+    physical_ev = call @sa3d_camera_physical_ev100(2.8, 0.008, 100.0)
+    physical_bad = call @sa3d_camera_physical_ev100(0.0, 0.008, 100.0)
+    depth_op_ok = eq depth_op, SA3D_CAMERA_DEPTH_LOAD_CLEAR
+    depth_clear_ok = fcmp_eq depth_clear, 0.0
+    depth_usage_ok = eq depth_usage, SA3D_CAMERA_DEPTH_TEXTURE_USAGE_RENDER_ATTACHMENT
+    clear_valid_ok = eq clear_valid, 1
+    load_valid_ok = eq load_valid, 1
+    bad_valid_ok = eq bad_valid, 0
+    blender_ev_ok = fcmp_gt blender_ev, 9.699
+    blender_ev_ok2 = fcmp_lt blender_ev, 9.701
+    sunlight_ev_ok = fcmp_eq sunlight_ev, 15.0
+    overcast_ev_ok = fcmp_eq overcast_ev, 12.0
+    indoor_ev_ok = fcmp_eq indoor_ev, 7.0
+    exposure_ok = fcmp_gt exposure, 0.001
+    exposure_ok2 = fcmp_lt exposure, 0.00101
+    physical_ev_ok = fcmp_gt physical_ev, 9.93
+    physical_ev_ok2 = fcmp_lt physical_ev, 9.94
+    physical_bad_ok = fcmp_eq physical_bad, 0.0
+    p1 = and depth_op_ok, depth_clear_ok
+    p2 = and depth_usage_ok, clear_valid_ok
+    p3 = and load_valid_ok, bad_valid_ok
+    p4 = and blender_ev_ok, blender_ev_ok2
+    p5 = and sunlight_ev_ok, overcast_ev_ok
+    p6 = and indoor_ev_ok, exposure_ok
+    p7 = and exposure_ok2, physical_ev_ok
+    p8 = and physical_ev_ok2, physical_bad_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    r1 = and q1, q2
+    r2 = and q3, q4
+    ok = and r1, r2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return
+
+L_ERR:
+    panic(3042)

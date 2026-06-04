@@ -1,0 +1,535 @@
+@import "../3d_light.sal"
+
+@test "3d_light descriptor layout"():
+L_ENTRY:
+    light = alloc SA3D_LIGHT_DESC_SIZE
+    store light+SA3D_LIGHT_DESC_kind, SA3D_LIGHT_SPOT as i32
+    store light+SA3D_LIGHT_DESC_enabled, 1 as i32
+    store light+SA3D_LIGHT_DESC_intensity, 1101004800 as i32
+    store light+SA3D_LIGHT_DESC_outer_angle, 1065353216 as i32
+    kind = load light+0 as i32
+    enabled = load light+4 as i32
+    intensity = load light+56 as i32
+    outer = load light+68 as i32
+    kind_ok = eq kind, 3
+    enabled_ok = eq enabled, 1
+    intensity_ok = eq intensity, 1101004800
+    outer_ok = eq outer, 1065353216
+    pair1 = and kind_ok, enabled_ok
+    pair2 = and intensity_ok, outer_ok
+    ok = and pair1, pair2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !light
+    return
+
+L_ERR:
+    !light
+    panic(3050)
+
+@test "3d_light constructors and updates"():
+L_ENTRY:
+    light = alloc SA3D_LIGHT_DESC_SIZE
+    call @sa3d_light_point(&light, 1148846080, 1101004800, 1065353216, 1073741824, 1077936128)
+    kind = load light+SA3D_LIGHT_DESC_kind as i32
+    enabled = call @sa3d_light_is_enabled(&light)
+    intensity = load light+SA3D_LIGHT_DESC_intensity as i32
+    range = load light+SA3D_LIGHT_DESC_range as i32
+    pos = ptr_add light, SA3D_LIGHT_DESC_position
+    px = load pos+SA3D_VEC3_x as i32
+    py = load pos+SA3D_VEC3_y as i32
+    pz = load pos+SA3D_VEC3_z as i32
+    call @sa3d_light_set_color(&light, 1065353216, 1056964608, 1050253722, 1065353216)
+    color = ptr_add light, SA3D_LIGHT_DESC_color
+    cr = load color+SA3D_COLOR_r as i32
+    cg = load color+SA3D_COLOR_g as i32
+    cb = load color+SA3D_COLOR_b as i32
+    call @sa3d_light_set_enabled(&light, 0)
+    disabled = call @sa3d_light_is_enabled(&light)
+    kind_ok = eq kind, SA3D_LIGHT_POINT
+    enabled_ok = eq enabled, 1
+    intensity_ok = eq intensity, 1148846080
+    range_ok = eq range, 1101004800
+    px_ok = eq px, 1065353216
+    py_ok = eq py, 1073741824
+    pz_ok = eq pz, 1077936128
+    cr_ok = eq cr, 1065353216
+    cg_ok = eq cg, 1056964608
+    cb_ok = eq cb, 1050253722
+    disabled_ok = eq disabled, 0
+    p1 = and kind_ok, enabled_ok
+    p2 = and intensity_ok, range_ok
+    p3 = and px_ok, py_ok
+    p4 = and pz_ok, cr_ok
+    p5 = and cg_ok, cb_ok
+    p6 = and disabled_ok, p5
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and q1, q2
+    ok = and q3, p6
+    br ok -> L_BEHAVIOR_OK, L_BEHAVIOR_ERR
+
+L_BEHAVIOR_OK:
+    !light
+    return
+
+L_BEHAVIOR_ERR:
+    !light
+    panic(3051)
+
+@test "3d_light directional and spot constructors"():
+L_ENTRY:
+    light = alloc SA3D_LIGHT_DESC_SIZE
+    call @sa3d_light_directional(&light, 1176256512, 0, -1082130432, 0)
+    dkind = load light+SA3D_LIGHT_DESC_kind as i32
+    dintensity = load light+SA3D_LIGHT_DESC_intensity as i32
+    dir = ptr_add light, SA3D_LIGHT_DESC_direction
+    dy = load dir+SA3D_VEC3_y as i32
+    call @sa3d_light_spot(&light, 1148846080, 1101004800, 1045220557, 1053609165)
+    skind = load light+SA3D_LIGHT_DESC_kind as i32
+    sintensity = load light+SA3D_LIGHT_DESC_intensity as i32
+    srange = load light+SA3D_LIGHT_DESC_range as i32
+    inner = load light+SA3D_LIGHT_DESC_inner_angle as i32
+    outer = load light+SA3D_LIGHT_DESC_outer_angle as i32
+    call @sa3d_light_set_spot_angles(&light, 1050253722, 1056964608)
+    inner2 = load light+SA3D_LIGHT_DESC_inner_angle as i32
+    outer2 = load light+SA3D_LIGHT_DESC_outer_angle as i32
+    dkind_ok = eq dkind, SA3D_LIGHT_DIRECTIONAL
+    dintensity_ok = eq dintensity, 1176256512
+    dy_ok = eq dy, -1082130432
+    skind_ok = eq skind, SA3D_LIGHT_SPOT
+    sintensity_ok = eq sintensity, 1148846080
+    srange_ok = eq srange, 1101004800
+    inner_ok = eq inner, 1045220557
+    outer_ok = eq outer, 1053609165
+    inner2_ok = eq inner2, 1050253722
+    outer2_ok = eq outer2, 1056964608
+    p1 = and dkind_ok, dintensity_ok
+    p2 = and dy_ok, skind_ok
+    p3 = and sintensity_ok, srange_ok
+    p4 = and inner_ok, outer_ok
+    p5 = and inner2_ok, outer2_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and q1, q2
+    ok = and q3, p5
+    br ok -> L_SPOT_OK, L_SPOT_ERR
+
+L_SPOT_OK:
+    !light
+    return
+
+L_SPOT_ERR:
+    !light
+    panic(3052)
+
+@test "3d_light validation and range influence"():
+L_ENTRY:
+    point = alloc SA3D_LIGHT_DESC_SIZE
+    spot = alloc SA3D_LIGHT_DESC_SIZE
+    ambient = alloc SA3D_LIGHT_DESC_SIZE
+    p_inside = alloc SA3D_VEC3_SIZE
+    p_outside = alloc SA3D_VEC3_SIZE
+    call @sa3d_light_point(&point, 10, 5, 0, 0, 0)
+    call @sa3d_vec3_set(&p_inside, 3, 4, 0)
+    call @sa3d_vec3_set(&p_outside, 6, 0, 0)
+    kind_point_ok = call @sa3d_light_kind_is_valid(SA3D_LIGHT_POINT)
+    kind_bad = call @sa3d_light_kind_is_valid(99)
+    point_positional = call @sa3d_light_is_positional(&point)
+    point_range = call @sa3d_light_has_finite_range(&point)
+    point_valid = call @sa3d_light_desc_validate(&point)
+    affects_inside = call @sa3d_light_affects_point(&point, &p_inside)
+    affects_outside = call @sa3d_light_affects_point(&point, &p_outside)
+    call @sa3d_light_set_enabled(&point, 0)
+    affects_disabled = call @sa3d_light_affects_point(&point, &p_inside)
+    call @sa3d_light_spot(&spot, 10, 8, 6, 4)
+    spot_bad = call @sa3d_light_spot_angles_valid(&spot)
+    spot_valid_bad = call @sa3d_light_desc_validate(&spot)
+    call @sa3d_light_set_spot_angles(&spot, 2, 4)
+    spot_good = call @sa3d_light_spot_angles_valid(&spot)
+    spot_valid_good = call @sa3d_light_desc_validate(&spot)
+    call @sa3d_light_ambient(&ambient, 1)
+    ambient_positional = call @sa3d_light_is_positional(&ambient)
+    ambient_range = call @sa3d_light_has_finite_range(&ambient)
+    ambient_valid = call @sa3d_light_desc_validate(&ambient)
+    ambient_affects = call @sa3d_light_affects_point(&ambient, &p_outside)
+    kind_point_ok_ok = eq kind_point_ok, 1
+    kind_bad_ok = eq kind_bad, 0
+    point_positional_ok = eq point_positional, 1
+    point_range_ok = eq point_range, 1
+    point_valid_ok = eq point_valid, 1
+    affects_inside_ok = eq affects_inside, 1
+    affects_outside_ok = eq affects_outside, 0
+    affects_disabled_ok = eq affects_disabled, 0
+    spot_bad_ok = eq spot_bad, 0
+    spot_valid_bad_ok = eq spot_valid_bad, 0
+    spot_good_ok = eq spot_good, 1
+    spot_valid_good_ok = eq spot_valid_good, 1
+    ambient_positional_ok = eq ambient_positional, 0
+    ambient_range_ok = eq ambient_range, 0
+    ambient_valid_ok = eq ambient_valid, 1
+    ambient_affects_ok = eq ambient_affects, 1
+    p1 = and kind_point_ok_ok, kind_bad_ok
+    p2 = and point_positional_ok, point_range_ok
+    p3 = and point_valid_ok, affects_inside_ok
+    p4 = and affects_outside_ok, affects_disabled_ok
+    p5 = and spot_bad_ok, spot_valid_bad_ok
+    p6 = and spot_good_ok, spot_valid_good_ok
+    p7 = and ambient_positional_ok, ambient_range_ok
+    p8 = and ambient_valid_ok, ambient_affects_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    r1 = and q1, q2
+    r2 = and q3, q4
+    ok = and r1, r2
+    br ok -> L_VALIDATE_OK, L_VALIDATE_ERR
+
+L_VALIDATE_OK:
+    !p_outside
+    !p_inside
+    !ambient
+    !spot
+    !point
+    return
+
+L_VALIDATE_ERR:
+    !p_outside
+    !p_inside
+    !ambient
+    !spot
+    !point
+    panic(3053)
+
+@test "3d_light Bevy defaults match ambient directional point spot"():
+L_ENTRY:
+    ambient = alloc SA3D_LIGHT_BEVY_SIZE
+    directional = alloc SA3D_LIGHT_BEVY_SIZE
+    point = alloc SA3D_LIGHT_BEVY_SIZE
+    spot = alloc SA3D_LIGHT_BEVY_SIZE
+    none = alloc SA3D_LIGHT_BEVY_SIZE
+    call @sa3d_light_bevy_default_ambient(&ambient)
+    call @sa3d_light_bevy_default_directional(&directional)
+    call @sa3d_light_bevy_default_point(&point)
+    call @sa3d_light_bevy_default_spot(&spot)
+    call @sa3d_light_bevy_global_ambient_none(&none)
+    akind = load ambient+SA3D_LIGHT_BEVY_kind as i32
+    abright = load ambient+SA3D_LIGHT_BEVY_intensity as f32
+    aaffects = load ambient+SA3D_LIGHT_BEVY_affects_lightmapped as i32
+    nkind = load none+SA3D_LIGHT_BEVY_kind as i32
+    nbright = load none+SA3D_LIGHT_BEVY_intensity as f32
+    dkind = load directional+SA3D_LIGHT_BEVY_kind as i32
+    dillum = load directional+SA3D_LIGHT_BEVY_intensity as f32
+    ddepth = load directional+SA3D_LIGHT_BEVY_shadow_depth_bias as f32
+    dnormal = load directional+SA3D_LIGHT_BEVY_shadow_normal_bias as f32
+    pkind = load point+SA3D_LIGHT_BEVY_kind as i32
+    pintensity = load point+SA3D_LIGHT_BEVY_intensity as f32
+    prange = load point+SA3D_LIGHT_BEVY_range as f32
+    pdepth = load point+SA3D_LIGHT_BEVY_shadow_depth_bias as f32
+    pnormal = load point+SA3D_LIGHT_BEVY_shadow_normal_bias as f32
+    pnear = load point+SA3D_LIGHT_BEVY_shadow_map_near_z as f32
+    skind = load spot+SA3D_LIGHT_BEVY_kind as i32
+    sintensity = load spot+SA3D_LIGHT_BEVY_intensity as f32
+    srange = load spot+SA3D_LIGHT_BEVY_range as f32
+    sinner = load spot+SA3D_LIGHT_BEVY_inner_angle as f32
+    souter = load spot+SA3D_LIGHT_BEVY_outer_angle as f32
+    sdepth = load spot+SA3D_LIGHT_BEVY_shadow_depth_bias as f32
+    snormal = load spot+SA3D_LIGHT_BEVY_shadow_normal_bias as f32
+    ambient_valid = call @sa3d_light_bevy_validate(&ambient)
+    directional_valid = call @sa3d_light_bevy_validate(&directional)
+    point_valid = call @sa3d_light_bevy_validate(&point)
+    spot_valid = call @sa3d_light_bevy_validate(&spot)
+    akind_ok = eq akind, SA3D_LIGHT_AMBIENT
+    abright_ok = fcmp_eq abright, 80.0
+    aaffects_ok = eq aaffects, 1
+    nkind_ok = eq nkind, SA3D_LIGHT_AMBIENT
+    nbright_ok = fcmp_eq nbright, 0.0
+    dkind_ok = eq dkind, SA3D_LIGHT_DIRECTIONAL
+    dillum_ok = fcmp_eq dillum, 10000.0
+    ddepth_ok = fcmp_gt ddepth, 0.0199
+    ddepth_ok2 = fcmp_lt ddepth, 0.0201
+    dnormal_ok = fcmp_gt dnormal, 1.799
+    dnormal_ok2 = fcmp_lt dnormal, 1.801
+    pkind_ok = eq pkind, SA3D_LIGHT_POINT
+    pintensity_ok = fcmp_eq pintensity, 1000000.0
+    prange_ok = fcmp_eq prange, 20.0
+    pdepth_ok = fcmp_gt pdepth, 0.0799
+    pdepth_ok2 = fcmp_lt pdepth, 0.0801
+    pnormal_ok = fcmp_gt pnormal, 0.599
+    pnormal_ok2 = fcmp_lt pnormal, 0.601
+    pnear_ok = fcmp_gt pnear, 0.099
+    pnear_ok2 = fcmp_lt pnear, 0.101
+    skind_ok = eq skind, SA3D_LIGHT_SPOT
+    sintensity_ok = fcmp_eq sintensity, 1000000.0
+    srange_ok = fcmp_eq srange, 20.0
+    sinner_ok = fcmp_eq sinner, 0.0
+    souter_ok = fcmp_gt souter, 0.7853
+    souter_ok2 = fcmp_lt souter, 0.7855
+    sdepth_ok = fcmp_gt sdepth, 0.0199
+    sdepth_ok2 = fcmp_lt sdepth, 0.0201
+    snormal_ok = fcmp_gt snormal, 1.799
+    snormal_ok2 = fcmp_lt snormal, 1.801
+    valid1 = and ambient_valid, directional_valid
+    valid2 = and point_valid, spot_valid
+    p1 = and akind_ok, abright_ok
+    p2 = and aaffects_ok, nkind_ok
+    p3 = and nbright_ok, dkind_ok
+    p4 = and dillum_ok, ddepth_ok
+    p5 = and ddepth_ok2, dnormal_ok
+    p6 = and dnormal_ok2, pkind_ok
+    p7 = and pintensity_ok, prange_ok
+    p8 = and pdepth_ok, pdepth_ok2
+    p9 = and pnormal_ok, pnormal_ok2
+    p10 = and pnear_ok, pnear_ok2
+    p11 = and skind_ok, sintensity_ok
+    p12 = and srange_ok, sinner_ok
+    p13 = and souter_ok, souter_ok2
+    p14 = and sdepth_ok, sdepth_ok2
+    p15 = and snormal_ok, snormal_ok2
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    q8 = and p15, valid1
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and q7, q8
+    s1 = and r1, r2
+    s2 = and r3, r4
+    s3 = and s1, s2
+    ok = and s3, valid2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !none
+    !spot
+    !point
+    !directional
+    !ambient
+    return
+
+L_ERR:
+    !none
+    !spot
+    !point
+    !directional
+    !ambient
+    panic(3054)
+
+@test "3d_light Bevy spot clamp and attenuation logic"():
+L_ENTRY:
+    light = alloc SA3D_LIGHT_BEVY_SIZE
+    call @sa3d_light_bevy_default_spot(&light)
+    call @sa3d_light_bevy_set_spot_angles_clamped(&light, 2.0, 3.0)
+    inner0 = load light+SA3D_LIGHT_BEVY_inner_angle as f32
+    outer0 = load light+SA3D_LIGHT_BEVY_outer_angle as f32
+    valid0 = call @sa3d_light_bevy_spot_angles_valid(&light)
+    call @sa3d_light_bevy_set_spot_angles_clamped(&light, -1.0, 0.5)
+    inner1 = load light+SA3D_LIGHT_BEVY_inner_angle as f32
+    outer1 = load light+SA3D_LIGHT_BEVY_outer_angle as f32
+    valid1 = call @sa3d_light_bevy_spot_angles_valid(&light)
+    call @sa3d_light_bevy_default_point(&light)
+    a0 = call @sa3d_light_bevy_point_attenuation(&light, 0.0)
+    a10 = call @sa3d_light_bevy_point_attenuation(&light, 10.0)
+    a20 = call @sa3d_light_bevy_point_attenuation(&light, 20.0)
+    a21 = call @sa3d_light_bevy_point_attenuation(&light, 21.0)
+    call @sa3d_light_bevy_set_radius(&light, -2.0)
+    radius0 = load light+SA3D_LIGHT_BEVY_radius as f32
+    call @sa3d_light_bevy_set_range(&light, -5.0)
+    range0 = load light+SA3D_LIGHT_BEVY_range as f32
+    valid_after_clamp = call @sa3d_light_bevy_validate(&light)
+    inner0_ok = fcmp_gt inner0, 1.5707
+    inner0_ok2 = fcmp_lt inner0, 1.5709
+    outer0_ok = fcmp_gt outer0, 1.5707
+    outer0_ok2 = fcmp_lt outer0, 1.5709
+    valid0_ok = eq valid0, 1
+    inner1_ok = fcmp_eq inner1, 0.0
+    outer1_ok = fcmp_eq outer1, 0.5
+    valid1_ok = eq valid1, 1
+    a0_ok = fcmp_eq a0, 1.0
+    a10_ok = fcmp_gt a10, 0.878
+    a10_ok2 = fcmp_lt a10, 0.879
+    a20_ok = fcmp_eq a20, 0.0
+    a21_ok = fcmp_eq a21, 0.0
+    radius0_ok = fcmp_eq radius0, 0.0
+    range0_ok = fcmp_eq range0, 0.0
+    valid_after_ok = eq valid_after_clamp, 1
+    p1 = and inner0_ok, inner0_ok2
+    p2 = and outer0_ok, outer0_ok2
+    p3 = and valid0_ok, inner1_ok
+    p4 = and outer1_ok, valid1_ok
+    p5 = and a0_ok, a10_ok
+    p6 = and a10_ok2, a20_ok
+    p7 = and a21_ok, radius0_ok
+    p8 = and range0_ok, valid_after_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    r1 = and q1, q2
+    r2 = and q3, q4
+    ok = and r1, r2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !light
+    return
+
+L_ERR:
+    !light
+    panic(3055)
+
+@test "3d_light Bevy textures, shadow maps, and sun disk"():
+L_ENTRY:
+    dir_tex = alloc SA3D_LIGHT_DIRECTIONAL_TEXTURE_SIZE
+    point_tex = alloc SA3D_LIGHT_POINT_TEXTURE_SIZE
+    spot_tex = alloc SA3D_LIGHT_SPOT_TEXTURE_SIZE
+    dir_map = alloc SA3D_DIRECTIONAL_LIGHT_SHADOW_MAP_SIZE
+    point_map = alloc SA3D_POINT_LIGHT_SHADOW_MAP_SIZE
+    sun = alloc SA3D_SUN_DISK_SIZE
+    call @sa3d_directional_light_texture_init(&dir_tex)
+    call @sa3d_point_light_texture_init(&point_tex)
+    call @sa3d_spot_light_texture_init(&spot_tex)
+    call @sa3d_directional_light_shadow_map_init(&dir_map)
+    call @sa3d_point_light_shadow_map_init(&point_map)
+    call @sa3d_sun_disk_default(&sun)
+    dir_image = load dir_tex+SA3D_LIGHT_DIRECTIONAL_TEXTURE_image as i64
+    dir_tiled = load dir_tex+SA3D_LIGHT_DIRECTIONAL_TEXTURE_tiled as i32
+    point_image = load point_tex+SA3D_LIGHT_POINT_TEXTURE_image as i64
+    point_layout = load point_tex+SA3D_LIGHT_POINT_TEXTURE_cubemap_layout as i32
+    spot_image = load spot_tex+SA3D_LIGHT_SPOT_TEXTURE_image as i64
+    dir_size = load dir_map+SA3D_DIRECTIONAL_LIGHT_SHADOW_MAP_size as i64
+    point_size = load point_map+SA3D_POINT_LIGHT_SHADOW_MAP_size as i64
+    sun_angle = load sun+SA3D_SUN_DISK_angular_size as f32
+    sun_intensity = load sun+SA3D_SUN_DISK_intensity as f32
+    shadow_method_default = call @sa3d_shadow_filtering_method_default()
+    shadow_method_ok = call @sa3d_shadow_filtering_method_is_valid(shadow_method_default)
+    marker_mask_ok = call @sa3d_light_marker_mask_is_valid(SA3D_LIGHT_MARKER_NOT_SHADOW_CASTER)
+    marker_has_ok = call @sa3d_light_marker_mask_has(SA3D_LIGHT_MARKER_NOT_SHADOW_CASTER, SA3D_LIGHT_MARKER_NOT_SHADOW_CASTER)
+    dir_tex_ok = eq dir_image, 0
+    dir_tiled_ok = eq dir_tiled, 0
+    point_image_ok = eq point_image, 0
+    point_layout_ok = eq point_layout, SA3D_CUBEMAP_LAYOUT_CROSS_VERTICAL
+    spot_image_ok = eq spot_image, 0
+    dir_size_ok = eq dir_size, 2048
+    point_size_ok = eq point_size, 1024
+    sun_angle_ok = fcmp_gt sun_angle, 0.0093
+    sun_angle_ok2 = fcmp_lt sun_angle, 0.00931
+    sun_intensity_ok = fcmp_eq sun_intensity, 1.0
+    shadow_method_ok2 = eq shadow_method_ok, 1
+    shadow_method_default_ok = eq shadow_method_default, SA3D_SHADOW_FILTERING_METHOD_GAUSSIAN
+    marker_mask_ok2 = eq marker_mask_ok, 1
+    marker_has_ok2 = eq marker_has_ok, 1
+    p1 = and dir_tex_ok, dir_tiled_ok
+    p2 = and point_image_ok, point_layout_ok
+    p3 = and spot_image_ok, dir_size_ok
+    p4 = and point_size_ok, sun_angle_ok
+    p5 = and sun_angle_ok2, sun_intensity_ok
+    p6 = and shadow_method_ok2, shadow_method_default_ok
+    p7 = and marker_mask_ok2, marker_has_ok2
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and q3, p7
+    ok = and q1, q2
+    ok2 = and ok, q4
+    br ok2 -> L_OK, L_ERR
+
+L_OK:
+    !sun
+    !point_map
+    !dir_map
+    !spot_tex
+    !point_tex
+    !dir_tex
+    return
+
+L_ERR:
+    !sun
+    !point_map
+    !dir_map
+    !spot_tex
+    !point_tex
+    !dir_tex
+    panic(3056)
+
+@test "3d_light Bevy cascade shadow config defaults and validation"():
+L_ENTRY:
+    config = alloc SA3D_CASCADE_SHADOW_CONFIG_SIZE
+    single = alloc SA3D_CASCADE_SHADOW_CONFIG_SIZE
+    call @sa3d_cascade_shadow_config_default(&config)
+    num = load config+SA3D_CASCADE_SHADOW_CONFIG_num_cascades as i32
+    min_dist = load config+SA3D_CASCADE_SHADOW_CONFIG_minimum_distance as f32
+    max_dist = load config+SA3D_CASCADE_SHADOW_CONFIG_maximum_distance as f32
+    first_bound = load config+SA3D_CASCADE_SHADOW_CONFIG_first_cascade_far_bound as f32
+    overlap = load config+SA3D_CASCADE_SHADOW_CONFIG_overlap_proportion as f32
+    b0 = load config+SA3D_CASCADE_SHADOW_CONFIG_bound0 as f32
+    b1 = load config+SA3D_CASCADE_SHADOW_CONFIG_bound1 as f32
+    b2 = load config+SA3D_CASCADE_SHADOW_CONFIG_bound2 as f32
+    b3 = load config+SA3D_CASCADE_SHADOW_CONFIG_bound3 as f32
+    valid = call @sa3d_cascade_shadow_config_validate(&config)
+    single_ok_set = call @sa3d_cascade_shadow_config_build_single(&single, 0.1, 50.0, 0.2)
+    single_valid = call @sa3d_cascade_shadow_config_validate(&single)
+    single_num = load single+SA3D_CASCADE_SHADOW_CONFIG_num_cascades as i32
+    single_b0 = load single+SA3D_CASCADE_SHADOW_CONFIG_bound0 as f32
+    single_b1 = load single+SA3D_CASCADE_SHADOW_CONFIG_bound1 as f32
+    bad_overlap = call @sa3d_cascade_shadow_config_build_single(&single, 0.1, 50.0, 1.0)
+    bad_max = call @sa3d_cascade_shadow_config_build_single(&single, 2.0, 1.0, 0.2)
+    num_ok = eq num, 4
+    min_ok = fcmp_gt min_dist, 0.099
+    min_ok2 = fcmp_lt min_dist, 0.101
+    max_ok = fcmp_eq max_dist, 150.0
+    first_ok = fcmp_eq first_bound, 10.0
+    overlap_ok = fcmp_gt overlap, 0.199
+    overlap_ok2 = fcmp_lt overlap, 0.201
+    b0_ok = fcmp_eq b0, 10.0
+    b1_ok = fcmp_gt b1, 24.66
+    b1_ok2 = fcmp_lt b1, 24.67
+    b2_ok = fcmp_gt b2, 60.82
+    b2_ok2 = fcmp_lt b2, 60.83
+    b3_ok = fcmp_eq b3, 150.0
+    valid_ok = eq valid, 1
+    single_ok_set_ok = eq single_ok_set, 1
+    single_valid_ok = eq single_valid, 1
+    single_num_ok = eq single_num, 1
+    single_b0_ok = fcmp_eq single_b0, 50.0
+    single_b1_ok = fcmp_eq single_b1, 0.0
+    bad_overlap_ok = eq bad_overlap, 0
+    bad_max_ok = eq bad_max, 0
+    p1 = and num_ok, min_ok
+    p2 = and min_ok2, max_ok
+    p3 = and first_ok, overlap_ok
+    p4 = and overlap_ok2, b0_ok
+    p5 = and b1_ok, b1_ok2
+    p6 = and b2_ok, b2_ok2
+    p7 = and b3_ok, valid_ok
+    p8 = and single_ok_set_ok, single_valid_ok
+    p9 = and single_num_ok, single_b0_ok
+    p10 = and single_b1_ok, bad_overlap_ok
+    p11 = and bad_max_ok, p10
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p11
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and r1, r2
+    ok = and r3, q5
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !single
+    !config
+    return
+
+L_ERR:
+    !single
+    !config
+    panic(3057)

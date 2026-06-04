@@ -1,0 +1,36 @@
+@import "../3d.sal"
+
+@test "3d aggregate module bitmask"():
+L_ENTRY:
+    lower = or SA3D_MODULE_MATH, SA3D_MODULE_TRANSFORM
+    geom = or lower, SA3D_MODULE_GEOMETRY
+    camera = or geom, SA3D_MODULE_CAMERA
+    material = or camera, SA3D_MODULE_MATERIAL
+    light = or material, SA3D_MODULE_LIGHT
+    scene = or light, SA3D_MODULE_SCENE
+    render = or scene, SA3D_MODULE_RENDER_WGPU
+    particle = or render, SA3D_MODULE_PARTICLE
+    app = or particle, SA3D_MODULE_APP
+    time = or app, SA3D_MODULE_TIME
+    color = or time, SA3D_MODULE_COLOR
+    shader = or color, SA3D_MODULE_SHADER
+    image = or shader, SA3D_MODULE_IMAGE
+    pbr = or image, SA3D_MODULE_PBR
+    input = or pbr, SA3D_MODULE_INPUT
+    camera_controller = or input, SA3D_MODULE_CAMERA_CONTROLLER
+    animation = or camera_controller, SA3D_MODULE_ANIMATION
+    gizmos = or animation, SA3D_MODULE_GIZMOS
+    gltf = or gizmos, SA3D_MODULE_GLTF
+    xml = or gltf, SA3D_MODULE_XML
+    yaml = or xml, SA3D_MODULE_YAML
+    all = or yaml, SA3D_MODULE_ECS
+    all_ok = eq all, SA3D_MODULE_ALL
+    version_ok = eq SA3D_VERSION_MINOR, 1
+    ok = and all_ok, version_ok
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    return
+
+L_ERR:
+    panic(3090)

@@ -1,0 +1,314 @@
+@import "../3d_pbr.sal"
+
+@test "3d_pbr material init defaults"():
+L_ENTRY:
+    d = alloc SA3D_PBR_MATERIAL_DESC_SIZE
+    call @sa3d_pbr_material_init(&d)
+    alpha = call @sa3d_pbr_material_get_alpha_mode(&d)
+    flags = call @sa3d_pbr_material_get_flags(&d)
+    standard_flags = call @sa3d_pbr_material_standard_flags(&d)
+    m = call @sa3d_pbr_material_get_metallic(&d)
+    r = call @sa3d_pbr_material_get_roughness(&d)
+    attenuation_distance = load d+SA3D_PBR_MATERIAL_DESC_attenuation_distance as i32
+    alpha_ok = eq alpha, SA3D_PBR_ALPHA_OPAQUE
+    flags_ok = eq flags, SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE
+    standard_flags_ok = eq standard_flags, SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE
+    m_ok = eq m, 0
+    r_ok = eq r, SA3D_PBR_F32_0_5
+    attenuation_distance_ok = eq attenuation_distance, SA3D_PBR_F32_INFINITY
+    p = and alpha_ok, flags_ok
+    p2 = and m_ok, r_ok
+    p3 = and standard_flags_ok, attenuation_distance_ok
+    p4 = and p, p2
+    ok = and p4, p3
+    br ok -> L_OK, L_ERR
+L_OK:
+    !d
+    return 0
+L_ERR:
+    !d
+    panic(3070)
+
+@test "3d_pbr material flags textures and validation"():
+L_ENTRY:
+    d = alloc SA3D_PBR_MATERIAL_DESC_SIZE
+    call @sa3d_pbr_material_init(&d)
+    call @sa3d_pbr_material_set_base_color(&d, 11, 22, 33, 44)
+    call @sa3d_pbr_material_set_emissive(&d, 5, 6, 7)
+    call @sa3d_pbr_material_set_metallic_roughness(&d, 8, 9)
+    call @sa3d_pbr_material_set_reflectance(&d, 10)
+    call @sa3d_pbr_material_set_alpha_cutoff(&d, 12)
+    call @sa3d_pbr_material_set_normal_occlusion(&d, 13, 14)
+    call @sa3d_pbr_material_set_transmission(&d, 15, 16, 17, 18)
+    call @sa3d_pbr_material_set_attenuation(&d, 19, 20, 21, 22, 23)
+    call @sa3d_pbr_material_set_clearcoat(&d, 24, 25)
+    r = load d+SA3D_PBR_MATERIAL_DESC_base_color as i32
+    g = load d+4 as i32
+    b = load d+8 as i32
+    a = load d+12 as i32
+    e0 = load d+SA3D_PBR_MATERIAL_DESC_emissive as i32
+    e1 = load d+20 as i32
+    e2 = load d+24 as i32
+    metallic = call @sa3d_pbr_material_get_metallic(&d)
+    rough = call @sa3d_pbr_material_get_roughness(&d)
+    refl = load d+SA3D_PBR_MATERIAL_DESC_reflectance as i32
+    cutoff = load d+SA3D_PBR_MATERIAL_DESC_alpha_cutoff as i32
+    normal_scale = load d+SA3D_PBR_MATERIAL_DESC_normal_scale as i32
+    occ_strength = load d+SA3D_PBR_MATERIAL_DESC_occlusion_strength as i32
+    diffuse_tx = load d+SA3D_PBR_MATERIAL_DESC_diffuse_transmission as i32
+    specular_tx = load d+SA3D_PBR_MATERIAL_DESC_specular_transmission as i32
+    thickness = load d+SA3D_PBR_MATERIAL_DESC_thickness as i32
+    ior = load d+SA3D_PBR_MATERIAL_DESC_ior as i32
+    attenuation_r = load d+SA3D_PBR_MATERIAL_DESC_attenuation_color as i32
+    attenuation_distance = load d+SA3D_PBR_MATERIAL_DESC_attenuation_distance as i32
+    clearcoat = load d+SA3D_PBR_MATERIAL_DESC_clearcoat as i32
+    clearcoat_rough = load d+SA3D_PBR_MATERIAL_DESC_clearcoat_roughness as i32
+    call @sa3d_pbr_material_enable_flag(&d, SA3D_PBR_MATERIAL_DOUBLE_SIDED)
+    call @sa3d_pbr_material_enable_flag(&d, SA3D_PBR_MATERIAL_UNLIT)
+    has_double = call @sa3d_pbr_material_has_flag(&d, SA3D_PBR_MATERIAL_DOUBLE_SIDED)
+    call @sa3d_pbr_material_disable_flag(&d, SA3D_PBR_MATERIAL_UNLIT)
+    has_unlit = call @sa3d_pbr_material_has_flag(&d, SA3D_PBR_MATERIAL_UNLIT)
+    flags = call @sa3d_pbr_material_get_flags(&d)
+    alpha_valid = call @sa3d_pbr_material_alpha_mode_is_valid(SA3D_PBR_ALPHA_BLEND)
+    alpha_bad = call @sa3d_pbr_material_alpha_mode_is_valid(99)
+    call @sa3d_pbr_material_set_alpha_mode(&d, SA3D_PBR_ALPHA_BLEND)
+    blend = call @sa3d_pbr_material_requires_blend(&d)
+    blend_flags = call @sa3d_pbr_material_get_flags(&d)
+    cutoff0 = call @sa3d_pbr_material_requires_alpha_cutoff(&d)
+    call @sa3d_pbr_material_set_alpha_mode(&d, SA3D_PBR_ALPHA_MASK)
+    mask_flags = call @sa3d_pbr_material_get_flags(&d)
+    cutoff1 = call @sa3d_pbr_material_requires_alpha_cutoff(&d)
+    set_base = call @sa3d_pbr_material_set_texture(&d, SA3D_PBR_TEXTURE_SLOT_BASE_COLOR, 101)
+    set_occ = call @sa3d_pbr_material_set_texture(&d, SA3D_PBR_TEXTURE_SLOT_OCCLUSION, 505)
+    set_bad = call @sa3d_pbr_material_set_texture(&d, 99, 123)
+    base_tex = call @sa3d_pbr_material_get_texture(&d, SA3D_PBR_TEXTURE_SLOT_BASE_COLOR)
+    occ_tex = call @sa3d_pbr_material_get_texture(&d, SA3D_PBR_TEXTURE_SLOT_OCCLUSION)
+    normal_tex = call @sa3d_pbr_material_get_texture(&d, SA3D_PBR_TEXTURE_SLOT_NORMAL)
+    off_occ = call @sa3d_pbr_material_texture_offset(SA3D_PBR_TEXTURE_SLOT_OCCLUSION)
+    off_bad = call @sa3d_pbr_material_texture_offset(99)
+    valid = call @sa3d_pbr_material_validate(&d)
+    store d+SA3D_PBR_MATERIAL_DESC_alpha_mode, 99 as i32
+    invalid = call @sa3d_pbr_material_validate(&d)
+    r_ok = eq r, 11
+    g_ok = eq g, 22
+    b_ok = eq b, 33
+    a_ok = eq a, 44
+    e0_ok = eq e0, 5
+    e1_ok = eq e1, 6
+    e2_ok = eq e2, 7
+    metallic_ok = eq metallic, 8
+    rough_ok = eq rough, 9
+    refl_ok = eq refl, 10
+    cutoff_ok = eq cutoff, 12
+    normal_scale_ok = eq normal_scale, 13
+    occ_strength_ok = eq occ_strength, 14
+    diffuse_tx_ok = eq diffuse_tx, 15
+    specular_tx_ok = eq specular_tx, 16
+    thickness_ok = eq thickness, 17
+    ior_ok = eq ior, 18
+    attenuation_r_ok = eq attenuation_r, 19
+    attenuation_distance_ok = eq attenuation_distance, 23
+    standard_flags = call @sa3d_pbr_material_standard_flags(&d)
+    attenuation_flag = and standard_flags, SA3D_PBR_STANDARD_MATERIAL_FLAGS_ATTENUATION_ENABLED_BIT
+    attenuation_flag_ok = ne attenuation_flag, 0
+    clearcoat_ok = eq clearcoat, 24
+    clearcoat_rough_ok = eq clearcoat_rough, 25
+    has_double_ok = eq has_double, 1
+    has_unlit_ok = eq has_unlit, 0
+    flags_ok = eq flags, SA3D_PBR_MATERIAL_DOUBLE_SIDED
+    alpha_valid_ok = eq alpha_valid, 1
+    alpha_bad_ok = eq alpha_bad, 0
+    blend_ok = eq blend, 1
+    expected_blend_flags = or SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND, SA3D_PBR_MATERIAL_DOUBLE_SIDED
+    expected_mask_flags = or SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK, SA3D_PBR_MATERIAL_DOUBLE_SIDED
+    blend_flags_ok = eq blend_flags, expected_blend_flags
+    mask_flags_ok = eq mask_flags, expected_mask_flags
+    cutoff0_ok = eq cutoff0, 0
+    cutoff1_ok = eq cutoff1, 1
+    set_base_ok = eq set_base, 1
+    set_occ_ok = eq set_occ, 1
+    set_bad_ok = eq set_bad, 0
+    base_tex_ok = eq base_tex, 101
+    occ_tex_ok = eq occ_tex, 505
+    normal_tex_ok = eq normal_tex, 0
+    off_occ_ok = eq off_occ, SA3D_PBR_MATERIAL_DESC_occlusion_texture
+    off_bad_ok = eq off_bad, 0
+    valid_ok = eq valid, 1
+    invalid_ok = eq invalid, 0
+    p1 = and r_ok, g_ok
+    p2 = and b_ok, a_ok
+    p3 = and e0_ok, e1_ok
+    p4 = and e2_ok, metallic_ok
+    p5 = and rough_ok, refl_ok
+    p6 = and cutoff_ok, normal_scale_ok
+    p7 = and occ_strength_ok, has_double_ok
+    p8 = and has_unlit_ok, flags_ok
+    p9 = and alpha_valid_ok, alpha_bad_ok
+    p10 = and blend_ok, cutoff0_ok
+    p11 = and cutoff1_ok, set_base_ok
+    p12 = and set_occ_ok, set_bad_ok
+    p13 = and base_tex_ok, occ_tex_ok
+    p14 = and normal_tex_ok, off_occ_ok
+    p15 = and off_bad_ok, valid_ok
+    p16 = and invalid_ok, diffuse_tx_ok
+    p17 = and specular_tx_ok, thickness_ok
+    p18 = and ior_ok, attenuation_r_ok
+    p19 = and attenuation_distance_ok, clearcoat_ok
+    p20 = and clearcoat_rough_ok, blend_flags_ok
+    p21 = and mask_flags_ok, p9
+    p22 = and attenuation_flag_ok, p21
+    !expected_mask_flags
+    !expected_blend_flags
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p10, p11
+    q6 = and p12, p13
+    q7 = and p14, p15
+    q8 = and p16, p17
+    q9 = and p18, p19
+    q10 = and p20, p22
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and q7, q8
+    r5 = and q9, q10
+    s1 = and r1, r2
+    s2 = and r3, r4
+    s3 = and s2, r5
+    ok = and s1, s3
+    br ok -> L_MAT_OK, L_MAT_ERR
+
+L_MAT_OK:
+    !d
+    return 0
+
+L_MAT_ERR:
+    !d
+    panic(3072)
+
+@test "3d_pbr alpha mode extensions and render helpers"():
+L_ENTRY:
+    d = alloc SA3D_PBR_MATERIAL_DESC_SIZE
+    call @sa3d_pbr_material_init(&d)
+    call @sa3d_pbr_material_enable_flag(&d, SA3D_PBR_MATERIAL_DOUBLE_SIDED)
+    call @sa3d_pbr_material_set_transmission(&d, 0, 16, 17, 18)
+    alpha_valid_a2c = call @sa3d_pbr_material_alpha_mode_is_valid(SA3D_PBR_ALPHA_ALPHA_TO_COVERAGE)
+    alpha_valid_add = call @sa3d_pbr_material_alpha_mode_is_valid(SA3D_PBR_ALPHA_ADD)
+    alpha_valid_multiply = call @sa3d_pbr_material_alpha_mode_is_valid(SA3D_PBR_ALPHA_MULTIPLY)
+    call @sa3d_pbr_material_set_alpha_mode(&d, SA3D_PBR_ALPHA_ALPHA_TO_COVERAGE)
+    a2c_flags = call @sa3d_pbr_material_get_flags(&d)
+    a2c_transparent = call @sa3d_pbr_material_is_transparent(&d)
+    a2c_depth_write = call @sa3d_pbr_material_depth_write_enabled(&d)
+    call @sa3d_pbr_material_set_alpha_mode(&d, SA3D_PBR_ALPHA_ADD)
+    add_flags = call @sa3d_pbr_material_get_flags(&d)
+    add_transparent = call @sa3d_pbr_material_is_transparent(&d)
+    call @sa3d_pbr_material_set_alpha_mode(&d, SA3D_PBR_ALPHA_MULTIPLY)
+    multiply_flags = call @sa3d_pbr_material_get_flags(&d)
+    multiply_transparent = call @sa3d_pbr_material_is_transparent(&d)
+    call @sa3d_pbr_material_set_transmission(&d, 0, 16, 17, 18)
+    opaque_render = call @sa3d_pbr_material_opaque_render_method(&d)
+    reads_view = call @sa3d_pbr_material_reads_view_transmission_texture(&d)
+    expected_a2c_flags = or SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE, SA3D_PBR_MATERIAL_DOUBLE_SIDED
+    expected_add_flags = or SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD, SA3D_PBR_MATERIAL_DOUBLE_SIDED
+    expected_multiply_flags = or SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY, SA3D_PBR_MATERIAL_DOUBLE_SIDED
+    alpha_valid_a2c_ok = eq alpha_valid_a2c, 1
+    alpha_valid_add_ok = eq alpha_valid_add, 1
+    alpha_valid_multiply_ok = eq alpha_valid_multiply, 1
+    a2c_flags_ok = eq a2c_flags, expected_a2c_flags
+    add_flags_ok = eq add_flags, expected_add_flags
+    multiply_flags_ok = eq multiply_flags, expected_multiply_flags
+    a2c_transparent_ok = eq a2c_transparent, 0
+    a2c_depth_write_ok = eq a2c_depth_write, 1
+    add_transparent_ok = eq add_transparent, 1
+    multiply_transparent_ok = eq multiply_transparent, 1
+    opaque_render_ok = eq opaque_render, SA3D_OPAQUE_RENDER_AUTO
+    reads_view_ok = eq reads_view, 1
+    p1 = and alpha_valid_a2c_ok, alpha_valid_add_ok
+    p2 = and alpha_valid_multiply_ok, a2c_flags_ok
+    p3 = and add_flags_ok, multiply_flags_ok
+    p4 = and a2c_transparent_ok, a2c_depth_write_ok
+    p5 = and add_transparent_ok, multiply_transparent_ok
+    p6 = and opaque_render_ok, reads_view_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    t1 = and q1, q2
+    ok = and t1, q3
+    br ok -> L_EXT_OK, L_EXT_ERR
+
+L_EXT_OK:
+    !d
+    return 0
+
+L_EXT_ERR:
+    !d
+    panic(3074)
+
+@test "3d_pbr environment init"():
+L_ENTRY:
+    e = alloc SA3D_PBR_ENVIRONMENT_DESC_SIZE
+    call @sa3d_pbr_environment_init(&e)
+    intensity = call @sa3d_pbr_environment_get_intensity(&e)
+    ok = eq intensity, 1065353216
+    !e
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3071)
+
+@test "3d_pbr environment maps and intensity"():
+L_ENTRY:
+    e = alloc SA3D_PBR_ENVIRONMENT_DESC_SIZE
+    call @sa3d_pbr_environment_init(&e)
+    complete0 = call @sa3d_pbr_environment_has_complete_maps(&e)
+    call @sa3d_pbr_environment_set_maps(&e, 10, 20, 30)
+    call @sa3d_pbr_environment_set_intensity(&e, 1234)
+    complete1 = call @sa3d_pbr_environment_has_complete_maps(&e)
+    diffuse = load e+SA3D_PBR_ENVIRONMENT_DESC_diffuse_cubemap as i64
+    specular = load e+SA3D_PBR_ENVIRONMENT_DESC_specular_cubemap as i64
+    brdf = load e+SA3D_PBR_ENVIRONMENT_DESC_brdf_lut as i64
+    intensity = call @sa3d_pbr_environment_get_intensity(&e)
+    complete0_ok = eq complete0, 0
+    complete1_ok = eq complete1, 1
+    diffuse_ok = eq diffuse, 10
+    specular_ok = eq specular, 20
+    brdf_ok = eq brdf, 30
+    intensity_ok = eq intensity, 1234
+    p1 = and complete0_ok, complete1_ok
+    p2 = and diffuse_ok, specular_ok
+    p3 = and brdf_ok, intensity_ok
+    p4 = and p2, p3
+    ok = and p1, p4
+    br ok -> L_ENV_OK, L_ENV_ERR
+
+L_ENV_OK:
+    !e
+    return 0
+
+L_ENV_ERR:
+    !e
+    panic(3073)
+
+@test "3d_pbr bevy pbr math helpers"():
+L_ENTRY:
+    rough = call @sa3d_pbr_perceptual_roughness_to_roughness(SA3D_PBR_F32_0_5)
+    f0d = call @sa3d_pbr_calculate_f0_dielectric(SA3D_PBR_F32_0_5)
+    f0 = call @sa3d_pbr_calculate_f0_channel(SA3D_PBR_F32_1, SA3D_PBR_F32_0_5, SA3D_PBR_F32_0_5)
+    diffuse = call @sa3d_pbr_calculate_diffuse_channel(SA3D_PBR_F32_1, SA3D_PBR_F32_0_5, SA3D_PBR_F32_0_5, SA3D_PBR_F32_0)
+    rough_ok = eq rough, 1048576000
+    f0d_ok = eq f0d, 1025758986
+    f0_ok = eq f0, 1057300152
+    diffuse_ok = eq diffuse, 1056964608
+    p1 = and rough_ok, f0d_ok
+    p2 = and f0_ok, diffuse_ok
+    ok = and p1, p2
+    br ok -> L_MATH_OK, L_MATH_ERR
+
+L_MATH_OK:
+    return 0
+
+L_MATH_ERR:
+    panic(3074)

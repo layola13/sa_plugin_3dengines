@@ -1,0 +1,28 @@
+{
+  "schema": "sa.plugin/1",
+  "name": "3d_render_wgpu",
+  "version": "0.1.0",
+  "source": { "type": "local", "path": "." },
+  "abi": { "plugin": 1, "saasm": ">=0.4.0", "symbols": "browser-imports" },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_render_wgpu.so" } },
+  "interfaces": {
+    "wasm_imports": [{ "path": "3d_render_wgpu.sai" }],
+    "sal": { "path": "3d_render_wgpu.sal" }
+  },
+  "assets": {
+    "share": [
+      { "path": "3d_render_wgpu.sai", "target": "3d_render_wgpu.sai" },
+      { "path": "3d_render_wgpu.sal", "target": "3d_render_wgpu.sal" }
+    ]
+  },
+  "skills": ["3d.render.wgpu"],
+  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [], "env": ["HOME", "SA_*"], "process": { "spawn": false, "exec": [] } },
+  "dependencies": {
+    "3d_image": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_image", "optional": false },
+    "3d_pbr": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_pbr", "optional": false },
+    "3d_scene": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_scene", "optional": false },
+    "3d_shader": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_shader", "optional": false },
+    "sax": { "version": ">=0.1.0", "abi": 1, "path": "../../sa_plugin_sax", "optional": false },
+    "wgpu": { "version": ">=0.1.0", "abi": 1, "path": "../../sa_plugin_wgpu", "optional": false }
+  }
+}

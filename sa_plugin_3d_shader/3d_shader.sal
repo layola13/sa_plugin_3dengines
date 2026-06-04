@@ -1,0 +1,1018 @@
+#def SA3D_SHADER_VERSION_MAJOR = 0
+#def SA3D_SHADER_VERSION_MINOR = 1
+
+#def SA3D_SHADER_FORMAT_WGSL = 1
+
+#def SA3D_SHADER_REF_DEFAULT = 0
+#def SA3D_SHADER_REF_HANDLE = 1
+#def SA3D_SHADER_REF_PATH = 2
+#def SA3D_SHADER_REF_INLINE = 3
+
+#def SA3D_SHADER_STAGE_VERTEX = 1
+#def SA3D_SHADER_STAGE_FRAGMENT = 2
+#def SA3D_SHADER_STAGE_COMPUTE = 4
+
+#def SA3D_SHADER_DEF_BOOL = 1
+#def SA3D_SHADER_DEF_INT = 2
+#def SA3D_SHADER_DEF_UINT = 3
+
+#def SA3D_SHADER_VALIDATE_DISABLED = 0
+#def SA3D_SHADER_VALIDATE_ENABLED = 1
+
+#def SA3D_SHADER_DESC_format = +0
+#def SA3D_SHADER_DESC_flags = +4
+#def SA3D_SHADER_DESC_source_ptr = +8
+#def SA3D_SHADER_DESC_source_len = +16
+#def SA3D_SHADER_DESC_path_ptr = +24
+#def SA3D_SHADER_DESC_path_len = +32
+#def SA3D_SHADER_DESC_import_path_ptr = +40
+#def SA3D_SHADER_DESC_import_path_len = +48
+#def SA3D_SHADER_DESC_defs_ptr = +56
+#def SA3D_SHADER_DESC_defs_len = +64
+#def SA3D_SHADER_DESC_validate = +72
+#def SA3D_SHADER_DESC_SIZE = 80
+
+#def SA3D_SHADER_REF_kind = +0
+#def SA3D_SHADER_REF_flags = +4
+#def SA3D_SHADER_REF_handle = +8
+#def SA3D_SHADER_REF_path_ptr = +16
+#def SA3D_SHADER_REF_path_len = +24
+#def SA3D_SHADER_REF_SIZE = 32
+
+#def SA3D_SHADER_ENTRY_name_ptr = +0
+#def SA3D_SHADER_ENTRY_name_len = +8
+#def SA3D_SHADER_ENTRY_stage = +16
+#def SA3D_SHADER_ENTRY_shader_ref = +24
+#def SA3D_SHADER_ENTRY_SIZE = 56
+
+#def SA3D_SHADER_ENTRY_PAIR_vertex = +0
+#def SA3D_SHADER_ENTRY_PAIR_fragment = +56
+#def SA3D_SHADER_ENTRY_PAIR_SIZE = 112
+
+#def SA3D_SHADER_DEF_name_ptr = +0
+#def SA3D_SHADER_DEF_name_len = +8
+#def SA3D_SHADER_DEF_kind = +16
+#def SA3D_SHADER_DEF_value = +24
+#def SA3D_SHADER_DEF_SIZE = 32
+
+@sa3d_shader_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_SHADER_DESC_format, 0 as i32
+    store desc+SA3D_SHADER_DESC_flags, 0 as i32
+    store desc+SA3D_SHADER_DESC_source_ptr, 0 as i64
+    store desc+SA3D_SHADER_DESC_source_len, 0 as i64
+    store desc+SA3D_SHADER_DESC_path_ptr, 0 as i64
+    store desc+SA3D_SHADER_DESC_path_len, 0 as i64
+    store desc+SA3D_SHADER_DESC_import_path_ptr, 0 as i64
+    store desc+SA3D_SHADER_DESC_import_path_len, 0 as i64
+    store desc+SA3D_SHADER_DESC_defs_ptr, 0 as i64
+    store desc+SA3D_SHADER_DESC_defs_len, 0 as i64
+    store desc+SA3D_SHADER_DESC_validate, SA3D_SHADER_VALIDATE_ENABLED as i32
+    !desc
+    return
+
+@sa3d_shader_desc_set_source(&desc: ptr, src_ptr: ptr, src_len: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_SHADER_DESC_source_ptr, src_ptr as ptr
+    store desc+SA3D_SHADER_DESC_source_len, src_len as i64
+    !src_len
+    !src_ptr
+    !desc
+    return
+
+@sa3d_shader_desc_set_format(&desc: ptr, format: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_SHADER_DESC_format, format as i32
+    !format
+    !desc
+    return
+
+@sa3d_shader_desc_set_validate(&desc: ptr, validate: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_SHADER_DESC_validate, validate as i32
+    !validate
+    !desc
+    return
+
+@sa3d_shader_desc_set_path(&desc: ptr, path_ptr: ptr, path_len: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_SHADER_DESC_path_ptr, path_ptr as ptr
+    store desc+SA3D_SHADER_DESC_path_len, path_len as i64
+    !path_len
+    !path_ptr
+    !desc
+    return
+
+@sa3d_shader_desc_set_import_path(&desc: ptr, path_ptr: ptr, path_len: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_SHADER_DESC_import_path_ptr, path_ptr as ptr
+    store desc+SA3D_SHADER_DESC_import_path_len, path_len as i64
+    !path_len
+    !path_ptr
+    !desc
+    return
+
+@sa3d_shader_desc_set_defs(&desc: ptr, defs_ptr: ptr, defs_len: i64) -> void:
+L_ENTRY:
+    store desc+SA3D_SHADER_DESC_defs_ptr, defs_ptr as ptr
+    store desc+SA3D_SHADER_DESC_defs_len, defs_len as i64
+    !defs_len
+    !defs_ptr
+    !desc
+    return
+
+@sa3d_shader_format_is_valid(format: i32) -> i32:
+L_ENTRY:
+    ok = eq format, SA3D_SHADER_FORMAT_WGSL
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !format
+    return 1
+
+L_FALSE:
+    !ok
+    !format
+    return 0
+
+@sa3d_shader_stage_is_valid(stage: i32) -> i32:
+L_ENTRY:
+    is_vertex = eq stage, SA3D_SHADER_STAGE_VERTEX
+    is_fragment = eq stage, SA3D_SHADER_STAGE_FRAGMENT
+    is_compute = eq stage, SA3D_SHADER_STAGE_COMPUTE
+    vf = or is_vertex, is_fragment
+    ok = or vf, is_compute
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !vf
+    !is_compute
+    !is_fragment
+    !is_vertex
+    !stage
+    return 1
+
+L_FALSE:
+    !ok
+    !vf
+    !is_compute
+    !is_fragment
+    !is_vertex
+    !stage
+    return 0
+
+@sa3d_shader_stage_mask_has(mask: i32, stage: i32) -> i32:
+L_ENTRY:
+    masked = and mask, stage
+    ok = ne masked, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !masked
+    !stage
+    !mask
+    return 1
+
+L_FALSE:
+    !ok
+    !masked
+    !stage
+    !mask
+    return 0
+
+@sa3d_shader_desc_has_source(&desc: ptr) -> i32:
+L_ENTRY:
+    source_ptr = load desc+SA3D_SHADER_DESC_source_ptr as i64
+    source_len = load desc+SA3D_SHADER_DESC_source_len as i64
+    ptr_ok = ne source_ptr, 0
+    len_ok = sgt source_len, 0
+    ok = and ptr_ok, len_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !source_len
+    !source_ptr
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !source_len
+    !source_ptr
+    !desc
+    return 0
+
+@sa3d_shader_desc_has_path(&desc: ptr) -> i32:
+L_ENTRY:
+    path_ptr = load desc+SA3D_SHADER_DESC_path_ptr as i64
+    path_len = load desc+SA3D_SHADER_DESC_path_len as i64
+    ptr_ok = ne path_ptr, 0
+    len_ok = sgt path_len, 0
+    ok = and ptr_ok, len_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !path_len
+    !path_ptr
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !path_len
+    !path_ptr
+    !desc
+    return 0
+
+@sa3d_shader_desc_validate(&desc: ptr) -> i32:
+L_ENTRY:
+    format = load desc+SA3D_SHADER_DESC_format as i32
+    import_path_ptr = load desc+SA3D_SHADER_DESC_import_path_ptr as i64
+    import_path_len = load desc+SA3D_SHADER_DESC_import_path_len as i64
+    defs_ptr = load desc+SA3D_SHADER_DESC_defs_ptr as i64
+    defs_len = load desc+SA3D_SHADER_DESC_defs_len as i64
+    format_ok = call @sa3d_shader_format_is_valid(format)
+    has_source = call @sa3d_shader_desc_has_source(&desc)
+    has_path = call @sa3d_shader_desc_has_path(&desc)
+    import_ptr_ok = eq import_path_len, 0
+    defs_ptr_ok = eq defs_len, 0
+    import_ptr_nonzero = ne import_path_ptr, 0
+    defs_ptr_nonzero = ne defs_ptr, 0
+    import_ptr_zero = eq import_path_ptr, 0
+    defs_ptr_zero = eq defs_ptr, 0
+    import_empty_ok = and import_ptr_zero, import_ptr_ok
+    defs_empty_ok = and defs_ptr_zero, defs_ptr_ok
+    import_len_nonzero = ne import_path_len, 0
+    defs_len_nonzero = ne defs_len, 0
+    import_filled_ok = and import_ptr_nonzero, import_len_nonzero
+    defs_filled_ok = and defs_ptr_nonzero, defs_len_nonzero
+    import_ptr_ok2 = or import_empty_ok, import_filled_ok
+    defs_ptr_ok2 = or defs_empty_ok, defs_filled_ok
+    has_input = or has_source, has_path
+    ptrs_ok = and import_ptr_ok2, defs_ptr_ok2
+    ok = and format_ok, has_input
+    ok = and ok, ptrs_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !ptrs_ok
+    !defs_ptr_ok2
+    !defs_ptr_nonzero
+    !defs_ptr_zero
+    !defs_ptr_ok
+    !defs_len_nonzero
+    !import_len_nonzero
+    !import_ptr_ok2
+    !import_ptr_nonzero
+    !import_ptr_zero
+    !import_ptr_ok
+    !defs_len
+    !defs_ptr
+    !import_path_len
+    !import_path_ptr
+    !has_input
+    !has_path
+    !has_source
+    !format_ok
+    !format
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !ptrs_ok
+    !defs_ptr_ok2
+    !defs_ptr_nonzero
+    !defs_ptr_zero
+    !defs_ptr_ok
+    !defs_len_nonzero
+    !import_len_nonzero
+    !import_ptr_ok2
+    !import_ptr_nonzero
+    !import_ptr_zero
+    !import_ptr_ok
+    !defs_len
+    !defs_ptr
+    !import_path_len
+    !import_path_ptr
+    !has_input
+    !has_path
+    !has_source
+    !format_ok
+    !format
+    !desc
+    return 0
+
+@sa3d_shader_ref_init_default(&ref: ptr) -> void:
+L_ENTRY:
+    store ref+SA3D_SHADER_REF_kind, SA3D_SHADER_REF_DEFAULT as i32
+    store ref+SA3D_SHADER_REF_flags, 0 as i32
+    store ref+SA3D_SHADER_REF_handle, 0 as i64
+    store ref+SA3D_SHADER_REF_path_ptr, 0 as i64
+    store ref+SA3D_SHADER_REF_path_len, 0 as i64
+    !ref
+    return
+
+@sa3d_shader_ref_init_handle(&ref: ptr, handle: i64) -> void:
+L_ENTRY:
+    store ref+SA3D_SHADER_REF_kind, SA3D_SHADER_REF_HANDLE as i32
+    store ref+SA3D_SHADER_REF_flags, 0 as i32
+    store ref+SA3D_SHADER_REF_handle, handle as i64
+    store ref+SA3D_SHADER_REF_path_ptr, 0 as i64
+    store ref+SA3D_SHADER_REF_path_len, 0 as i64
+    !handle
+    !ref
+    return
+
+@sa3d_shader_ref_init_inline(&ref: ptr) -> void:
+L_ENTRY:
+    store ref+SA3D_SHADER_REF_kind, SA3D_SHADER_REF_INLINE as i32
+    store ref+SA3D_SHADER_REF_flags, 0 as i32
+    store ref+SA3D_SHADER_REF_handle, 0 as i64
+    store ref+SA3D_SHADER_REF_path_ptr, 0 as i64
+    store ref+SA3D_SHADER_REF_path_len, 0 as i64
+    !ref
+    return
+
+@sa3d_shader_ref_init_path(&ref: ptr, path_ptr: ptr, path_len: i64) -> void:
+L_ENTRY:
+    store ref+SA3D_SHADER_REF_kind, SA3D_SHADER_REF_PATH as i32
+    store ref+SA3D_SHADER_REF_flags, 0 as i32
+    store ref+SA3D_SHADER_REF_handle, 0 as i64
+    store ref+SA3D_SHADER_REF_path_ptr, path_ptr as ptr
+    store ref+SA3D_SHADER_REF_path_len, path_len as i64
+    !path_len
+    !path_ptr
+    !ref
+    return
+
+@sa3d_shader_ref_get_kind(&ref: ptr) -> i32:
+L_ENTRY:
+    kind = load ref+SA3D_SHADER_REF_kind as i32
+    !ref
+    return kind
+
+@sa3d_shader_ref_is_bound(&ref: ptr) -> i32:
+L_ENTRY:
+    kind = load ref+SA3D_SHADER_REF_kind as i32
+    is_default = eq kind, SA3D_SHADER_REF_DEFAULT
+    br is_default -> L_FALSE_DEFAULT, L_CHECK_HANDLE
+
+L_FALSE_DEFAULT:
+    !is_default
+    !kind
+    !ref
+    return 0
+
+L_CHECK_HANDLE:
+    is_handle = eq kind, SA3D_SHADER_REF_HANDLE
+    br is_handle -> L_HANDLE, L_CHECK_PATH
+
+L_HANDLE:
+    handle = load ref+SA3D_SHADER_REF_handle as i64
+    ok = ne handle, 0
+    br ok -> L_TRUE_HANDLE, L_FALSE_HANDLE
+
+L_TRUE_HANDLE:
+    !ok
+    !handle
+    !is_handle
+    !is_default
+    !kind
+    !ref
+    return 1
+
+L_FALSE_HANDLE:
+    !ok
+    !handle
+    !is_handle
+    !is_default
+    !kind
+    !ref
+    return 0
+
+L_CHECK_PATH:
+    is_path = eq kind, SA3D_SHADER_REF_PATH
+    br is_path -> L_PATH, L_CHECK_INLINE
+
+L_PATH:
+    path_ptr = load ref+SA3D_SHADER_REF_path_ptr as i64
+    path_len = load ref+SA3D_SHADER_REF_path_len as i64
+    ptr_ok = ne path_ptr, 0
+    len_ok = sgt path_len, 0
+    ok = and ptr_ok, len_ok
+    br ok -> L_TRUE_PATH, L_FALSE_PATH
+
+L_TRUE_PATH:
+    !ok
+    !len_ok
+    !ptr_ok
+    !path_len
+    !path_ptr
+    !is_path
+    !is_handle
+    !is_default
+    !kind
+    !ref
+    return 1
+
+L_FALSE_PATH:
+    !ok
+    !len_ok
+    !ptr_ok
+    !path_len
+    !path_ptr
+    !is_path
+    !is_handle
+    !is_default
+    !kind
+    !ref
+    return 0
+
+L_CHECK_INLINE:
+    is_inline = eq kind, SA3D_SHADER_REF_INLINE
+    br is_inline -> L_TRUE_INLINE, L_FALSE_INLINE
+
+L_TRUE_INLINE:
+    !is_inline
+    !is_path
+    !is_handle
+    !is_default
+    !kind
+    !ref
+    return 1
+
+L_FALSE_INLINE:
+    !is_inline
+    !is_path
+    !is_handle
+    !is_default
+    !kind
+    !ref
+    return 0
+
+@sa3d_shader_entry_init(&entry: ptr, name_ptr: ptr, name_len: i64, stage: i32) -> void:
+L_ENTRY:
+    store entry+SA3D_SHADER_ENTRY_name_ptr, name_ptr as ptr
+    store entry+SA3D_SHADER_ENTRY_name_len, name_len as i64
+    store entry+SA3D_SHADER_ENTRY_stage, stage as i32
+    store entry+24, 0 as i64
+    store entry+32, 0 as i64
+    store entry+40, 0 as i64
+    store entry+48, 0 as i64
+    store entry+52, 0 as i32
+    !stage
+    !name_len
+    !name_ptr
+    !entry
+    return
+
+@sa3d_shader_entry_get_stage(&entry: ptr) -> i32:
+L_ENTRY:
+    stage = load entry+SA3D_SHADER_ENTRY_stage as i32
+    !entry
+    return stage
+
+@sa3d_shader_entry_set_ref_handle(&entry: ptr, handle: i64) -> void:
+L_ENTRY:
+    ref = ptr_add entry, SA3D_SHADER_ENTRY_shader_ref
+    call @sa3d_shader_ref_init_handle(&ref, handle)
+    !ref
+    !handle
+    !entry
+    return
+
+@sa3d_shader_entry_set_ref_inline(&entry: ptr) -> void:
+L_ENTRY:
+    ref = ptr_add entry, SA3D_SHADER_ENTRY_shader_ref
+    call @sa3d_shader_ref_init_inline(&ref)
+    !ref
+    !entry
+    return
+
+@sa3d_shader_entry_set_ref_path(&entry: ptr, path_ptr: ptr, path_len: i64) -> void:
+L_ENTRY:
+    ref = ptr_add entry, SA3D_SHADER_ENTRY_shader_ref
+    call @sa3d_shader_ref_init_path(&ref, path_ptr, path_len)
+    !ref
+    !path_len
+    !path_ptr
+    !entry
+    return
+
+@sa3d_shader_entry_validate(&entry: ptr) -> i32:
+L_ENTRY:
+    name_len = load entry+SA3D_SHADER_ENTRY_name_len as i64
+    stage = load entry+SA3D_SHADER_ENTRY_stage as i32
+    ref = ptr_add entry, SA3D_SHADER_ENTRY_shader_ref
+    name_ok = sgt name_len, 0
+    stage_ok = call @sa3d_shader_stage_is_valid(stage)
+    ref_ok = call @sa3d_shader_ref_is_bound(&ref)
+    p = and name_ok, stage_ok
+    ok = and p, ref_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p
+    !ref_ok
+    !stage_ok
+    !name_ok
+    !ref
+    !stage
+    !name_len
+    !entry
+    return 1
+
+L_FALSE:
+    !ok
+    !p
+    !ref_ok
+    !stage_ok
+    !name_ok
+    !ref
+    !stage
+    !name_len
+    !entry
+    return 0
+
+@sa3d_shader_entry_uses_handle(&entry: ptr) -> i32:
+L_ENTRY:
+    kind = load entry+SA3D_SHADER_ENTRY_shader_ref as i32
+    is_handle = eq kind, SA3D_SHADER_REF_HANDLE
+    br is_handle -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !is_handle
+    !kind
+    !entry
+    return 1
+
+L_FALSE:
+    !is_handle
+    !kind
+    !entry
+    return 0
+
+@sa3d_shader_def_init(&def: ptr, name_ptr: ptr, name_len: i64, kind: i32, value: i64) -> void:
+L_ENTRY:
+    store def+SA3D_SHADER_DEF_name_ptr, name_ptr as ptr
+    store def+SA3D_SHADER_DEF_name_len, name_len as i64
+    store def+SA3D_SHADER_DEF_kind, kind as i32
+    store def+SA3D_SHADER_DEF_value, value as i64
+    !value
+    !kind
+    !name_len
+    !name_ptr
+    !def
+    return
+
+@sa3d_shader_def_init_bool(&def: ptr, name_ptr: ptr, name_len: i64, value: i32) -> void:
+L_ENTRY:
+    bool_value = ne value, 0
+    br bool_value -> L_BOOL_TRUE, L_BOOL_FALSE
+
+L_BOOL_TRUE:
+    call @sa3d_shader_def_init(&def, name_ptr, name_len, SA3D_SHADER_DEF_BOOL, 1 as i64)
+    !bool_value
+    !value
+    !name_len
+    !name_ptr
+    !def
+    return
+
+L_BOOL_FALSE:
+    call @sa3d_shader_def_init(&def, name_ptr, name_len, SA3D_SHADER_DEF_BOOL, 0 as i64)
+    !bool_value
+    !value
+    !name_len
+    !name_ptr
+    !def
+    return
+
+@sa3d_shader_def_init_int(&def: ptr, name_ptr: ptr, name_len: i64, value: i64) -> void:
+L_ENTRY:
+    call @sa3d_shader_def_init(&def, name_ptr, name_len, SA3D_SHADER_DEF_INT, value)
+    !value
+    !name_len
+    !name_ptr
+    !def
+    return
+
+@sa3d_shader_def_init_uint(&def: ptr, name_ptr: ptr, name_len: i64, value: i64) -> void:
+L_ENTRY:
+    call @sa3d_shader_def_init(&def, name_ptr, name_len, SA3D_SHADER_DEF_UINT, value)
+    !value
+    !name_len
+    !name_ptr
+    !def
+    return
+
+@sa3d_shader_def_get_kind(&def: ptr) -> i32:
+L_ENTRY:
+    kind = load def+SA3D_SHADER_DEF_kind as i32
+    !def
+    return kind
+
+@sa3d_shader_def_get_value(&def: ptr) -> i64:
+L_ENTRY:
+    value = load def+SA3D_SHADER_DEF_value as i64
+    !def
+    return value
+
+@sa3d_shader_def_kind_is_valid(kind: i32) -> i32:
+L_ENTRY:
+    is_bool = eq kind, SA3D_SHADER_DEF_BOOL
+    is_int = eq kind, SA3D_SHADER_DEF_INT
+    is_uint = eq kind, SA3D_SHADER_DEF_UINT
+    ok0 = or is_bool, is_int
+    ok = or ok0, is_uint
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !ok0
+    !is_uint
+    !is_int
+    !is_bool
+    !kind
+    return 1
+
+L_FALSE:
+    !ok
+    !ok0
+    !is_uint
+    !is_int
+    !is_bool
+    !kind
+    return 0
+
+@sa3d_shader_def_has_name(&def: ptr) -> i32:
+L_ENTRY:
+    name_ptr = load def+SA3D_SHADER_DEF_name_ptr as i64
+    name_len = load def+SA3D_SHADER_DEF_name_len as i64
+    ptr_ok = ne name_ptr, 0
+    len_ok = sgt name_len, 0
+    ok = and ptr_ok, len_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !name_len
+    !name_ptr
+    !def
+    return 1
+
+L_FALSE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !name_len
+    !name_ptr
+    !def
+    return 0
+
+@sa3d_shader_str_eq(&lhs: ptr, lhs_len: i64, &rhs: ptr, rhs_len: i64) -> i32:
+L_ENTRY:
+    idx = 0 as i64
+    same_len = eq lhs_len, rhs_len
+    br same_len -> L_LOOP, L_FALSE
+
+L_LOOP:
+    done = eq idx, lhs_len
+    br done -> L_TRUE, L_COMPARE
+
+L_COMPARE:
+    lhs_cur = ptr_add lhs, idx
+    rhs_cur = ptr_add rhs, idx
+    lhs_byte = load lhs_cur+0 as u8
+    rhs_byte = load rhs_cur+0 as u8
+    same = eq lhs_byte, rhs_byte
+    br same -> L_NEXT, L_COMPARE_FALSE
+
+L_NEXT:
+    idx_next = add idx, 1
+    !done
+    !same
+    !rhs_byte
+    !lhs_byte
+    !rhs_cur
+    !lhs_cur
+    !idx
+    idx = idx_next
+    jmp L_LOOP
+
+L_COMPARE_FALSE:
+    !same
+    !rhs_byte
+    !lhs_byte
+    !rhs_cur
+    !lhs_cur
+    jmp L_FALSE
+
+L_TRUE:
+    !done
+    !same_len
+    !idx
+    !rhs_len
+    !lhs_len
+    !rhs
+    !lhs
+    return 1
+
+L_FALSE:
+    !same_len
+    !idx
+    !rhs_len
+    !lhs_len
+    !rhs
+    !lhs
+    return 0
+
+@sa3d_shader_def_matches_name(&def: ptr, name_ptr: ptr, name_len: i64) -> i32:
+L_ENTRY:
+    def_name_ptr = load def+SA3D_SHADER_DEF_name_ptr as i64
+    def_name_len = load def+SA3D_SHADER_DEF_name_len as i64
+    ok = call @sa3d_shader_str_eq(&def_name_ptr, def_name_len, &name_ptr, name_len)
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !name_len
+    !name_ptr
+    !def_name_len
+    !def_name_ptr
+    !def
+    return 1
+
+L_FALSE:
+    !ok
+    !name_len
+    !name_ptr
+    !def_name_len
+    !def_name_ptr
+    !def
+    return 0
+
+@sa3d_shader_def_is_valid(&def: ptr) -> i32:
+L_ENTRY:
+    name_ok = call @sa3d_shader_def_has_name(&def)
+    kind = load def+SA3D_SHADER_DEF_kind as i32
+    kind_ok = call @sa3d_shader_def_kind_is_valid(kind)
+    ok = and name_ok, kind_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !kind_ok
+    !kind
+    !name_ok
+    !def
+    return 1
+
+L_FALSE:
+    !ok
+    !kind_ok
+    !kind
+    !name_ok
+    !def
+    return 0
+
+@sa3d_shader_defs_find_by_name(&defs: ptr, defs_len: i64, name_ptr: ptr, name_len: i64) -> i64:
+L_ENTRY:
+    idx = 0 as i64
+    empty = eq defs_len, 0
+    br empty -> L_NOT_FOUND_EMPTY, L_LOOP
+
+L_LOOP:
+    done = eq idx, defs_len
+    br done -> L_NOT_FOUND_DONE, L_CHECK
+
+L_CHECK:
+    offset = mul idx, SA3D_SHADER_DEF_SIZE
+    def = ptr_add defs, offset
+    matches = call @sa3d_shader_def_matches_name(&def, name_ptr, name_len)
+    br matches -> L_FOUND, L_ADVANCE
+
+L_ADVANCE:
+    idx_next = add idx, 1
+    !done
+    !matches
+    !def
+    !offset
+    !idx
+    idx = idx_next
+    jmp L_LOOP
+
+L_FOUND:
+    !done
+    !matches
+    !def
+    !offset
+    !name_len
+    !name_ptr
+    !defs_len
+    !defs
+    return idx
+
+L_NOT_FOUND_DONE:
+    !done
+    !empty
+    !idx
+    !name_len
+    !name_ptr
+    !defs_len
+    !defs
+    return -1
+
+L_NOT_FOUND_EMPTY:
+    !empty
+    !idx
+    !name_len
+    !name_ptr
+    !defs_len
+    !defs
+    return -1
+
+@sa3d_shader_desc_has_import_path(&desc: ptr) -> i32:
+L_ENTRY:
+    import_path_ptr = load desc+SA3D_SHADER_DESC_import_path_ptr as i64
+    import_path_len = load desc+SA3D_SHADER_DESC_import_path_len as i64
+    ptr_ok = ne import_path_ptr, 0
+    len_ok = sgt import_path_len, 0
+    ok = and ptr_ok, len_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !import_path_len
+    !import_path_ptr
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !import_path_len
+    !import_path_ptr
+    !desc
+    return 0
+
+@sa3d_shader_desc_has_defs(&desc: ptr) -> i32:
+L_ENTRY:
+    defs_ptr = load desc+SA3D_SHADER_DESC_defs_ptr as i64
+    defs_len = load desc+SA3D_SHADER_DESC_defs_len as i64
+    ptr_ok = ne defs_ptr, 0
+    len_ok = sgt defs_len, 0
+    ok = and ptr_ok, len_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !defs_len
+    !defs_ptr
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !defs_len
+    !defs_ptr
+    !desc
+    return 0
+
+@sa3d_shader_desc_resolve_import_path(&desc: ptr) -> i32:
+L_ENTRY:
+    import_path_ptr = load desc+SA3D_SHADER_DESC_import_path_ptr as i64
+    import_path_len = load desc+SA3D_SHADER_DESC_import_path_len as i64
+    import_has = call @sa3d_shader_desc_has_import_path(&desc)
+    br import_has -> L_EXISTING, L_COPY
+
+L_COPY:
+    path_ptr = load desc+SA3D_SHADER_DESC_path_ptr as i64
+    path_len = load desc+SA3D_SHADER_DESC_path_len as i64
+    path_ok = call @sa3d_shader_desc_has_path(&desc)
+    br path_ok -> L_DO_COPY, L_FAIL
+
+L_DO_COPY:
+    store desc+SA3D_SHADER_DESC_import_path_ptr, path_ptr as ptr
+    store desc+SA3D_SHADER_DESC_import_path_len, path_len as i64
+    !path_ok
+    !path_len
+    !path_ptr
+    !import_has
+    !import_path_len
+    !import_path_ptr
+    !desc
+    return 1
+
+L_EXISTING:
+    !import_has
+    !import_path_len
+    !import_path_ptr
+    !desc
+    return 1
+
+L_FAIL:
+    !path_ok
+    !path_len
+    !path_ptr
+    !import_has
+    !import_path_len
+    !import_path_ptr
+    !desc
+    return 0
+
+@sa3d_shader_entry_get_handle(&entry: ptr) -> i64:
+L_ENTRY:
+    handle = load entry+32 as i64
+    !entry
+    return handle
+
+@sa3d_shader_entry_pair_init(&pair: ptr, vertex_name_ptr: ptr, vertex_name_len: i64, fragment_name_ptr: ptr, fragment_name_len: i64) -> void:
+L_ENTRY:
+    fragment = ptr_add pair, SA3D_SHADER_ENTRY_PAIR_fragment
+    call @sa3d_shader_entry_init(&pair, vertex_name_ptr, vertex_name_len, SA3D_SHADER_STAGE_VERTEX)
+    call @sa3d_shader_entry_init(&fragment, fragment_name_ptr, fragment_name_len, SA3D_SHADER_STAGE_FRAGMENT)
+    !fragment
+    !fragment_name_len
+    !fragment_name_ptr
+    !vertex_name_len
+    !vertex_name_ptr
+    !pair
+    return
+
+@sa3d_shader_entry_pair_set_ref_handle(&pair: ptr, handle: i64) -> void:
+L_ENTRY:
+    fragment = ptr_add pair, SA3D_SHADER_ENTRY_PAIR_fragment
+    call @sa3d_shader_entry_set_ref_handle(&pair, handle)
+    call @sa3d_shader_entry_set_ref_handle(&fragment, handle)
+    !fragment
+    !handle
+    !pair
+    return
+
+@sa3d_shader_entry_pair_validate_render(&pair: ptr) -> i32:
+L_ENTRY:
+    fragment = ptr_add pair, SA3D_SHADER_ENTRY_PAIR_fragment
+    v_stage = load pair+SA3D_SHADER_ENTRY_stage as i32
+    f_stage = load fragment+SA3D_SHADER_ENTRY_stage as i32
+    v_stage_ok = eq v_stage, SA3D_SHADER_STAGE_VERTEX
+    f_stage_ok = eq f_stage, SA3D_SHADER_STAGE_FRAGMENT
+    v_valid = call @sa3d_shader_entry_validate(&pair)
+    f_valid = call @sa3d_shader_entry_validate(&fragment)
+    p1 = and v_stage_ok, f_stage_ok
+    p2 = and v_valid, f_valid
+    ok = and p1, p2
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p2
+    !p1
+    !f_valid
+    !v_valid
+    !f_stage_ok
+    !v_stage_ok
+    !f_stage
+    !v_stage
+    !fragment
+    !pair
+    return 1
+
+L_FALSE:
+    !ok
+    !p2
+    !p1
+    !f_valid
+    !v_valid
+    !f_stage_ok
+    !v_stage_ok
+    !f_stage
+    !v_stage
+    !fragment
+    !pair
+    return 0

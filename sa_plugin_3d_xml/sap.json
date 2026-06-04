@@ -1,0 +1,13 @@
+{
+  "schema": "sa.plugin/1",
+  "name": "3d_xml",
+  "version": "0.1.0",
+  "source": { "type": "local", "path": "." },
+  "abi": { "plugin": 1, "saasm": ">=0.4.0" },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_xml.so" } },
+  "interfaces": { "sal": { "path": "3d_xml.sal" } },
+  "assets": { "share": [{ "path": "3d_xml.sal", "target": "3d_xml.sal" }] },
+  "skills": ["3d.xml"],
+  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [], "env": [], "process": { "spawn": false, "exec": [] } },
+  "dependencies": {}
+}

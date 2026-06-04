@@ -1,0 +1,202 @@
+@import "../3d_image.sal"
+
+@extern sa3d_image_native_selftest() -> i32
+
+@test "3d_image desc init defaults"():
+L_ENTRY:
+    d = alloc SA3D_IMAGE_DESC_SIZE
+    call @sa3d_image_desc_init(&d)
+    w = call @sa3d_image_desc_get_width(&d)
+    h = call @sa3d_image_desc_get_height(&d)
+    fmt = call @sa3d_image_desc_get_format(&d)
+    w_ok = eq w, 0
+    h_ok = eq h, 0
+    fmt_ok = eq fmt, SA3D_IMAGE_FORMAT_RGBA8_UNORM
+    pa = and w_ok, h_ok
+    ok = and pa, fmt_ok
+    br ok -> L_STEP2, L_ERR
+L_STEP2:
+    call @sa3d_image_desc_set_size(&d, 512, 256)
+    call @sa3d_image_desc_set_format(&d, SA3D_IMAGE_FORMAT_BGRA8_UNORM)
+    w2 = call @sa3d_image_desc_get_width(&d)
+    h2 = call @sa3d_image_desc_get_height(&d)
+    fmt2 = call @sa3d_image_desc_get_format(&d)
+    w2_ok = eq w2, 512
+    h2_ok = eq h2, 256
+    fmt2_ok = eq fmt2, SA3D_IMAGE_FORMAT_BGRA8_UNORM
+    pa2 = and w2_ok, h2_ok
+    ok2 = and pa2, fmt2_ok
+    !d
+    br ok2 -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !d
+    panic(3100)
+L_ERR2:
+    panic(3101)
+
+@test "3d_sampler desc init defaults"():
+L_ENTRY:
+    d = alloc SA3D_SAMPLER_DESC_SIZE
+    call @sa3d_sampler_desc_init(&d)
+    mag = call @sa3d_sampler_desc_get_mag_filter(&d)
+    ok = eq mag, SA3D_SAMPLER_FILTER_LINEAR
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3102)
+
+@test "3d_image desc validation usage and byte sizes"():
+L_ENTRY:
+    d = alloc SA3D_IMAGE_DESC_SIZE
+    call @sa3d_image_desc_init(&d)
+    valid0 = call @sa3d_image_desc_validate(&d)
+    call @sa3d_image_desc_set_size(&d, 128, 64)
+    call @sa3d_image_desc_set_dimension(&d, SA3D_IMAGE_DIMENSION_2D, 2)
+    call @sa3d_image_desc_set_format(&d, SA3D_IMAGE_FORMAT_RGBA16_FLOAT)
+    call @sa3d_image_desc_add_usage(&d, SA3D_IMAGE_USAGE_COPY_DST)
+    call @sa3d_image_desc_set_data(&d, 9000, 131072)
+    valid1 = call @sa3d_image_desc_validate(&d)
+    has_tex = call @sa3d_image_desc_has_usage(&d, SA3D_IMAGE_USAGE_TEXTURE_BINDING)
+    has_copy = call @sa3d_image_desc_has_usage(&d, SA3D_IMAGE_USAGE_COPY_DST)
+    bpp = call @sa3d_image_format_bytes_per_pixel(SA3D_IMAGE_FORMAT_RGBA16_FLOAT)
+    bpp32 = call @sa3d_image_format_bytes_per_pixel(SA3D_IMAGE_FORMAT_RGBA32_FLOAT)
+    bpp_bad = call @sa3d_image_format_bytes_per_pixel(999)
+    pitch = call @sa3d_image_desc_compute_row_pitch(&d)
+    stored_pitch = call @sa3d_image_desc_update_row_pitch(&d)
+    total = call @sa3d_image_desc_compute_data_len(&d)
+    fmt_ok = call @sa3d_image_format_is_valid(SA3D_IMAGE_FORMAT_DEPTH24_PLUS)
+    fmt_bad = call @sa3d_image_format_is_valid(999)
+    dim_ok = call @sa3d_image_dimension_is_valid(SA3D_IMAGE_DIMENSION_CUBE)
+    dim_bad = call @sa3d_image_dimension_is_valid(99)
+    data_ptr = load d+SA3D_IMAGE_DESC_data_ptr as i64
+    data_len = load d+SA3D_IMAGE_DESC_data_len as i64
+    valid0_ok = eq valid0, 0
+    valid1_ok = eq valid1, 1
+    has_tex_ok = eq has_tex, 1
+    has_copy_ok = eq has_copy, 1
+    bpp_ok = eq bpp, 8
+    bpp32_ok = eq bpp32, 16
+    bpp_bad_ok = eq bpp_bad, 0
+    pitch_ok = eq pitch, 1024
+    stored_pitch_ok = eq stored_pitch, 1024
+    total_ok = eq total, 131072
+    fmt_ok_ok = eq fmt_ok, 1
+    fmt_bad_ok = eq fmt_bad, 0
+    dim_ok_ok = eq dim_ok, 1
+    dim_bad_ok = eq dim_bad, 0
+    data_ptr_ok = eq data_ptr, 9000
+    data_len_ok = eq data_len, 131072
+    p1 = and valid0_ok, valid1_ok
+    p2 = and has_tex_ok, has_copy_ok
+    p3 = and bpp_ok, bpp32_ok
+    p4 = and bpp_bad_ok, pitch_ok
+    p5 = and stored_pitch_ok, total_ok
+    p6 = and fmt_ok_ok, fmt_bad_ok
+    p7 = and dim_ok_ok, dim_bad_ok
+    p8 = and data_ptr_ok, data_len_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    r1 = and q1, q2
+    r2 = and q3, q4
+    ok = and r1, r2
+    br ok -> L_IMAGE_HELPERS_OK, L_IMAGE_HELPERS_ERR
+
+L_IMAGE_HELPERS_OK:
+    !d
+    return
+
+L_IMAGE_HELPERS_ERR:
+    !d
+    panic(3103)
+
+@test "3d_sampler setters and validation"():
+L_ENTRY:
+    s = alloc SA3D_SAMPLER_DESC_SIZE
+    call @sa3d_sampler_desc_init(&s)
+    valid0 = call @sa3d_sampler_desc_validate(&s)
+    call @sa3d_sampler_desc_set_address(&s, SA3D_SAMPLER_ADDRESS_REPEAT, SA3D_SAMPLER_ADDRESS_MIRROR_REPEAT, SA3D_SAMPLER_ADDRESS_CLAMP_TO_EDGE)
+    call @sa3d_sampler_desc_set_filters(&s, SA3D_SAMPLER_FILTER_NEAREST, SA3D_SAMPLER_FILTER_LINEAR, SA3D_SAMPLER_FILTER_NEAREST)
+    call @sa3d_sampler_desc_set_lod(&s, 2, 12)
+    valid1 = call @sa3d_sampler_desc_validate(&s)
+    mag = call @sa3d_sampler_desc_get_mag_filter(&s)
+    addr_u = load s+SA3D_SAMPLER_DESC_address_u as i32
+    addr_v = load s+SA3D_SAMPLER_DESC_address_v as i32
+    lod_min = load s+SA3D_SAMPLER_DESC_lod_min as i32
+    lod_max = load s+SA3D_SAMPLER_DESC_lod_max as i32
+    addr_ok = call @sa3d_sampler_address_is_valid(SA3D_SAMPLER_ADDRESS_REPEAT)
+    addr_bad = call @sa3d_sampler_address_is_valid(99)
+    filter_ok = call @sa3d_sampler_filter_is_valid(SA3D_SAMPLER_FILTER_LINEAR)
+    filter_bad = call @sa3d_sampler_filter_is_valid(99)
+    call @sa3d_sampler_desc_set_lod(&s, 20, 10)
+    valid_bad_lod = call @sa3d_sampler_desc_validate(&s)
+    valid0_ok = eq valid0, 1
+    valid1_ok = eq valid1, 1
+    mag_ok = eq mag, SA3D_SAMPLER_FILTER_NEAREST
+    addr_u_ok = eq addr_u, SA3D_SAMPLER_ADDRESS_REPEAT
+    addr_v_ok = eq addr_v, SA3D_SAMPLER_ADDRESS_MIRROR_REPEAT
+    lod_min_ok = eq lod_min, 2
+    lod_max_ok = eq lod_max, 12
+    addr_ok_ok = eq addr_ok, 1
+    addr_bad_ok = eq addr_bad, 0
+    filter_ok_ok = eq filter_ok, 1
+    filter_bad_ok = eq filter_bad, 0
+    valid_bad_lod_ok = eq valid_bad_lod, 0
+    p1 = and valid0_ok, valid1_ok
+    p2 = and mag_ok, addr_u_ok
+    p3 = and addr_v_ok, lod_min_ok
+    p4 = and lod_max_ok, addr_ok_ok
+    p5 = and addr_bad_ok, filter_ok_ok
+    p6 = and filter_bad_ok, valid_bad_lod_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    r = and q1, q2
+    ok = and r, q3
+    br ok -> L_SAMPLER_HELPERS_OK, L_SAMPLER_HELPERS_ERR
+
+L_SAMPLER_HELPERS_OK:
+    !s
+    return
+
+L_SAMPLER_HELPERS_ERR:
+    !s
+    panic(3104)
+
+@test "3d_image native selftest"():
+L_ENTRY:
+    status = call @sa3d_image_native_selftest()
+    ok = eq status, 0
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3105)
+
+@test "3d_image Bevy row pitch must cover a full row"():
+L_ENTRY:
+    d = alloc SA3D_IMAGE_DESC_SIZE
+    ok_new = call @sa3d_image_desc_new_uninit(&d, 4, 4, 1, SA3D_IMAGE_DIMENSION_2D, SA3D_IMAGE_FORMAT_RGBA8_UNORM)
+    store d+SA3D_IMAGE_DESC_row_pitch, 8 as i64
+    bad = call @sa3d_image_desc_validate(&d)
+    store d+SA3D_IMAGE_DESC_row_pitch, 16 as i64
+    good = call @sa3d_image_desc_validate(&d)
+    ok_new_ok = eq ok_new, 1
+    bad_ok = eq bad, 0
+    good_ok = eq good, 1
+    p = and ok_new_ok, bad_ok
+    ok = and p, good_ok
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !d
+    return
+
+L_ERR:
+    !d
+    panic(3106)

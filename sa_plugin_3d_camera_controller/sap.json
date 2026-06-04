@@ -1,0 +1,18 @@
+{
+  "schema": "sa.plugin/1",
+  "name": "3d_camera_controller",
+  "version": "0.1.0",
+  "source": { "type": "local", "path": "." },
+  "abi": { "plugin": 1, "saasm": ">=0.4.0" },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_camera_controller.so" } },
+  "interfaces": { "sal": { "path": "3d_camera_controller.sal" } },
+  "assets": { "share": [{ "path": "3d_camera_controller.sal", "target": "3d_camera_controller.sal" }] },
+  "skills": ["3d.camera_controller"],
+  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [], "env": [], "process": { "spawn": false, "exec": [] } },
+  "dependencies": {
+    "3d_camera": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_camera", "optional": false },
+    "3d_input": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_input", "optional": false },
+    "3d_time": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_time", "optional": false },
+    "3d_transform": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_transform", "optional": false }
+  }
+}

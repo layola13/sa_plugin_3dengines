@@ -1,0 +1,429 @@
+@import "../3d_ecs.sal"
+
+@test "3d_ecs entity id init and equal"():
+L_ENTRY:
+    a = alloc SA3D_ECS_ENTITY_ID_SIZE
+    b = alloc SA3D_ECS_ENTITY_ID_SIZE
+    call @sa3d_ecs_entity_id_init(&a, 5, 3)
+    call @sa3d_ecs_entity_id_init(&b, 5, 3)
+    idx = call @sa3d_ecs_entity_id_get_index(&a)
+    gen = call @sa3d_ecs_entity_id_get_generation(&a)
+    idx_ok = eq idx, 5
+    gen_ok = eq gen, 3
+    pa = and idx_ok, gen_ok
+    eq_result = call @sa3d_ecs_entity_id_equal(&a, &b)
+    eq_ok = eq eq_result, 1
+    ok = and pa, eq_ok
+    br ok -> L_STEP2, L_ERR
+L_STEP2:
+    store b+SA3D_ECS_ENTITY_ID_generation, 7 as i64
+    ne_result = call @sa3d_ecs_entity_id_equal(&a, &b)
+    ne_ok = eq ne_result, 0
+    !a
+    !b
+    br ne_ok -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !a
+    !b
+    panic(3140)
+L_ERR2:
+    panic(3141)
+
+@test "3d_ecs component desc init"():
+L_ENTRY:
+    d = alloc SA3D_ECS_COMPONENT_DESC_SIZE
+    call @sa3d_ecs_component_desc_init(&d, 1, 16, 8)
+    tid = load d+SA3D_ECS_COMPONENT_DESC_type_id as i64
+    sz = load d+SA3D_ECS_COMPONENT_DESC_size as i64
+    tid_ok = eq tid, 1
+    sz_ok = eq sz, 16
+    ok = and tid_ok, sz_ok
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3142)
+
+@test "3d_ecs world desc init"():
+L_ENTRY:
+    d = alloc SA3D_ECS_WORLD_DESC_SIZE
+    call @sa3d_ecs_world_desc_init(&d)
+    cap = call @sa3d_ecs_world_desc_get_entity_capacity(&d)
+    has_components = call @sa3d_ecs_world_desc_has_components(&d)
+    ok = eq cap, 1024
+    ok2 = eq has_components, 0
+    !d
+    all = and ok, ok2
+    br all -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3143)
+
+@test "3d_ecs world spawn contains and despawn generation"():
+L_ENTRY:
+    metas = alloc 32
+    world = alloc SA3D_ECS_WORLD_STATE_SIZE
+    e0 = alloc SA3D_ECS_ENTITY_ID_SIZE
+    e1 = alloc SA3D_ECS_ENTITY_ID_SIZE
+    store metas+0, 0 as i64
+    store metas+8, 0 as i64
+    store metas+16, 0 as i64
+    store metas+24, 0 as i64
+    call @sa3d_ecs_world_state_init(&world, metas, 2)
+    dead0 = call @sa3d_ecs_world_state_get_dead_count(&world)
+    spawned0 = call @sa3d_ecs_world_spawn(&world, &e0)
+    spawned1 = call @sa3d_ecs_world_spawn(&world, &e1)
+    spawned2 = call @sa3d_ecs_world_spawn(&world, &e1)
+    alive_after_spawn = call @sa3d_ecs_world_state_get_alive_count(&world)
+    dead_after_spawn = call @sa3d_ecs_world_state_get_dead_count(&world)
+    e0_contains = call @sa3d_ecs_world_contains_spawned(&world, &e0)
+    e1_contains = call @sa3d_ecs_world_contains_spawned(&world, &e1)
+    e0_idx = load e0+SA3D_ECS_ENTITY_ID_index as i64
+    e0_gen = load e0+SA3D_ECS_ENTITY_ID_generation as i64
+    e1_idx = load e1+SA3D_ECS_ENTITY_ID_index as i64
+    despawned = call @sa3d_ecs_world_despawn(&world, &e0)
+    e0_contains_after = call @sa3d_ecs_world_contains_spawned(&world, &e0)
+    despawned_again = call @sa3d_ecs_world_despawn(&world, &e0)
+    alive_after_despawn = call @sa3d_ecs_world_state_get_alive_count(&world)
+    meta0_gen = load metas+SA3D_ECS_ENTITY_META_generation as i64
+    spawn0_ok = eq spawned0, 1
+    spawn1_ok = eq spawned1, 1
+    full_ok = eq spawned2, 0
+    alive_spawn_ok = eq alive_after_spawn, 2
+    dead0_ok = eq dead0, 0
+    dead_after_spawn_ok = eq dead_after_spawn, 0
+    e0_contains_ok = eq e0_contains, 1
+    e1_contains_ok = eq e1_contains, 1
+    e0_idx_ok = eq e0_idx, 0
+    e0_gen_ok = eq e0_gen, 0
+    e1_idx_ok = eq e1_idx, 1
+    despawn_ok = eq despawned, 1
+    stale_ok = eq e0_contains_after, 0
+    again_ok = eq despawned_again, 0
+    alive_despawn_ok = eq alive_after_despawn, 1
+    gen_bumped_ok = eq meta0_gen, 1
+    p1 = and spawn0_ok, spawn1_ok
+    p2 = and full_ok, alive_spawn_ok
+    p3 = and e0_contains_ok, e1_contains_ok
+    p4 = and e0_idx_ok, e0_gen_ok
+    p5 = and e1_idx_ok, despawn_ok
+    p6 = and stale_ok, again_ok
+    p7 = and alive_despawn_ok, gen_bumped_ok
+    p8 = and dead0_ok, dead_after_spawn_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    r1 = and q1, q2
+    r2 = and q3, p7
+    r3 = and r1, r2
+    ok = and r3, p8
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !e1
+    !e0
+    !world
+    !metas
+    return 0
+
+L_ERR:
+    !e1
+    !e0
+    !world
+    !metas
+    panic(3144)
+
+@test "3d_ecs world free list reuses despawned entity generation"():
+L_ENTRY:
+    metas = alloc 32
+    free_indices = alloc 16
+    world = alloc SA3D_ECS_WORLD_STATE_SIZE
+    e0 = alloc SA3D_ECS_ENTITY_ID_SIZE
+    e1 = alloc SA3D_ECS_ENTITY_ID_SIZE
+    e2 = alloc SA3D_ECS_ENTITY_ID_SIZE
+    store metas+0, 0 as i64
+    store metas+8, 0 as i64
+    store metas+16, 0 as i64
+    store metas+24, 0 as i64
+    call @sa3d_ecs_world_state_init_with_free_list(&world, metas, free_indices, 2)
+    spawned0 = call @sa3d_ecs_world_spawn(&world, &e0)
+    spawned1 = call @sa3d_ecs_world_spawn(&world, &e1)
+    despawned0 = call @sa3d_ecs_world_despawn(&world, &e0)
+    dead_after_despawn = call @sa3d_ecs_world_state_get_dead_count(&world)
+    free_after_despawn = load world+SA3D_ECS_WORLD_STATE_free_count as i64
+    spawned2 = call @sa3d_ecs_world_spawn(&world, &e2)
+    alive_after_reuse = call @sa3d_ecs_world_state_get_alive_count(&world)
+    dead_after_reuse = call @sa3d_ecs_world_state_get_dead_count(&world)
+    free_after_reuse = load world+SA3D_ECS_WORLD_STATE_free_count as i64
+    e0_stale = call @sa3d_ecs_world_contains_spawned(&world, &e0)
+    e2_live = call @sa3d_ecs_world_contains_spawned(&world, &e2)
+    e2_idx = load e2+SA3D_ECS_ENTITY_ID_index as i64
+    e2_gen = load e2+SA3D_ECS_ENTITY_ID_generation as i64
+    spawn0_ok = eq spawned0, 1
+    spawn1_ok = eq spawned1, 1
+    despawn_ok = eq despawned0, 1
+    dead_push_ok = eq dead_after_despawn, 1
+    free_push_ok = eq free_after_despawn, 1
+    spawn2_ok = eq spawned2, 1
+    reuse_idx_ok = eq e2_idx, 0
+    reuse_gen_ok = eq e2_gen, 1
+    stale_ok = eq e0_stale, 0
+    live_ok = eq e2_live, 1
+    alive_ok = eq alive_after_reuse, 2
+    dead_reuse_ok = eq dead_after_reuse, 0
+    free_reuse_ok = eq free_after_reuse, 0
+    p1 = and spawn0_ok, spawn1_ok
+    p2 = and despawn_ok, dead_push_ok
+    p3 = and free_push_ok, spawn2_ok
+    p4 = and reuse_idx_ok, reuse_gen_ok
+    p5 = and stale_ok, live_ok
+    p6 = and alive_ok, dead_reuse_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    r1 = and q1, q2
+    r2 = and q3, free_reuse_ok
+    ok = and r1, r2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !e2
+    !e1
+    !e0
+    !world
+    !free_indices
+    !metas
+    return 0
+
+L_ERR:
+    !e2
+    !e1
+    !e0
+    !world
+    !free_indices
+    !metas
+    panic(3145)
+
+@test "3d_ecs query access matches bevy read write filter conflicts"():
+L_ENTRY:
+    desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    terms = alloc 48
+    term0 = ptr_add terms, 0
+    term1 = ptr_add terms, SA3D_ECS_QUERY_TERM_SIZE
+    term2 = ptr_add terms, 32
+
+    call @sa3d_ecs_query_term_init(&term0, 10, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_term_init(&term1, 10, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_desc_init(&desc, terms, 2, 16)
+    read_read = call @sa3d_ecs_query_desc_validate(&desc)
+
+    call @sa3d_ecs_query_term_init(&term1, 10, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    read_write = call @sa3d_ecs_query_desc_validate(&desc)
+
+    call @sa3d_ecs_query_term_init(&term0, 10, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&term1, 10, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    write_write = call @sa3d_ecs_query_desc_validate(&desc)
+
+    call @sa3d_ecs_query_term_init(&term0, 10, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&term1, 10, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    write_with = call @sa3d_ecs_query_desc_validate(&desc)
+
+    call @sa3d_ecs_query_term_init(&term0, 10, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_term_init(&term1, 10, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    read_without = call @sa3d_ecs_query_desc_validate(&desc)
+
+    call @sa3d_ecs_query_term_init(&term0, 10, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_term_init(&term1, 11, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    read_other_write = call @sa3d_ecs_query_desc_validate(&desc)
+
+    call @sa3d_ecs_query_term_init(&term0, 10, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_term_init(&term1, 11, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    call @sa3d_ecs_query_term_init(&term2, 12, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_desc_init(&desc, terms, 3, 24)
+    filter_three = call @sa3d_ecs_query_desc_validate(&desc)
+
+    call @sa3d_ecs_query_term_init(&term0, -1, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_desc_init(&desc, terms, 1, 8)
+    invalid_component = call @sa3d_ecs_query_desc_validate(&desc)
+
+    call @sa3d_ecs_query_term_init(&term0, 10, 99, 0)
+    invalid_access = call @sa3d_ecs_query_desc_validate(&desc)
+
+    rr_ok = eq read_read, 1
+    rw_ok = eq read_write, 0
+    ww_ok = eq write_write, 0
+    wf_ok = eq write_with, 1
+    rwo_ok = eq read_without, 1
+    row_ok = eq read_other_write, 1
+    ft_ok = eq filter_three, 1
+    ic_ok = eq invalid_component, 0
+    ia_ok = eq invalid_access, 0
+    p1 = and rr_ok, rw_ok
+    p2 = and ww_ok, wf_ok
+    p3 = and rwo_ok, row_ok
+    p4 = and ft_ok, ic_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and q1, q2
+    ok = and q3, ia_ok
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !term2
+    !term1
+    !term0
+    !terms
+    !desc
+    return 0
+
+L_ERR:
+    !term2
+    !term1
+    !term0
+    !terms
+    !desc
+    panic(3146)
+
+@test "3d_ecs query compatibility uses bevy filtered access disjointness"():
+L_ENTRY:
+    a_desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    b_desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    a_terms = alloc 32
+    b_terms = alloc 32
+    a0 = ptr_add a_terms, 0
+    a1 = ptr_add a_terms, SA3D_ECS_QUERY_TERM_SIZE
+    b0 = ptr_add b_terms, 0
+    b1 = ptr_add b_terms, SA3D_ECS_QUERY_TERM_SIZE
+
+    call @sa3d_ecs_query_term_init(&a0, 30, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&b0, 30, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 1, 8)
+    call @sa3d_ecs_query_desc_init(&b_desc, b_terms, 1, 8)
+    write_write = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 30, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&a1, 40, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    call @sa3d_ecs_query_term_init(&b0, 30, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&b1, 40, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 2, 16)
+    call @sa3d_ecs_query_desc_init(&b_desc, b_terms, 2, 16)
+    with_without = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 30, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&a1, 40, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_term_init(&b0, 30, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&b1, 40, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    reversed = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 30, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&a1, 41, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    call @sa3d_ecs_query_term_init(&b0, 30, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&b1, 40, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    unrelated_filter = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 30, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 1, 8)
+    read_write = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    ww_ok = eq write_write, 0
+    disjoint_ok = eq with_without, 1
+    reversed_ok = eq reversed, 1
+    unrelated_ok = eq unrelated_filter, 0
+    read_write_ok = eq read_write, 0
+    p1 = and ww_ok, disjoint_ok
+    p2 = and reversed_ok, unrelated_ok
+    p3 = and p1, p2
+    ok = and p3, read_write_ok
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !b1
+    !b0
+    !a1
+    !a0
+    !b_terms
+    !a_terms
+    !b_desc
+    !a_desc
+    return 0
+
+L_ERR:
+    !b1
+    !b0
+    !a1
+    !a0
+    !b_terms
+    !a_terms
+    !b_desc
+    !a_desc
+    panic(3147)
+
+@test "3d_ecs query compatibility honors bevy DNF filter sets"():
+L_ENTRY:
+    a_desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    b_desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    a_terms = alloc 48
+    b_terms = alloc 48
+    a0 = ptr_add a_terms, 0
+    a1 = ptr_add a_terms, SA3D_ECS_QUERY_TERM_SIZE
+    a2 = ptr_add a_terms, 32
+    b0 = ptr_add b_terms, 0
+    b1 = ptr_add b_terms, SA3D_ECS_QUERY_TERM_SIZE
+    b2 = ptr_add b_terms, 32
+
+    call @sa3d_ecs_query_term_init(&a0, 50, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&a1, 10, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    call @sa3d_ecs_query_term_init(&a2, 11, SA3D_ECS_QUERY_ACCESS_WITH, 1)
+    call @sa3d_ecs_query_term_init(&b0, 50, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&b1, 10, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_term_init(&b2, 11, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 3, 24)
+    call @sa3d_ecs_query_desc_init(&b_desc, b_terms, 3, 24)
+    or_with_both_without = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&b1, 10, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_term_init(&b2, 12, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    one_branch_not_ruled_out = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a1, 10, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    call @sa3d_ecs_query_term_init(&a2, 11, SA3D_ECS_QUERY_ACCESS_WITHOUT, 1)
+    call @sa3d_ecs_query_term_init(&b1, 10, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_term_init(&b2, 11, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    or_cross_ruled_out = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    both_without_ok = eq or_with_both_without, 1
+    not_ruled_out_ok = eq one_branch_not_ruled_out, 0
+    cross_ok = eq or_cross_ruled_out, 1
+    p0 = and both_without_ok, not_ruled_out_ok
+    ok = and p0, cross_ok
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !b2
+    !b1
+    !b0
+    !a2
+    !a1
+    !a0
+    !b_terms
+    !a_terms
+    !b_desc
+    !a_desc
+    return 0
+
+L_ERR:
+    !b2
+    !b1
+    !b0
+    !a2
+    !a1
+    !a0
+    !b_terms
+    !a_terms
+    !b_desc
+    !a_desc
+    panic(3148)

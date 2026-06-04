@@ -1,0 +1,513 @@
+#def SA3D_YAML_VERSION_MAJOR = 0
+#def SA3D_YAML_VERSION_MINOR = 1
+
+#def SA3D_YAML_NODE_MAPPING = 1
+#def SA3D_YAML_NODE_SEQUENCE = 2
+#def SA3D_YAML_NODE_SCALAR = 3
+
+#def SA3D_YAML_SCALAR_STRING = 1
+#def SA3D_YAML_SCALAR_INT = 2
+#def SA3D_YAML_SCALAR_FLOAT = 3
+#def SA3D_YAML_SCALAR_BOOL = 4
+#def SA3D_YAML_SCALAR_NULL = 5
+
+#def SA3D_YAML_DOC_DESC_source_ptr = +0
+#def SA3D_YAML_DOC_DESC_source_len = +8
+#def SA3D_YAML_DOC_DESC_base_uri_ptr = +16
+#def SA3D_YAML_DOC_DESC_base_uri_len = +24
+#def SA3D_YAML_DOC_DESC_flags = +32
+#def SA3D_YAML_DOC_DESC_SIZE = 40
+
+#def SA3D_YAML_NODE_DESC_kind = +0
+#def SA3D_YAML_NODE_DESC_scalar_kind = +4
+#def SA3D_YAML_NODE_DESC_key_ptr = +8
+#def SA3D_YAML_NODE_DESC_key_len = +16
+#def SA3D_YAML_NODE_DESC_value_ptr = +24
+#def SA3D_YAML_NODE_DESC_value_len = +32
+#def SA3D_YAML_NODE_DESC_first_child = +40
+#def SA3D_YAML_NODE_DESC_next_sibling = +48
+#def SA3D_YAML_NODE_DESC_SIZE = 56
+
+@sa3d_yaml_doc_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_YAML_DOC_DESC_source_ptr, 0 as i64
+    store desc+SA3D_YAML_DOC_DESC_source_len, 0 as i64
+    store desc+SA3D_YAML_DOC_DESC_base_uri_ptr, 0 as i64
+    store desc+SA3D_YAML_DOC_DESC_base_uri_len, 0 as i64
+    store desc+SA3D_YAML_DOC_DESC_flags, 0 as i32
+    !desc
+    return
+
+@sa3d_yaml_doc_desc_get_flags(&desc: ptr) -> i32:
+L_ENTRY:
+    f = load desc+SA3D_YAML_DOC_DESC_flags as i32
+    !desc
+    return f
+
+@sa3d_yaml_doc_desc_set_flags(&desc: ptr, flags: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_YAML_DOC_DESC_flags, flags as i32
+    !flags
+    !desc
+    return
+
+@sa3d_yaml_ptr_len_pair_is_valid(ptr: ptr, len: i64) -> i32:
+L_ENTRY:
+    nonnegative = sge len, 0
+    zero = eq len, 0
+    has_ptr = ne ptr, 0
+    ptr_ok = or zero, has_ptr
+    ok = and nonnegative, ptr_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !ptr_ok
+    !has_ptr
+    !zero
+    !nonnegative
+    !len
+    !ptr
+    return 1
+
+L_FALSE:
+    !ok
+    !ptr_ok
+    !has_ptr
+    !zero
+    !nonnegative
+    !len
+    !ptr
+    return 0
+
+@sa3d_yaml_doc_desc_set_base_uri(&desc: ptr, base_uri: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store desc+SA3D_YAML_DOC_DESC_base_uri_ptr, 0 as i64
+    store desc+SA3D_YAML_DOC_DESC_base_uri_len, 0 as i64
+    !negative
+    !len
+    !base_uri
+    !desc
+    return
+
+L_SET:
+    store desc+SA3D_YAML_DOC_DESC_base_uri_ptr, base_uri as ptr
+    store desc+SA3D_YAML_DOC_DESC_base_uri_len, len as i64
+    !negative
+    !len
+    !base_uri
+    !desc
+    return
+
+@sa3d_yaml_doc_desc_set_source(&desc: ptr, source: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store desc+SA3D_YAML_DOC_DESC_source_ptr, 0 as i64
+    store desc+SA3D_YAML_DOC_DESC_source_len, 0 as i64
+    !negative
+    !len
+    !source
+    !desc
+    return
+
+L_SET:
+    store desc+SA3D_YAML_DOC_DESC_source_ptr, source as ptr
+    store desc+SA3D_YAML_DOC_DESC_source_len, len as i64
+    !negative
+    !len
+    !source
+    !desc
+    return
+
+@sa3d_yaml_node_kind_is_valid(kind: i32) -> i32:
+L_ENTRY:
+    is_mapping = eq kind, SA3D_YAML_NODE_MAPPING
+    is_sequence = eq kind, SA3D_YAML_NODE_SEQUENCE
+    is_scalar = eq kind, SA3D_YAML_NODE_SCALAR
+    a = or is_mapping, is_sequence
+    ok = or a, is_scalar
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !a
+    !is_scalar
+    !is_sequence
+    !is_mapping
+    !kind
+    return 1
+
+L_FALSE:
+    !ok
+    !a
+    !is_scalar
+    !is_sequence
+    !is_mapping
+    !kind
+    return 0
+
+@sa3d_yaml_scalar_kind_is_valid(kind: i32) -> i32:
+L_ENTRY:
+    is_string = eq kind, SA3D_YAML_SCALAR_STRING
+    is_int = eq kind, SA3D_YAML_SCALAR_INT
+    is_float = eq kind, SA3D_YAML_SCALAR_FLOAT
+    is_bool = eq kind, SA3D_YAML_SCALAR_BOOL
+    is_null = eq kind, SA3D_YAML_SCALAR_NULL
+    a = or is_string, is_int
+    b = or is_float, is_bool
+    c = or a, b
+    ok = or c, is_null
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !c
+    !b
+    !a
+    !is_null
+    !is_bool
+    !is_float
+    !is_int
+    !is_string
+    !kind
+    return 1
+
+L_FALSE:
+    !ok
+    !c
+    !b
+    !a
+    !is_null
+    !is_bool
+    !is_float
+    !is_int
+    !is_string
+    !kind
+    return 0
+
+@sa3d_yaml_doc_desc_is_valid(&desc: ptr) -> i32:
+L_ENTRY:
+    source_ptr = load desc+SA3D_YAML_DOC_DESC_source_ptr as ptr
+    source_len = load desc+SA3D_YAML_DOC_DESC_source_len as i64
+    base_uri_ptr = load desc+SA3D_YAML_DOC_DESC_base_uri_ptr as ptr
+    base_uri_len = load desc+SA3D_YAML_DOC_DESC_base_uri_len as i64
+    flags = load desc+SA3D_YAML_DOC_DESC_flags as i32
+    has_source_ptr = ne source_ptr, 0
+    has_source_len = sgt source_len, 0
+    has_source = and has_source_ptr, has_source_len
+    base_uri_ok = call @sa3d_yaml_ptr_len_pair_is_valid(base_uri_ptr, base_uri_len)
+    flags_valid = eq flags, 0
+    ok = and has_source, base_uri_ok
+    valid = and ok, flags_valid
+    br valid -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !valid
+    !ok
+    !flags_valid
+    !base_uri_ok
+    !has_source
+    !has_source_len
+    !has_source_ptr
+    !base_uri_len
+    !base_uri_ptr
+    !source_len
+    !source_ptr
+    !flags
+    !desc
+    return 1
+
+L_FALSE:
+    !valid
+    !ok
+    !flags_valid
+    !base_uri_ok
+    !has_source
+    !has_source_len
+    !has_source_ptr
+    !base_uri_len
+    !base_uri_ptr
+    !source_len
+    !source_ptr
+    !flags
+    !desc
+    return 0
+
+@sa3d_yaml_node_desc_init(&node: ptr) -> void:
+L_ENTRY:
+    store node+SA3D_YAML_NODE_DESC_kind, SA3D_YAML_NODE_SCALAR as i32
+    store node+SA3D_YAML_NODE_DESC_scalar_kind, SA3D_YAML_SCALAR_STRING as i32
+    store node+SA3D_YAML_NODE_DESC_key_ptr, 0 as i64
+    store node+SA3D_YAML_NODE_DESC_key_len, 0 as i64
+    store node+SA3D_YAML_NODE_DESC_value_ptr, 0 as i64
+    store node+SA3D_YAML_NODE_DESC_value_len, 0 as i64
+    store node+SA3D_YAML_NODE_DESC_first_child, 0 as i64
+    store node+SA3D_YAML_NODE_DESC_next_sibling, 0 as i64
+    !node
+    return
+
+@sa3d_yaml_node_desc_get_kind(&node: ptr) -> i32:
+L_ENTRY:
+    k = load node+SA3D_YAML_NODE_DESC_kind as i32
+    !node
+    return k
+
+@sa3d_yaml_node_desc_get_scalar_kind(&node: ptr) -> i32:
+L_ENTRY:
+    sk = load node+SA3D_YAML_NODE_DESC_scalar_kind as i32
+    !node
+    return sk
+
+@sa3d_yaml_node_desc_set_kind(&node: ptr, kind: i32, scalar_kind: i32) -> void:
+L_ENTRY:
+    store node+SA3D_YAML_NODE_DESC_kind, kind as i32
+    store node+SA3D_YAML_NODE_DESC_scalar_kind, scalar_kind as i32
+    !scalar_kind
+    !kind
+    !node
+    return
+
+@sa3d_yaml_node_desc_set_key(&node: ptr, key: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store node+SA3D_YAML_NODE_DESC_key_ptr, 0 as i64
+    store node+SA3D_YAML_NODE_DESC_key_len, 0 as i64
+    !negative
+    !len
+    !key
+    !node
+    return
+
+L_SET:
+    store node+SA3D_YAML_NODE_DESC_key_ptr, key as ptr
+    store node+SA3D_YAML_NODE_DESC_key_len, len as i64
+    !negative
+    !len
+    !key
+    !node
+    return
+
+@sa3d_yaml_node_desc_set_value(&node: ptr, value: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store node+SA3D_YAML_NODE_DESC_value_ptr, 0 as i64
+    store node+SA3D_YAML_NODE_DESC_value_len, 0 as i64
+    !negative
+    !len
+    !value
+    !node
+    return
+
+L_SET:
+    store node+SA3D_YAML_NODE_DESC_value_ptr, value as ptr
+    store node+SA3D_YAML_NODE_DESC_value_len, len as i64
+    !negative
+    !len
+    !value
+    !node
+    return
+
+@sa3d_yaml_node_desc_is_valid(&node: ptr) -> i32:
+L_ENTRY:
+    kind = load node+SA3D_YAML_NODE_DESC_kind as i32
+    scalar_kind = load node+SA3D_YAML_NODE_DESC_scalar_kind as i32
+    value_len = load node+SA3D_YAML_NODE_DESC_value_len as i64
+    kind_ok = call @sa3d_yaml_node_kind_is_valid(kind)
+    scalar_ok = call @sa3d_yaml_scalar_kind_is_valid(scalar_kind)
+    kind_valid = ne kind_ok, 0
+    scalar_valid = ne scalar_ok, 0
+    is_scalar = eq kind, SA3D_YAML_NODE_SCALAR
+    has_value = sgt value_len, 0
+    non_scalar = ne kind, SA3D_YAML_NODE_SCALAR
+    value_ok = or non_scalar, has_value
+    a = and kind_valid, scalar_valid
+    ok = and a, value_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !a
+    !value_ok
+    !non_scalar
+    !has_value
+    !is_scalar
+    !scalar_valid
+    !kind_valid
+    !scalar_ok
+    !kind_ok
+    !value_len
+    !scalar_kind
+    !kind
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !a
+    !value_ok
+    !non_scalar
+    !has_value
+    !is_scalar
+    !scalar_valid
+    !kind_valid
+    !scalar_ok
+    !kind_ok
+    !value_len
+    !scalar_kind
+    !kind
+    !node
+    return 0
+
+@sa3d_yaml_byte_is_ws(byte: u8) -> i32:
+L_ENTRY:
+    sp = eq byte, 32
+    tab = eq byte, 9
+    lf = eq byte, 10
+    cr = eq byte, 13
+    a = or sp, tab
+    b = or lf, cr
+    ok = or a, b
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !b
+    !a
+    !cr
+    !lf
+    !tab
+    !sp
+    !byte
+    return 1
+
+L_FALSE:
+    !ok
+    !b
+    !a
+    !cr
+    !lf
+    !tab
+    !sp
+    !byte
+    return 0
+
+@sa3d_yaml_doc_desc_count_nodes(&desc: ptr) -> i64:
+L_ENTRY:
+    source = load desc+SA3D_YAML_DOC_DESC_source_ptr as ptr
+    len = load desc+SA3D_YAML_DOC_DESC_source_len as i64
+    has_source_ptr = ne source, 0
+    has_source_len = sgt len, 0
+    ok = and has_source_ptr, has_source_len
+    br ok -> L_CALL, L_ZERO
+
+L_CALL:
+    count = call @sa3d_yaml_doc_desc_count_nodes_from(source, len, 0)
+    !ok
+    !has_source_len
+    !has_source_ptr
+    !len
+    !source
+    return count
+
+L_ZERO:
+    !ok
+    !has_source_len
+    !has_source_ptr
+    !len
+    !source
+    return 0
+
+@sa3d_yaml_doc_desc_count_nodes_from(source: ptr, len: i64, idx: i64) -> i64:
+L_ENTRY:
+    more = slt idx, len
+    br more -> L_LOAD, L_DONE
+
+L_LOAD:
+    cur = ptr_add source, idx
+    byte = load cur+0 as u8
+    is_ws = call @sa3d_yaml_byte_is_ws(byte)
+    br is_ws -> L_NEXT, L_COUNT
+
+L_COUNT:
+    next_idx = add idx, 1
+    rest = call @sa3d_yaml_doc_desc_count_nodes_from(source, len, next_idx)
+    out = add rest, 1
+    !rest
+    !next_idx
+    !is_ws
+    !byte
+    !cur
+    !more
+    !idx
+    !len
+    !source
+    return out
+
+L_NEXT:
+    next_idx = add idx, 1
+    out = call @sa3d_yaml_doc_desc_count_nodes_from(source, len, next_idx)
+    !next_idx
+    !is_ws
+    !byte
+    !cur
+    !more
+    !idx
+    !len
+    !source
+    return out
+
+L_DONE:
+    !more
+    !idx
+    !len
+    !source
+    return 0
+
+@sa3d_yaml_count_siblings(first: ptr) -> i64:
+L_ENTRY:
+    count_slot = stack_alloc 8
+    current_slot = stack_alloc 8
+    store count_slot+0, 0 as i64
+    store current_slot+0, first as ptr
+    !first
+    jmp L_HEAD
+
+L_HEAD:
+    current_value = load current_slot+0 as i64
+    current = load current_slot+0 as ptr
+    is_null = eq current_value, 0
+    br is_null -> L_DONE, L_BODY
+
+L_BODY:
+    count = load count_slot+0 as i64
+    next_count = add count, 1
+    next = load current+SA3D_YAML_NODE_DESC_next_sibling as ptr
+    store count_slot+0, next_count as i64
+    store current_slot+0, next as ptr
+    !next
+    !next_count
+    !count
+    !is_null
+    !current
+    !current_value
+    jmp L_HEAD
+
+L_DONE:
+    out = load count_slot+0 as i64
+    !is_null
+    !current
+    !current_value
+    return out

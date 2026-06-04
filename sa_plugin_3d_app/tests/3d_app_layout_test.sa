@@ -1,0 +1,123 @@
+@import "../3d_app.sal"
+
+@test "3d_app plugin desc init"():
+L_ENTRY:
+    d = alloc SA3D_APP_PLUGIN_DESC_SIZE
+    call @sa3d_app_plugin_desc_init(&d)
+    call @sa3d_app_plugin_desc_set_version(&d, 1, 2)
+    major = call @sa3d_app_plugin_desc_get_version_major(&d)
+    ok = eq major, 1
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3120)
+
+@test "3d_app system desc init"():
+L_ENTRY:
+    d = alloc SA3D_APP_SYSTEM_DESC_SIZE
+    call @sa3d_app_system_desc_init(&d)
+    stage0 = call @sa3d_app_system_desc_get_stage(&d)
+    s0_ok = eq stage0, 0
+    br s0_ok -> L_STEP2, L_ERR
+L_STEP2:
+    call @sa3d_app_system_desc_set_stage(&d, SA3D_APP_STAGE_UPDATE)
+    stage1 = call @sa3d_app_system_desc_get_stage(&d)
+    ok = eq stage1, SA3D_APP_STAGE_UPDATE
+    !d
+    br ok -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !d
+    panic(3121)
+L_ERR2:
+    panic(3122)
+
+@test "3d_app schedule desc init"():
+L_ENTRY:
+    d = alloc SA3D_APP_SCHEDULE_DESC_SIZE
+    call @sa3d_app_schedule_desc_init(&d)
+    mask = call @sa3d_app_schedule_desc_get_stage_mask(&d)
+    ok = eq mask, 0
+    br ok -> L_STEP2, L_ERR
+L_STEP2:
+    call @sa3d_app_schedule_desc_set_stage_mask(&d, 7)
+    mask2 = call @sa3d_app_schedule_desc_get_stage_mask(&d)
+    ok2 = eq mask2, 7
+    !d
+    br ok2 -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !d
+    panic(3123)
+L_ERR2:
+    panic(3124)
+
+@test "3d_app stage helpers and plugin validation"():
+L_ENTRY:
+    p = alloc SA3D_APP_PLUGIN_DESC_SIZE
+    name = alloc 8
+    call @sa3d_app_plugin_desc_init(&p)
+    valid0 = call @sa3d_app_plugin_desc_is_valid(&p)
+    call @sa3d_app_plugin_desc_set_name(&p, 100, 8)
+    call @sa3d_app_plugin_desc_set_version(&p, 1, 0)
+    valid1 = call @sa3d_app_plugin_desc_is_valid(&p)
+    stage_good = call @sa3d_app_stage_is_valid(SA3D_APP_STAGE_RENDER)
+    stage_bad = call @sa3d_app_stage_is_valid(99)
+    bit = call @sa3d_app_stage_bit(SA3D_APP_STAGE_POST_UPDATE)
+    mask_bad = call @sa3d_app_stage_mask_is_valid(128)
+    valid0_ok = eq valid0, 0
+    valid1_ok = eq valid1, 1
+    stage_good_ok = eq stage_good, 1
+    stage_bad_ok = eq stage_bad, 0
+    bit_ok = eq bit, 8
+    mask_bad_ok = eq mask_bad, 0
+    a = and valid0_ok, valid1_ok
+    b = and stage_good_ok, stage_bad_ok
+    c = and bit_ok, mask_bad_ok
+    ab = and a, b
+    ok = and ab, c
+    !name
+    !p
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3125)
+
+@test "3d_app system and schedule validation"():
+L_ENTRY:
+    s = alloc SA3D_APP_SYSTEM_DESC_SIZE
+    sched = alloc SA3D_APP_SCHEDULE_DESC_SIZE
+    systems = alloc SA3D_APP_SYSTEM_DESC_SIZE
+    call @sa3d_app_system_desc_init(&s)
+    call @sa3d_app_system_desc_set_name(&s, 200, 6)
+    call @sa3d_app_system_desc_set_stage(&s, SA3D_APP_STAGE_UPDATE)
+    call @sa3d_app_system_desc_set_order_fn(&s, 10, 1234, 5678)
+    sys_valid = call @sa3d_app_system_desc_is_valid(&s)
+    call @sa3d_app_schedule_desc_init(&sched)
+    call @sa3d_app_schedule_desc_set_systems(&sched, &systems, 1)
+    enabled = call @sa3d_app_schedule_desc_enable_stage(&sched, SA3D_APP_STAGE_UPDATE)
+    enabled_bad = call @sa3d_app_schedule_desc_enable_stage(&sched, 99)
+    sched_valid = call @sa3d_app_schedule_desc_is_valid(&sched)
+    mask = call @sa3d_app_schedule_desc_get_stage_mask(&sched)
+    sys_ok = eq sys_valid, 1
+    enabled_ok = eq enabled, 1
+    enabled_bad_ok = eq enabled_bad, 0
+    sched_ok = eq sched_valid, 1
+    mask_ok = eq mask, 4
+    a = and sys_ok, enabled_ok
+    b = and enabled_bad_ok, sched_ok
+    c = and a, b
+    ok = and c, mask_ok
+    !systems
+    !sched
+    !s
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3126)

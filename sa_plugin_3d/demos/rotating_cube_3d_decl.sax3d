@@ -1,0 +1,12 @@
+<Component name="Sa3dCube">
+  <section class="sa3d-stage">
+    <h1>SA 3D Engine Cube</h1>
+    <p>Scene3D is lowered by the aggregate 3D plugin before SAX builds the browser target.</p>
+    <canvas id="sa3d-canvas" width="1024" height="768" renderer="sa3d"></canvas>
+    <Scene3D canvas="#sa3d-canvas" backend="webgpu">
+      <PerspectiveCamera fovy="45" near="0.1" far="100" position="0 0 5" />
+      <UnlitMaterial id="cube_material" color="1 0.62 0.24 1" />
+      <CubeMesh id="cube" geometry="cube" material="cube_material" rotation="y" />
+    </Scene3D>
+  </section>
+</Component>

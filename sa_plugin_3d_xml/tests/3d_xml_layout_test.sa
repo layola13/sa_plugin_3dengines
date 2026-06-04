@@ -1,0 +1,142 @@
+@import "../3d_xml.sal"
+
+@test "3d_xml doc desc init"():
+L_ENTRY:
+    d = alloc SA3D_XML_DOC_DESC_SIZE
+    call @sa3d_xml_doc_desc_init(&d)
+    flags = call @sa3d_xml_doc_desc_get_flags(&d)
+    flags_ok = eq flags, 0
+    br flags_ok -> L_STEP2, L_ERR
+L_STEP2:
+    call @sa3d_xml_doc_desc_set_flags(&d, SA3D_XML_PARSE_ALLOW_COMMENTS)
+    flags2 = call @sa3d_xml_doc_desc_get_flags(&d)
+    ok = eq flags2, SA3D_XML_PARSE_ALLOW_COMMENTS
+    !d
+    br ok -> L_OK, L_ERR2
+L_OK:
+    return 0
+L_ERR:
+    !d
+    panic(3160)
+L_ERR2:
+    panic(3161)
+
+@test "3d_xml node desc init"():
+L_ENTRY:
+    n = alloc SA3D_XML_NODE_DESC_SIZE
+    call @sa3d_xml_node_desc_init(&n)
+    kind = call @sa3d_xml_node_desc_get_kind(&n)
+    ok = eq kind, SA3D_XML_NODE_ELEMENT
+    !n
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3162)
+
+@test "3d_xml doc and node validation"():
+L_ENTRY:
+    d = alloc SA3D_XML_DOC_DESC_SIZE
+    src = alloc 4
+    base = alloc 4
+    n = alloc SA3D_XML_NODE_DESC_SIZE
+    name = alloc 4
+    call @sa3d_xml_doc_desc_init(&d)
+    flags = or SA3D_XML_PARSE_PRESERVE_WHITESPACE, SA3D_XML_PARSE_ALLOW_COMMENTS
+    call @sa3d_xml_doc_desc_set_source(&d, &src, 4)
+    call @sa3d_xml_doc_desc_set_base_uri(&d, &base, 4)
+    call @sa3d_xml_doc_desc_set_flags(&d, flags)
+    doc_valid = call @sa3d_xml_doc_desc_is_valid(&d)
+    flags_bad = call @sa3d_xml_parse_flags_are_valid(8)
+    base_ok = call @sa3d_xml_ptr_len_pair_is_valid(&base, 4)
+    base_bad = call @sa3d_xml_ptr_len_pair_is_valid(0, 4)
+    call @sa3d_xml_doc_desc_set_base_uri(&d, 0, 4)
+    doc_invalid_base = call @sa3d_xml_doc_desc_is_valid(&d)
+    call @sa3d_xml_doc_desc_set_base_uri(&d, &base, 4)
+    call @sa3d_xml_node_desc_init(&n)
+    node_before = call @sa3d_xml_node_desc_is_valid(&n)
+    call @sa3d_xml_node_desc_set_name(&n, &name, 4)
+    node_after = call @sa3d_xml_node_desc_is_valid(&n)
+    kind_bad = call @sa3d_xml_node_kind_is_valid(99)
+    doc_ok = eq doc_valid, 1
+    doc_invalid_ok = eq doc_invalid_base, 0
+    base_ok2 = eq base_ok, 1
+    base_bad_ok = eq base_bad, 0
+    flags_bad_ok = eq flags_bad, 0
+    node_before_ok = eq node_before, 0
+    node_after_ok = eq node_after, 1
+    kind_bad_ok = eq kind_bad, 0
+    a = and doc_ok, flags_bad_ok
+    b = and doc_invalid_ok, base_ok2
+    c = and base_bad_ok, node_before_ok
+    d_ok = and node_after_ok, kind_bad_ok
+    e = and a, b
+    f = and c, d_ok
+    ok = and e, f
+    !name
+    !base
+    !n
+    !src
+    !d_ok
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3163)
+
+@test "3d_xml sibling count"():
+L_ENTRY:
+    a = alloc SA3D_XML_NODE_DESC_SIZE
+    b = alloc SA3D_XML_NODE_DESC_SIZE
+    c = alloc SA3D_XML_NODE_DESC_SIZE
+    call @sa3d_xml_node_desc_init(&a)
+    call @sa3d_xml_node_desc_init(&b)
+    call @sa3d_xml_node_desc_init(&c)
+    store a+SA3D_XML_NODE_DESC_next_sibling, b as ptr
+    store b+SA3D_XML_NODE_DESC_next_sibling, c as ptr
+    count = call @sa3d_xml_count_siblings(&a)
+    ok = eq count, 3
+    !c
+    !b
+    !a
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3164)
+
+@test "3d_xml start tag count"():
+L_ENTRY:
+    d = alloc SA3D_XML_DOC_DESC_SIZE
+    src = alloc 24
+    call @sa3d_xml_doc_desc_init(&d)
+    store src+0, 32 as u8
+    store src+1, 10 as u8
+    store src+2, 60 as u8
+    store src+3, 97 as u8
+    store src+4, 62 as u8
+    store src+5, 10 as u8
+    store src+6, 60 as u8
+    store src+7, 33 as u8
+    store src+8, 45 as u8
+    store src+9, 45 as u8
+    store src+10, 99 as u8
+    store src+11, 45 as u8
+    store src+12, 45 as u8
+    store src+13, 62 as u8
+    store src+14, 10 as u8
+    store src+15, 60 as u8
+    store src+16, 98 as u8
+    store src+17, 47 as u8
+    store src+18, 62 as u8
+    store src+19, 10 as u8
+    call @sa3d_xml_doc_desc_set_source(&d, &src, 20)
+    count = call @sa3d_xml_doc_desc_count_start_tags(&d)
+    ok = eq count, 2
+    !src
+    !d
+    br ok -> L_OK, L_ERR
+L_OK:
+    return 0
+L_ERR:
+    panic(3165)

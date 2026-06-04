@@ -1,0 +1,966 @@
+#def SA3D_PBR_VERSION_MAJOR = 0
+#def SA3D_PBR_VERSION_MINOR = 1
+
+#def SA3D_OPAQUE_RENDER_FORWARD = 0
+#def SA3D_OPAQUE_RENDER_DEFERRED = 1
+#def SA3D_OPAQUE_RENDER_AUTO = 2
+
+#def SA3D_PBR_WORKFLOW_METALLIC_ROUGHNESS = 1
+#def SA3D_PBR_WORKFLOW_SPECULAR_GLOSSINESS = 2
+
+#def SA3D_PBR_ALPHA_OPAQUE = 0
+#def SA3D_PBR_ALPHA_MASK = 1
+#def SA3D_PBR_ALPHA_BLEND = 2
+#def SA3D_PBR_ALPHA_PREMULTIPLIED = 3
+#def SA3D_PBR_ALPHA_ALPHA_TO_COVERAGE = 4
+#def SA3D_PBR_ALPHA_ADD = 5
+#def SA3D_PBR_ALPHA_MULTIPLY = 6
+
+#def SA3D_PBR_MATERIAL_DOUBLE_SIDED = 16
+#def SA3D_PBR_MATERIAL_UNLIT = 32
+#def SA3D_PBR_MATERIAL_RECEIVE_SHADOWS = 4
+
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT = 1
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT = 2
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT = 4
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT = 8
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT = 16
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_UNLIT_BIT = 32
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP = 64
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y = 128
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_FOG_ENABLED_BIT = 256
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT = 512
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_SPECULAR_TRANSMISSION_TEXTURE_BIT = 1024
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_THICKNESS_TEXTURE_BIT = 2048
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_DIFFUSE_TRANSMISSION_TEXTURE_BIT = 4096
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ATTENUATION_ENABLED_BIT = 8192
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_CLEARCOAT_TEXTURE_BIT = 16384
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_CLEARCOAT_ROUGHNESS_TEXTURE_BIT = 32768
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_CLEARCOAT_NORMAL_TEXTURE_BIT = 65536
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT = 131072
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT = 262144
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT = 524288
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS = -536870912
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE = 0
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK = 536870912
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND = 1073741824
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED = 1610612736
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD = -2147483648
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY = -1610612736
+#def SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE = -1073741824
+
+#def SA3D_PBR_F32_0 = 0
+#def SA3D_PBR_F32_0_16 = 1042536202
+#def SA3D_PBR_F32_0_5 = 1056964608
+#def SA3D_PBR_F32_1 = 1065353216
+#def SA3D_PBR_F32_1_5 = 1069547520
+#def SA3D_PBR_F32_INFINITY = 2139095040
+
+#def SA3D_PBR_TEXTURE_SLOT_NONE = 0
+#def SA3D_PBR_TEXTURE_SLOT_BASE_COLOR = 1
+#def SA3D_PBR_TEXTURE_SLOT_NORMAL = 2
+#def SA3D_PBR_TEXTURE_SLOT_METALLIC_ROUGHNESS = 3
+#def SA3D_PBR_TEXTURE_SLOT_EMISSIVE = 4
+#def SA3D_PBR_TEXTURE_SLOT_OCCLUSION = 5
+
+#def SA3D_PBR_MATERIAL_DESC_base_color = +0
+#def SA3D_PBR_MATERIAL_DESC_emissive = +16
+#def SA3D_PBR_MATERIAL_DESC_metallic = +32
+#def SA3D_PBR_MATERIAL_DESC_roughness = +36
+#def SA3D_PBR_MATERIAL_DESC_reflectance = +40
+#def SA3D_PBR_MATERIAL_DESC_alpha_cutoff = +44
+#def SA3D_PBR_MATERIAL_DESC_normal_scale = +48
+#def SA3D_PBR_MATERIAL_DESC_occlusion_strength = +52
+#def SA3D_PBR_MATERIAL_DESC_diffuse_transmission = +56
+#def SA3D_PBR_MATERIAL_DESC_specular_transmission = +60
+#def SA3D_PBR_MATERIAL_DESC_thickness = +64
+#def SA3D_PBR_MATERIAL_DESC_ior = +68
+#def SA3D_PBR_MATERIAL_DESC_attenuation_color = +72
+#def SA3D_PBR_MATERIAL_DESC_attenuation_distance = +88
+#def SA3D_PBR_MATERIAL_DESC_clearcoat = +92
+#def SA3D_PBR_MATERIAL_DESC_clearcoat_roughness = +96
+#def SA3D_PBR_MATERIAL_DESC_base_color_texture = +104
+#def SA3D_PBR_MATERIAL_DESC_normal_texture = +112
+#def SA3D_PBR_MATERIAL_DESC_metallic_roughness_texture = +120
+#def SA3D_PBR_MATERIAL_DESC_emissive_texture = +128
+#def SA3D_PBR_MATERIAL_DESC_occlusion_texture = +136
+#def SA3D_PBR_MATERIAL_DESC_vertex_shader_ref = +144
+#def SA3D_PBR_MATERIAL_DESC_fragment_shader_ref = +176
+#def SA3D_PBR_MATERIAL_DESC_flags = +208
+#def SA3D_PBR_MATERIAL_DESC_alpha_mode = +212
+#def SA3D_PBR_MATERIAL_DESC_SIZE = 216
+
+#def SA3D_PBR_ENVIRONMENT_DESC_diffuse_cubemap = +0
+#def SA3D_PBR_ENVIRONMENT_DESC_specular_cubemap = +8
+#def SA3D_PBR_ENVIRONMENT_DESC_brdf_lut = +16
+#def SA3D_PBR_ENVIRONMENT_DESC_intensity = +24
+#def SA3D_PBR_ENVIRONMENT_DESC_rotation = +28
+#def SA3D_PBR_ENVIRONMENT_DESC_SIZE = 44
+
+@sa3d_pbr_material_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_base_color, 1065353216 as i32
+    store desc+4, 1065353216 as i32
+    store desc+8, 1065353216 as i32
+    store desc+12, 1065353216 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_emissive, 0 as i32
+    store desc+20, 0 as i32
+    store desc+24, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_metallic, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_roughness, SA3D_PBR_F32_0_5 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_reflectance, SA3D_PBR_F32_0_5 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_alpha_cutoff, SA3D_PBR_F32_0_5 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_normal_scale, 1065353216 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_occlusion_strength, 1065353216 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_diffuse_transmission, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_specular_transmission, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_thickness, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_ior, SA3D_PBR_F32_1_5 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_attenuation_color, SA3D_PBR_F32_1 as i32
+    store desc+76, SA3D_PBR_F32_1 as i32
+    store desc+80, SA3D_PBR_F32_1 as i32
+    store desc+84, SA3D_PBR_F32_1 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_attenuation_distance, SA3D_PBR_F32_INFINITY as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_clearcoat, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_clearcoat_roughness, 0 as i32
+    store desc+100, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_base_color_texture, 0 as i64
+    store desc+SA3D_PBR_MATERIAL_DESC_normal_texture, 0 as i64
+    store desc+SA3D_PBR_MATERIAL_DESC_metallic_roughness_texture, 0 as i64
+    store desc+SA3D_PBR_MATERIAL_DESC_emissive_texture, 0 as i64
+    store desc+SA3D_PBR_MATERIAL_DESC_occlusion_texture, 0 as i64
+    store desc+SA3D_PBR_MATERIAL_DESC_vertex_shader_ref, 0 as i64
+    store desc+152, 0 as i64
+    store desc+160, 0 as i64
+    store desc+168, 0 as i64
+    store desc+172, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_fragment_shader_ref, 0 as i64
+    store desc+184, 0 as i64
+    store desc+192, 0 as i64
+    store desc+200, 0 as i64
+    store desc+204, 0 as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_flags, SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_alpha_mode, SA3D_PBR_ALPHA_OPAQUE as i32
+    !desc
+    return
+
+@sa3d_pbr_material_get_alpha_mode(&desc: ptr) -> i32:
+L_ENTRY:
+    mode = load desc+SA3D_PBR_MATERIAL_DESC_alpha_mode as i32
+    !desc
+    return mode
+
+@sa3d_pbr_material_get_flags(&desc: ptr) -> i32:
+L_ENTRY:
+    flags = load desc+SA3D_PBR_MATERIAL_DESC_flags as i32
+    !desc
+    return flags
+
+@sa3d_pbr_material_set_alpha_mode(&desc: ptr, mode: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_alpha_mode, mode as i32
+    flags = load desc+SA3D_PBR_MATERIAL_DESC_flags as i32
+    cleared = and flags, 536870911
+    alpha_flags = call @sa3d_pbr_alpha_mode_to_standard_flags(mode)
+    next = or cleared, alpha_flags
+    store desc+SA3D_PBR_MATERIAL_DESC_flags, next as i32
+    !next
+    !alpha_flags
+    !cleared
+    !flags
+    !mode
+    !desc
+    return
+
+@sa3d_pbr_material_set_flags(&desc: ptr, flags: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_flags, flags as i32
+    !flags
+    !desc
+    return
+
+@sa3d_pbr_f32_bits_is_finite(bits: i32) -> i32:
+L_ENTRY:
+    abs_bits = and bits, 2147483647
+    finite = slt abs_bits, SA3D_PBR_F32_INFINITY
+    !abs_bits
+    !bits
+    return finite
+
+@sa3d_pbr_material_standard_flags(&desc: ptr) -> i32:
+L_ENTRY:
+    flags = load desc+SA3D_PBR_MATERIAL_DESC_flags as i32
+    attenuation_distance = load desc+SA3D_PBR_MATERIAL_DESC_attenuation_distance as i32
+    attenuation_finite = call @sa3d_pbr_f32_bits_is_finite(attenuation_distance)
+    br attenuation_finite -> L_ATTENUATION, L_DONE
+
+L_ATTENUATION:
+    next = or flags, SA3D_PBR_STANDARD_MATERIAL_FLAGS_ATTENUATION_ENABLED_BIT
+    !attenuation_finite
+    !attenuation_distance
+    !flags
+    !desc
+    return next
+
+L_DONE:
+    !attenuation_finite
+    !attenuation_distance
+    !desc
+    return flags
+
+@sa3d_pbr_material_enable_flag(&desc: ptr, flag: i32) -> void:
+L_ENTRY:
+    flags = load desc+SA3D_PBR_MATERIAL_DESC_flags as i32
+    next = or flags, flag
+    store desc+SA3D_PBR_MATERIAL_DESC_flags, next as i32
+    !next
+    !flags
+    !flag
+    !desc
+    return
+
+@sa3d_pbr_material_disable_flag(&desc: ptr, flag: i32) -> void:
+L_ENTRY:
+    flags = load desc+SA3D_PBR_MATERIAL_DESC_flags as i32
+    mask = xor flag, -1
+    next = and flags, mask
+    store desc+SA3D_PBR_MATERIAL_DESC_flags, next as i32
+    !next
+    !mask
+    !flags
+    !flag
+    !desc
+    return
+
+@sa3d_pbr_material_has_flag(&desc: ptr, flag: i32) -> i32:
+L_ENTRY:
+    flags = load desc+SA3D_PBR_MATERIAL_DESC_flags as i32
+    masked = and flags, flag
+    ok = ne masked, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !masked
+    !flags
+    !flag
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !masked
+    !flags
+    !flag
+    !desc
+    return 0
+
+@sa3d_pbr_alpha_mode_to_standard_flags(mode: i32) -> i32:
+L_ENTRY:
+    opaque = eq mode, SA3D_PBR_ALPHA_OPAQUE
+    mask = eq mode, SA3D_PBR_ALPHA_MASK
+    blend = eq mode, SA3D_PBR_ALPHA_BLEND
+    premul = eq mode, SA3D_PBR_ALPHA_PREMULTIPLIED
+    a2c = eq mode, SA3D_PBR_ALPHA_ALPHA_TO_COVERAGE
+    add = eq mode, SA3D_PBR_ALPHA_ADD
+    multiply = eq mode, SA3D_PBR_ALPHA_MULTIPLY
+    br opaque -> L_OPAQUE, L_MASK_CHECK
+
+L_OPAQUE:
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE
+
+L_MASK_CHECK:
+    br mask -> L_MASK, L_BLEND_CHECK
+
+L_MASK:
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK
+
+L_BLEND_CHECK:
+    br blend -> L_BLEND, L_PREMUL_CHECK
+
+L_BLEND:
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND
+
+L_PREMUL_CHECK:
+    br premul -> L_PREMUL, L_A2C_CHECK
+
+L_PREMUL:
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED
+
+L_A2C_CHECK:
+    br a2c -> L_A2C, L_ADD_CHECK
+
+L_A2C:
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE
+
+L_ADD_CHECK:
+    br add -> L_ADD, L_MULTIPLY_CHECK
+
+L_ADD:
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD
+
+L_MULTIPLY_CHECK:
+    br multiply -> L_MULTIPLY, L_DEFAULT
+
+L_MULTIPLY:
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY
+
+L_DEFAULT:
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return SA3D_PBR_STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE
+
+@sa3d_pbr_material_set_transmission(&desc: ptr, diffuse: i32, specular: i32, thickness: i32, ior: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_diffuse_transmission, diffuse as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_specular_transmission, specular as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_thickness, thickness as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_ior, ior as i32
+    !ior
+    !thickness
+    !specular
+    !diffuse
+    !desc
+    return
+
+@sa3d_pbr_material_set_attenuation(&desc: ptr, r: i32, g: i32, b: i32, a: i32, distance: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_attenuation_color, r as i32
+    store desc+76, g as i32
+    store desc+80, b as i32
+    store desc+84, a as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_attenuation_distance, distance as i32
+    !distance
+    !a
+    !b
+    !g
+    !r
+    !desc
+    return
+
+@sa3d_pbr_material_set_clearcoat(&desc: ptr, clearcoat: i32, perceptual_roughness: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_clearcoat, clearcoat as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_clearcoat_roughness, perceptual_roughness as i32
+    !perceptual_roughness
+    !clearcoat
+    !desc
+    return
+
+@sa3d_pbr_f32_clamp01(v: i32) -> i32:
+L_ENTRY:
+    lt0 = fcmp_lt v, SA3D_PBR_F32_0
+    br lt0 -> L_ZERO, L_CHECK_ONE
+
+L_ZERO:
+    !lt0
+    !v
+    return SA3D_PBR_F32_0
+
+L_CHECK_ONE:
+    gt1 = fcmp_gt v, SA3D_PBR_F32_1
+    br gt1 -> L_ONE, L_VALUE
+
+L_ONE:
+    !gt1
+    !lt0
+    !v
+    return SA3D_PBR_F32_1
+
+L_VALUE:
+    !gt1
+    !lt0
+    return v
+
+@sa3d_pbr_perceptual_roughness_to_roughness(perceptual_roughness: i32) -> i32:
+L_ENTRY:
+    p = call @sa3d_pbr_f32_clamp01(perceptual_roughness)
+    roughness = fmul p, p
+    !p
+    !perceptual_roughness
+    return roughness
+
+@sa3d_pbr_calculate_f0_dielectric(reflectance: i32) -> i32:
+L_ENTRY:
+    r = call @sa3d_pbr_f32_clamp01(reflectance)
+    rr = fmul r, r
+    f0 = fmul SA3D_PBR_F32_0_16, rr
+    !rr
+    !r
+    !reflectance
+    return f0
+
+@sa3d_pbr_calculate_f0_channel(base_color: i32, metallic: i32, reflectance: i32) -> i32:
+L_ENTRY:
+    m = call @sa3d_pbr_f32_clamp01(metallic)
+    one_minus_m = fsub SA3D_PBR_F32_1, m
+    dielectric = call @sa3d_pbr_calculate_f0_dielectric(reflectance)
+    d_part = fmul dielectric, one_minus_m
+    b_part = fmul base_color, m
+    f0 = fadd d_part, b_part
+    !b_part
+    !d_part
+    !dielectric
+    !one_minus_m
+    !m
+    !reflectance
+    !metallic
+    !base_color
+    return f0
+
+@sa3d_pbr_calculate_diffuse_channel(base_color: i32, metallic: i32, specular_transmission: i32, diffuse_transmission: i32) -> i32:
+L_ENTRY:
+    m = call @sa3d_pbr_f32_clamp01(metallic)
+    st = call @sa3d_pbr_f32_clamp01(specular_transmission)
+    dt = call @sa3d_pbr_f32_clamp01(diffuse_transmission)
+    one_minus_m = fsub SA3D_PBR_F32_1, m
+    one_minus_st = fsub SA3D_PBR_F32_1, st
+    one_minus_dt = fsub SA3D_PBR_F32_1, dt
+    a = fmul base_color, one_minus_m
+    b = fmul a, one_minus_st
+    diffuse = fmul b, one_minus_dt
+    !b
+    !a
+    !one_minus_dt
+    !one_minus_st
+    !one_minus_m
+    !dt
+    !st
+    !m
+    !diffuse_transmission
+    !specular_transmission
+    !metallic
+    !base_color
+    return diffuse
+
+@sa3d_pbr_material_alpha_mode_is_valid(mode: i32) -> i32:
+L_ENTRY:
+    opaque = eq mode, SA3D_PBR_ALPHA_OPAQUE
+    mask = eq mode, SA3D_PBR_ALPHA_MASK
+    blend = eq mode, SA3D_PBR_ALPHA_BLEND
+    premul = eq mode, SA3D_PBR_ALPHA_PREMULTIPLIED
+    a2c = eq mode, SA3D_PBR_ALPHA_ALPHA_TO_COVERAGE
+    add = eq mode, SA3D_PBR_ALPHA_ADD
+    multiply = eq mode, SA3D_PBR_ALPHA_MULTIPLY
+    p1 = or opaque, mask
+    p2 = or blend, premul
+    p3 = or a2c, add
+    p4 = or p1, p2
+    p5 = or p3, multiply
+    ok = or p4, p5
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p5
+    !p4
+    !p3
+    !p2
+    !p1
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return 1
+
+L_FALSE:
+    !ok
+    !p5
+    !p4
+    !p3
+    !p2
+    !p1
+    !multiply
+    !add
+    !a2c
+    !premul
+    !blend
+    !mask
+    !opaque
+    !mode
+    return 0
+
+@sa3d_pbr_material_is_transparent(&desc: ptr) -> i32:
+L_ENTRY:
+    mode = load desc+SA3D_PBR_MATERIAL_DESC_alpha_mode as i32
+    is_blend = eq mode, SA3D_PBR_ALPHA_BLEND
+    is_premul = eq mode, SA3D_PBR_ALPHA_PREMULTIPLIED
+    is_add = eq mode, SA3D_PBR_ALPHA_ADD
+    is_multiply = eq mode, SA3D_PBR_ALPHA_MULTIPLY
+    p1 = or is_blend, is_premul
+    p2 = or is_add, is_multiply
+    ok = or p1, p2
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p2
+    !p1
+    !is_multiply
+    !is_add
+    !is_premul
+    !is_blend
+    !mode
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !p2
+    !p1
+    !is_multiply
+    !is_add
+    !is_premul
+    !is_blend
+    !mode
+    !desc
+    return 0
+
+@sa3d_pbr_material_depth_write_enabled(&desc: ptr) -> i32:
+L_ENTRY:
+    transparent = call @sa3d_pbr_material_is_transparent(&desc)
+    no_write = ne transparent, 0
+    br no_write -> L_FALSE, L_TRUE
+
+L_TRUE:
+    !no_write
+    !transparent
+    !desc
+    return 1
+
+L_FALSE:
+    !no_write
+    !transparent
+    !desc
+    return 0
+
+@sa3d_pbr_material_opaque_render_method(&desc: ptr) -> i32:
+L_ENTRY:
+    diffuse = load desc+SA3D_PBR_MATERIAL_DESC_diffuse_transmission as i32
+    has_diffuse = sgt diffuse, 0
+    br has_diffuse -> L_FORWARD, L_RETURN
+
+L_FORWARD:
+    !has_diffuse
+    !diffuse
+    !desc
+    return SA3D_OPAQUE_RENDER_FORWARD
+
+L_RETURN:
+    !has_diffuse
+    !diffuse
+    !desc
+    return SA3D_OPAQUE_RENDER_AUTO
+
+@sa3d_pbr_material_reads_view_transmission_texture(&desc: ptr) -> i32:
+L_ENTRY:
+    specular = load desc+SA3D_PBR_MATERIAL_DESC_specular_transmission as i32
+    ok = sgt specular, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !specular
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !specular
+    !desc
+    return 0
+
+@sa3d_pbr_material_requires_blend(&desc: ptr) -> i32:
+L_ENTRY:
+    mode = load desc+SA3D_PBR_MATERIAL_DESC_alpha_mode as i32
+    is_blend = eq mode, SA3D_PBR_ALPHA_BLEND
+    is_premul = eq mode, SA3D_PBR_ALPHA_PREMULTIPLIED
+    ok = or is_blend, is_premul
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !is_premul
+    !is_blend
+    !mode
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !is_premul
+    !is_blend
+    !mode
+    !desc
+    return 0
+
+@sa3d_pbr_material_requires_alpha_cutoff(&desc: ptr) -> i32:
+L_ENTRY:
+    mode = load desc+SA3D_PBR_MATERIAL_DESC_alpha_mode as i32
+    ok = eq mode, SA3D_PBR_ALPHA_MASK
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !mode
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !mode
+    !desc
+    return 0
+
+@sa3d_pbr_material_set_base_color(&desc: ptr, r: i32, g: i32, b: i32, a: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_base_color, r as i32
+    store desc+4, g as i32
+    store desc+8, b as i32
+    store desc+12, a as i32
+    !a
+    !b
+    !g
+    !r
+    !desc
+    return
+
+@sa3d_pbr_material_set_emissive(&desc: ptr, r: i32, g: i32, b: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_emissive, r as i32
+    store desc+20, g as i32
+    store desc+24, b as i32
+    !b
+    !g
+    !r
+    !desc
+    return
+
+@sa3d_pbr_material_set_metallic_roughness(&desc: ptr, metallic: i32, roughness: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_metallic, metallic as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_roughness, roughness as i32
+    !roughness
+    !metallic
+    !desc
+    return
+
+@sa3d_pbr_material_get_metallic(&desc: ptr) -> i32:
+L_ENTRY:
+    m = load desc+SA3D_PBR_MATERIAL_DESC_metallic as i32
+    !desc
+    return m
+
+@sa3d_pbr_material_get_roughness(&desc: ptr) -> i32:
+L_ENTRY:
+    r = load desc+SA3D_PBR_MATERIAL_DESC_roughness as i32
+    !desc
+    return r
+
+@sa3d_pbr_material_set_reflectance(&desc: ptr, reflectance: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_reflectance, reflectance as i32
+    !reflectance
+    !desc
+    return
+
+@sa3d_pbr_material_set_alpha_cutoff(&desc: ptr, cutoff: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_alpha_cutoff, cutoff as i32
+    !cutoff
+    !desc
+    return
+
+@sa3d_pbr_material_set_normal_occlusion(&desc: ptr, normal_scale: i32, occlusion_strength: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_PBR_MATERIAL_DESC_normal_scale, normal_scale as i32
+    store desc+SA3D_PBR_MATERIAL_DESC_occlusion_strength, occlusion_strength as i32
+    !occlusion_strength
+    !normal_scale
+    !desc
+    return
+
+@sa3d_pbr_material_texture_offset(slot: i32) -> i64:
+L_ENTRY:
+    is_base = eq slot, SA3D_PBR_TEXTURE_SLOT_BASE_COLOR
+    br is_base -> L_BASE, L_NORMAL_CHECK
+
+L_BASE:
+    !is_base
+    !slot
+    return SA3D_PBR_MATERIAL_DESC_base_color_texture
+
+L_NORMAL_CHECK:
+    is_normal = eq slot, SA3D_PBR_TEXTURE_SLOT_NORMAL
+    br is_normal -> L_NORMAL, L_MR_CHECK
+
+L_NORMAL:
+    !is_normal
+    !is_base
+    !slot
+    return SA3D_PBR_MATERIAL_DESC_normal_texture
+
+L_MR_CHECK:
+    is_mr = eq slot, SA3D_PBR_TEXTURE_SLOT_METALLIC_ROUGHNESS
+    br is_mr -> L_MR, L_EMISSIVE_CHECK
+
+L_MR:
+    !is_mr
+    !is_normal
+    !is_base
+    !slot
+    return SA3D_PBR_MATERIAL_DESC_metallic_roughness_texture
+
+L_EMISSIVE_CHECK:
+    is_emissive = eq slot, SA3D_PBR_TEXTURE_SLOT_EMISSIVE
+    br is_emissive -> L_EMISSIVE, L_OCCLUSION_CHECK
+
+L_EMISSIVE:
+    !is_emissive
+    !is_mr
+    !is_normal
+    !is_base
+    !slot
+    return SA3D_PBR_MATERIAL_DESC_emissive_texture
+
+L_OCCLUSION_CHECK:
+    is_occlusion = eq slot, SA3D_PBR_TEXTURE_SLOT_OCCLUSION
+    br is_occlusion -> L_OCCLUSION, L_NONE
+
+L_OCCLUSION:
+    !is_occlusion
+    !is_emissive
+    !is_mr
+    !is_normal
+    !is_base
+    !slot
+    return SA3D_PBR_MATERIAL_DESC_occlusion_texture
+
+L_NONE:
+    !is_occlusion
+    !is_emissive
+    !is_mr
+    !is_normal
+    !is_base
+    !slot
+    return 0
+
+@sa3d_pbr_material_set_texture(&desc: ptr, slot: i32, handle: i64) -> i32:
+L_ENTRY:
+    offset = call @sa3d_pbr_material_texture_offset(slot)
+    valid = ne offset, 0
+    br valid -> L_SET, L_INVALID
+
+L_SET:
+    target = ptr_add desc, offset
+    store target+0, handle as i64
+    !target
+    !valid
+    !offset
+    !handle
+    !slot
+    !desc
+    return 1
+
+L_INVALID:
+    !valid
+    !offset
+    !handle
+    !slot
+    !desc
+    return 0
+
+@sa3d_pbr_material_get_texture(&desc: ptr, slot: i32) -> i64:
+L_ENTRY:
+    offset = call @sa3d_pbr_material_texture_offset(slot)
+    valid = ne offset, 0
+    br valid -> L_GET, L_ZERO
+
+L_GET:
+    target = ptr_add desc, offset
+    handle = load target+0 as i64
+    !target
+    !valid
+    !offset
+    !slot
+    !desc
+    return handle
+
+L_ZERO:
+    !valid
+    !offset
+    !slot
+    !desc
+    return 0
+
+@sa3d_pbr_material_validate(&desc: ptr) -> i32:
+L_ENTRY:
+    mode = load desc+SA3D_PBR_MATERIAL_DESC_alpha_mode as i32
+    metallic = load desc+SA3D_PBR_MATERIAL_DESC_metallic as i32
+    roughness = load desc+SA3D_PBR_MATERIAL_DESC_roughness as i32
+    mode_ok = call @sa3d_pbr_material_alpha_mode_is_valid(mode)
+    metallic_ok = sge metallic, 0
+    roughness_ok = sge roughness, 0
+    p = and mode_ok, metallic_ok
+    ok = and p, roughness_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p
+    !roughness_ok
+    !metallic_ok
+    !mode_ok
+    !roughness
+    !metallic
+    !mode
+    !desc
+    return 1
+
+L_FALSE:
+    !ok
+    !p
+    !roughness_ok
+    !metallic_ok
+    !mode_ok
+    !roughness
+    !metallic
+    !mode
+    !desc
+    return 0
+
+@sa3d_pbr_environment_init(&env: ptr) -> void:
+L_ENTRY:
+    store env+SA3D_PBR_ENVIRONMENT_DESC_diffuse_cubemap, 0 as i64
+    store env+SA3D_PBR_ENVIRONMENT_DESC_specular_cubemap, 0 as i64
+    store env+SA3D_PBR_ENVIRONMENT_DESC_brdf_lut, 0 as i64
+    store env+SA3D_PBR_ENVIRONMENT_DESC_intensity, 1065353216 as i32
+    store env+SA3D_PBR_ENVIRONMENT_DESC_rotation, 0 as i32
+    !env
+    return
+
+@sa3d_pbr_environment_get_intensity(&env: ptr) -> i32:
+L_ENTRY:
+    i = load env+SA3D_PBR_ENVIRONMENT_DESC_intensity as i32
+    !env
+    return i
+
+@sa3d_pbr_environment_set_maps(&env: ptr, diffuse: i64, specular: i64, brdf_lut: i64) -> void:
+L_ENTRY:
+    store env+SA3D_PBR_ENVIRONMENT_DESC_diffuse_cubemap, diffuse as i64
+    store env+SA3D_PBR_ENVIRONMENT_DESC_specular_cubemap, specular as i64
+    store env+SA3D_PBR_ENVIRONMENT_DESC_brdf_lut, brdf_lut as i64
+    !brdf_lut
+    !specular
+    !diffuse
+    !env
+    return
+
+@sa3d_pbr_environment_set_intensity(&env: ptr, intensity: i32) -> void:
+L_ENTRY:
+    store env+SA3D_PBR_ENVIRONMENT_DESC_intensity, intensity as i32
+    !intensity
+    !env
+    return
+
+@sa3d_pbr_environment_has_complete_maps(&env: ptr) -> i32:
+L_ENTRY:
+    diffuse = load env+SA3D_PBR_ENVIRONMENT_DESC_diffuse_cubemap as i64
+    specular = load env+SA3D_PBR_ENVIRONMENT_DESC_specular_cubemap as i64
+    brdf = load env+SA3D_PBR_ENVIRONMENT_DESC_brdf_lut as i64
+    diffuse_ok = ne diffuse, 0
+    specular_ok = ne specular, 0
+    brdf_ok = ne brdf, 0
+    p = and diffuse_ok, specular_ok
+    ok = and p, brdf_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !p
+    !brdf_ok
+    !specular_ok
+    !diffuse_ok
+    !brdf
+    !specular
+    !diffuse
+    !env
+    return 1
+
+L_FALSE:
+    !ok
+    !p
+    !brdf_ok
+    !specular_ok
+    !diffuse_ok
+    !brdf
+    !specular
+    !diffuse
+    !env
+    return 0

@@ -1,0 +1,108 @@
+@import "../3d_gizmos.sal"
+
+@test "3d_gizmos line desc init and setters"():
+L_ENTRY:
+    l = alloc SA3D_GIZMO_LINE_DESC_SIZE
+    call @sa3d_gizmo_line_desc_init(&l)
+    call @sa3d_gizmo_line_desc_set_start(&l, 1065353216, 1073741824, 1077936128)
+    call @sa3d_gizmo_line_desc_set_end(&l, 1082130432, 1084227584, 1086324736)
+    sx = call @sa3d_gizmo_line_desc_get_start_x(&l)
+    ex = call @sa3d_gizmo_line_desc_get_end_x(&l)
+    sx_ok = eq sx, 1065353216
+    ex_ok = eq ex, 1082130432
+    ok = and sx_ok, ex_ok
+    !l
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3110)
+
+@test "3d_gizmos list desc init"():
+L_ENTRY:
+    lst = alloc SA3D_GIZMO_LIST_DESC_SIZE
+    call @sa3d_gizmo_list_desc_init(&lst)
+    len = call @sa3d_gizmo_list_desc_get_lines_len(&lst)
+    ok = eq len, 0
+    !lst
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3111)
+
+@test "3d_gizmos shape desc init"():
+L_ENTRY:
+    s = alloc SA3D_GIZMO_SHAPE_DESC_SIZE
+    call @sa3d_gizmo_shape_desc_init(&s)
+    kind = call @sa3d_gizmo_shape_desc_get_kind(&s)
+    ok = eq kind, SA3D_GIZMO_LINE
+    !s
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3112)
+
+@test "3d_gizmos validation and line bounds"():
+L_ENTRY:
+    l = alloc SA3D_GIZMO_LINE_DESC_SIZE
+    b = alloc SA3D_AABB_SIZE
+    call @sa3d_gizmo_line_desc_init(&l)
+    call @sa3d_gizmo_line_desc_set_start(&l, 30, -10, 4)
+    call @sa3d_gizmo_line_desc_set_end(&l, -5, 20, 40)
+    call @sa3d_gizmo_line_desc_set_width_flags(&l, 2, SA3D_GIZMO_FLAGS_DEPTH_TEST)
+    valid = call @sa3d_gizmo_line_desc_is_valid(&l)
+    call @sa3d_gizmo_line_desc_write_bounds(&l, &b)
+    min_x = load b+SA3D_AABB_min as i32
+    min_y = load b+4 as i32
+    max_z = load b+24 as i32
+    valid_ok = eq valid, 1
+    min_x_ok = eq min_x, -5
+    min_y_ok = eq min_y, -10
+    max_z_ok = eq max_z, 40
+    a = and valid_ok, min_x_ok
+    c = and min_y_ok, max_z_ok
+    ok = and a, c
+    !b
+    !l
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3113)
+
+@test "3d_gizmos list and shape derived behavior"():
+L_ENTRY:
+    lst = alloc SA3D_GIZMO_LIST_DESC_SIZE
+    line_mem = alloc SA3D_GIZMO_LINE_DESC_SIZE
+    shape_mem = alloc SA3D_GIZMO_SHAPE_DESC_SIZE
+    shape = alloc SA3D_GIZMO_SHAPE_DESC_SIZE
+    call @sa3d_gizmo_list_desc_init(&lst)
+    call @sa3d_gizmo_list_desc_set_lines(&lst, &line_mem, 3)
+    call @sa3d_gizmo_list_desc_set_shapes(&lst, &shape_mem, 2)
+    total = call @sa3d_gizmo_list_desc_total_primitives(&lst)
+    call @sa3d_gizmo_shape_desc_init(&shape)
+    call @sa3d_gizmo_shape_desc_set_kind_flags(&shape, SA3D_GIZMO_GRID, SA3D_GIZMO_FLAGS_SCREEN_SPACE)
+    shape_valid = call @sa3d_gizmo_shape_desc_is_valid(&shape)
+    kind_good = call @sa3d_gizmo_kind_is_valid(SA3D_GIZMO_SPHERE)
+    kind_bad = call @sa3d_gizmo_kind_is_valid(99)
+    flags_bad = call @sa3d_gizmo_flags_are_valid(8)
+    total_ok = eq total, 5
+    shape_ok = eq shape_valid, 1
+    kind_good_ok = eq kind_good, 1
+    kind_bad_ok = eq kind_bad, 0
+    flags_bad_ok = eq flags_bad, 0
+    a = and total_ok, shape_ok
+    b = and kind_good_ok, kind_bad_ok
+    c = and a, b
+    ok = and c, flags_bad_ok
+    !shape
+    !shape_mem
+    !line_mem
+    !lst
+    br ok -> L_OK, L_ERR
+L_OK:
+    return
+L_ERR:
+    panic(3114)

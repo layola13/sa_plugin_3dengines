@@ -1,0 +1,922 @@
+#def SA3D_SCENE_VERSION_MAJOR = 0
+#def SA3D_SCENE_VERSION_MINOR = 1
+
+#def SA3D_COMPONENT_TRANSFORM = 1
+#def SA3D_COMPONENT_MESH = 2
+#def SA3D_COMPONENT_CAMERA = 4
+#def SA3D_COMPONENT_MATERIAL = 8
+#def SA3D_COMPONENT_LIGHT = 16
+#def SA3D_COMPONENT_PARTICLE_EMITTER = 32
+
+#def SA3D_VISIBILITY_INHERITED = 0
+#def SA3D_VISIBILITY_HIDDEN = 1
+#def SA3D_VISIBILITY_VISIBLE = 2
+
+#def SA3D_ENTITY_id = +0
+#def SA3D_ENTITY_generation = +4
+#def SA3D_ENTITY_SIZE = 8
+
+#def SA3D_SCENE_NODE_entity = +0
+#def SA3D_SCENE_NODE_component_mask = +8
+#def SA3D_SCENE_NODE_transform = +16
+#def SA3D_SCENE_NODE_mesh = +24
+#def SA3D_SCENE_NODE_material = +32
+#def SA3D_SCENE_NODE_camera = +40
+#def SA3D_SCENE_NODE_light = +48
+#def SA3D_SCENE_NODE_particle_emitter = +56
+#def SA3D_SCENE_NODE_parent = +64
+#def SA3D_SCENE_NODE_first_child = +72
+#def SA3D_SCENE_NODE_child_count = +76
+#def SA3D_SCENE_NODE_visibility = +80
+#def SA3D_SCENE_NODE_inherited_visibility = +84
+#def SA3D_SCENE_NODE_view_visibility = +88
+#def SA3D_SCENE_NODE_visibility_class_mask = +92
+#def SA3D_SCENE_NODE_SIZE = 96
+
+#def SA3D_SCENE_SLICE_nodes_ptr = +0
+#def SA3D_SCENE_SLICE_nodes_len = +8
+#def SA3D_SCENE_SLICE_transforms_ptr = +16
+#def SA3D_SCENE_SLICE_meshes_ptr = +24
+#def SA3D_SCENE_SLICE_materials_ptr = +32
+#def SA3D_SCENE_SLICE_lights_ptr = +40
+#def SA3D_SCENE_SLICE_cameras_ptr = +48
+#def SA3D_SCENE_SLICE_SIZE = 56
+
+#def SA3D_SCENE_DECL_SCENE3D = 1
+#def SA3D_SCENE_DECL_CAMERA = 2
+#def SA3D_SCENE_DECL_MESH = 3
+#def SA3D_SCENE_DECL_MATERIAL = 4
+#def SA3D_SCENE_DECL_LIGHT = 5
+#def SA3D_SCENE_DECL_PARTICLE = 6
+
+#def SA3D_SCENE_DECL_NODE_kind = +0
+#def SA3D_SCENE_DECL_NODE_flags = +4
+#def SA3D_SCENE_DECL_NODE_id = +8
+#def SA3D_SCENE_DECL_NODE_parent = +16
+#def SA3D_SCENE_DECL_NODE_first_child = +24
+#def SA3D_SCENE_DECL_NODE_child_count = +28
+#def SA3D_SCENE_DECL_NODE_first_attr = +32
+#def SA3D_SCENE_DECL_NODE_attr_count = +36
+#def SA3D_SCENE_DECL_NODE_payload = +40
+#def SA3D_SCENE_DECL_NODE_SIZE = 48
+
+#def SA3D_SCENE_DECL_ATTR_key = +0
+#def SA3D_SCENE_DECL_ATTR_value = +8
+#def SA3D_SCENE_DECL_ATTR_SIZE = 16
+
+@sa3d_entity_set(&entity: ptr, id: i32, generation: i32) -> void:
+L_ENTRY:
+    store entity+SA3D_ENTITY_id, id as i32
+    store entity+SA3D_ENTITY_generation, generation as i32
+    !generation
+    !id
+    !entity
+    return
+
+@sa3d_scene_node_clear(&node: ptr) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_NODE_entity, 0 as i64
+    store node+SA3D_SCENE_NODE_component_mask, 0 as i64
+    store node+SA3D_SCENE_NODE_transform, 0 as i64
+    store node+SA3D_SCENE_NODE_mesh, 0 as i64
+    store node+SA3D_SCENE_NODE_material, 0 as i64
+    store node+SA3D_SCENE_NODE_camera, 0 as i64
+    store node+SA3D_SCENE_NODE_light, 0 as i64
+    store node+SA3D_SCENE_NODE_particle_emitter, 0 as i64
+    store node+SA3D_SCENE_NODE_parent, 0 as i64
+    store node+SA3D_SCENE_NODE_first_child, 0 as i32
+    store node+SA3D_SCENE_NODE_child_count, 0 as i32
+    store node+SA3D_SCENE_NODE_visibility, SA3D_VISIBILITY_INHERITED as i32
+    store node+SA3D_SCENE_NODE_inherited_visibility, 1 as i32
+    store node+SA3D_SCENE_NODE_view_visibility, 0 as i32
+    store node+SA3D_SCENE_NODE_visibility_class_mask, 0 as i32
+    !node
+    return
+
+@sa3d_scene_node_init(&node: ptr, entity_id: i32, generation: i32) -> void:
+L_ENTRY:
+    call @sa3d_scene_node_clear(&node)
+    entity = ptr_add node, SA3D_SCENE_NODE_entity
+    call @sa3d_entity_set(&entity, entity_id, generation)
+    !entity
+    !generation
+    !entity_id
+    !node
+    return
+
+@sa3d_scene_node_add_component(&node: ptr, component_bit: i64, handle: i64) -> void:
+L_ENTRY:
+    mask = load node+SA3D_SCENE_NODE_component_mask as i64
+    next_mask = or mask, component_bit
+    store node+SA3D_SCENE_NODE_component_mask, next_mask as i64
+    is_transform = eq component_bit, SA3D_COMPONENT_TRANSFORM
+    br is_transform -> L_TRANSFORM, L_CHECK_MESH
+
+L_TRANSFORM:
+    store node+SA3D_SCENE_NODE_transform, handle as i64
+    !is_transform
+    !next_mask
+    !mask
+    !handle
+    !component_bit
+    !node
+    return
+
+L_CHECK_MESH:
+    is_mesh = eq component_bit, SA3D_COMPONENT_MESH
+    br is_mesh -> L_MESH, L_CHECK_MATERIAL
+
+L_MESH:
+    store node+SA3D_SCENE_NODE_mesh, handle as i64
+    !is_mesh
+    !is_transform
+    !next_mask
+    !mask
+    !handle
+    !component_bit
+    !node
+    return
+
+L_CHECK_MATERIAL:
+    is_material = eq component_bit, SA3D_COMPONENT_MATERIAL
+    br is_material -> L_MATERIAL, L_CHECK_CAMERA
+
+L_MATERIAL:
+    store node+SA3D_SCENE_NODE_material, handle as i64
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !mask
+    !handle
+    !component_bit
+    !node
+    return
+
+L_CHECK_CAMERA:
+    is_camera = eq component_bit, SA3D_COMPONENT_CAMERA
+    br is_camera -> L_CAMERA, L_CHECK_LIGHT
+
+L_CAMERA:
+    store node+SA3D_SCENE_NODE_camera, handle as i64
+    !is_camera
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !mask
+    !handle
+    !component_bit
+    !node
+    return
+
+L_CHECK_LIGHT:
+    is_light = eq component_bit, SA3D_COMPONENT_LIGHT
+    br is_light -> L_LIGHT, L_CHECK_PARTICLE
+
+L_LIGHT:
+    store node+SA3D_SCENE_NODE_light, handle as i64
+    !is_light
+    !is_camera
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !mask
+    !handle
+    !component_bit
+    !node
+    return
+
+L_CHECK_PARTICLE:
+    is_particle = eq component_bit, SA3D_COMPONENT_PARTICLE_EMITTER
+    br is_particle -> L_PARTICLE, L_DONE
+
+L_PARTICLE:
+    store node+SA3D_SCENE_NODE_particle_emitter, handle as i64
+    !is_particle
+    !is_light
+    !is_camera
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !mask
+    !handle
+    !component_bit
+    !node
+    return
+
+L_DONE:
+    !is_particle
+    !is_light
+    !is_camera
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !mask
+    !handle
+    !component_bit
+    !node
+    return
+
+@sa3d_scene_node_remove_component(&node: ptr, component_bit: i64) -> void:
+L_ENTRY:
+    mask = load node+SA3D_SCENE_NODE_component_mask as i64
+    inverse = xor component_bit, -1
+    next_mask = and mask, inverse
+    store node+SA3D_SCENE_NODE_component_mask, next_mask as i64
+    is_transform = eq component_bit, SA3D_COMPONENT_TRANSFORM
+    br is_transform -> L_TRANSFORM, L_CHECK_MESH
+
+L_TRANSFORM:
+    store node+SA3D_SCENE_NODE_transform, 0 as i64
+    !is_transform
+    !next_mask
+    !inverse
+    !mask
+    !component_bit
+    !node
+    return
+
+L_CHECK_MESH:
+    is_mesh = eq component_bit, SA3D_COMPONENT_MESH
+    br is_mesh -> L_MESH, L_CHECK_MATERIAL
+
+L_MESH:
+    store node+SA3D_SCENE_NODE_mesh, 0 as i64
+    !is_mesh
+    !is_transform
+    !next_mask
+    !inverse
+    !mask
+    !component_bit
+    !node
+    return
+
+L_CHECK_MATERIAL:
+    is_material = eq component_bit, SA3D_COMPONENT_MATERIAL
+    br is_material -> L_MATERIAL, L_CHECK_CAMERA
+
+L_MATERIAL:
+    store node+SA3D_SCENE_NODE_material, 0 as i64
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !inverse
+    !mask
+    !component_bit
+    !node
+    return
+
+L_CHECK_CAMERA:
+    is_camera = eq component_bit, SA3D_COMPONENT_CAMERA
+    br is_camera -> L_CAMERA, L_CHECK_LIGHT
+
+L_CAMERA:
+    store node+SA3D_SCENE_NODE_camera, 0 as i64
+    !is_camera
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !inverse
+    !mask
+    !component_bit
+    !node
+    return
+
+L_CHECK_LIGHT:
+    is_light = eq component_bit, SA3D_COMPONENT_LIGHT
+    br is_light -> L_LIGHT, L_CHECK_PARTICLE
+
+L_LIGHT:
+    store node+SA3D_SCENE_NODE_light, 0 as i64
+    !is_light
+    !is_camera
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !inverse
+    !mask
+    !component_bit
+    !node
+    return
+
+L_CHECK_PARTICLE:
+    is_particle = eq component_bit, SA3D_COMPONENT_PARTICLE_EMITTER
+    br is_particle -> L_PARTICLE, L_DONE
+
+L_PARTICLE:
+    store node+SA3D_SCENE_NODE_particle_emitter, 0 as i64
+    !is_particle
+    !is_light
+    !is_camera
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !inverse
+    !mask
+    !component_bit
+    !node
+    return
+
+L_DONE:
+    !is_particle
+    !is_light
+    !is_camera
+    !is_material
+    !is_mesh
+    !is_transform
+    !next_mask
+    !inverse
+    !mask
+    !component_bit
+    !node
+    return
+
+@sa3d_scene_node_has_component(&node: ptr, component_bit: i64) -> i32:
+L_ENTRY:
+    mask = load node+SA3D_SCENE_NODE_component_mask as i64
+    bit = and mask, component_bit
+    present = ne bit, 0
+    br present -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !present
+    !bit
+    !mask
+    !component_bit
+    !node
+    return 1
+
+L_FALSE:
+    !present
+    !bit
+    !mask
+    !component_bit
+    !node
+    return 0
+
+@sa3d_scene_component_bit_is_valid(component_bit: i64) -> i32:
+L_ENTRY:
+    is_transform = eq component_bit, SA3D_COMPONENT_TRANSFORM
+    is_mesh = eq component_bit, SA3D_COMPONENT_MESH
+    is_camera = eq component_bit, SA3D_COMPONENT_CAMERA
+    is_material = eq component_bit, SA3D_COMPONENT_MATERIAL
+    is_light = eq component_bit, SA3D_COMPONENT_LIGHT
+    is_particle = eq component_bit, SA3D_COMPONENT_PARTICLE_EMITTER
+    p1 = or is_transform, is_mesh
+    p2 = or is_camera, is_material
+    p3 = or is_light, is_particle
+    q1 = or p1, p2
+    ok = or q1, p3
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !q1
+    !p3
+    !p2
+    !p1
+    !is_particle
+    !is_light
+    !is_material
+    !is_camera
+    !is_mesh
+    !is_transform
+    !component_bit
+    return 1
+
+L_FALSE:
+    !ok
+    !q1
+    !p3
+    !p2
+    !p1
+    !is_particle
+    !is_light
+    !is_material
+    !is_camera
+    !is_mesh
+    !is_transform
+    !component_bit
+    return 0
+
+@sa3d_scene_node_entity_matches(&node: ptr, id: i32, generation: i32) -> i32:
+L_ENTRY:
+    stored_id = load node+SA3D_ENTITY_id as i32
+    stored_generation = load node+SA3D_ENTITY_generation as i32
+    id_ok = eq stored_id, id
+    generation_ok = eq stored_generation, generation
+    ok = and id_ok, generation_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !generation_ok
+    !id_ok
+    !stored_generation
+    !stored_id
+    !generation
+    !id
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !generation_ok
+    !id_ok
+    !stored_generation
+    !stored_id
+    !generation
+    !id
+    !node
+    return 0
+
+@sa3d_scene_node_is_renderable(&node: ptr) -> i32:
+L_ENTRY:
+    has_transform = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_TRANSFORM)
+    has_mesh = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_MESH)
+    has_material = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_MATERIAL)
+    tm = and has_transform, has_mesh
+    ok = and tm, has_material
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !tm
+    !has_material
+    !has_mesh
+    !has_transform
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !tm
+    !has_material
+    !has_mesh
+    !has_transform
+    !node
+    return 0
+
+@sa3d_scene_node_is_camera(&node: ptr) -> i32:
+L_ENTRY:
+    has_transform = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_TRANSFORM)
+    has_camera = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_CAMERA)
+    ok = and has_transform, has_camera
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !has_camera
+    !has_transform
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !has_camera
+    !has_transform
+    !node
+    return 0
+
+@sa3d_scene_node_is_light(&node: ptr) -> i32:
+L_ENTRY:
+    has_transform = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_TRANSFORM)
+    has_light = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_LIGHT)
+    ok = and has_transform, has_light
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !has_light
+    !has_transform
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !has_light
+    !has_transform
+    !node
+    return 0
+
+@sa3d_scene_node_set_parent(&node: ptr, parent: i64) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_NODE_parent, parent as i64
+    !parent
+    !node
+    return
+
+@sa3d_scene_node_get_parent(&node: ptr) -> i64:
+L_ENTRY:
+    parent = load node+SA3D_SCENE_NODE_parent as i64
+    !node
+    return parent
+
+@sa3d_scene_node_set_children(&node: ptr, first_child: i32, child_count: i32) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_NODE_first_child, first_child as i32
+    store node+SA3D_SCENE_NODE_child_count, child_count as i32
+    !child_count
+    !first_child
+    !node
+    return
+
+@sa3d_scene_node_has_children(&node: ptr) -> i32:
+L_ENTRY:
+    child_count = load node+SA3D_SCENE_NODE_child_count as i32
+    ok = sgt child_count, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !child_count
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !child_count
+    !node
+    return 0
+
+@sa3d_scene_node_get_first_child(&node: ptr) -> i32:
+L_ENTRY:
+    first_child = load node+SA3D_SCENE_NODE_first_child as i32
+    !node
+    return first_child
+
+@sa3d_scene_node_get_child_count(&node: ptr) -> i32:
+L_ENTRY:
+    child_count = load node+SA3D_SCENE_NODE_child_count as i32
+    !node
+    return child_count
+
+@sa3d_scene_node_set_visibility(&node: ptr, visibility: i32) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_NODE_visibility, visibility as i32
+    !visibility
+    !node
+    return
+
+@sa3d_scene_node_get_visibility(&node: ptr) -> i32:
+L_ENTRY:
+    visibility = load node+SA3D_SCENE_NODE_visibility as i32
+    !node
+    return visibility
+
+@sa3d_scene_node_set_inherited_visibility(&node: ptr, visible: i32) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_NODE_inherited_visibility, visible as i32
+    !visible
+    !node
+    return
+
+@sa3d_scene_node_get_inherited_visibility(&node: ptr) -> i32:
+L_ENTRY:
+    visible = load node+SA3D_SCENE_NODE_inherited_visibility as i32
+    !node
+    return visible
+
+@sa3d_scene_node_is_visible_in_hierarchy(&node: ptr) -> i32:
+L_ENTRY:
+    visibility = load node+SA3D_SCENE_NODE_visibility as i32
+    inherited = load node+SA3D_SCENE_NODE_inherited_visibility as i32
+    hidden = eq visibility, SA3D_VISIBILITY_HIDDEN
+    visible = eq visibility, SA3D_VISIBILITY_VISIBLE
+    visible_or_inherited = or visible, inherited
+    ok = and visible_or_inherited, hidden
+    br ok -> L_FALSE, L_CHECK_VISIBLE
+
+L_CHECK_VISIBLE:
+    br visible_or_inherited -> L_TRUE, L_FALSE2
+
+L_TRUE:
+    !ok
+    !visible_or_inherited
+    !hidden
+    !visible
+    !inherited
+    !visibility
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !visible_or_inherited
+    !hidden
+    !visible
+    !inherited
+    !visibility
+    !node
+    return 0
+
+L_FALSE2:
+    !ok
+    !visible_or_inherited
+    !hidden
+    !visible
+    !inherited
+    !visibility
+    !node
+    return 0
+
+@sa3d_scene_node_set_view_visibility(&node: ptr, visible: i32) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_NODE_view_visibility, visible as i32
+    !visible
+    !node
+    return
+
+@sa3d_scene_node_get_view_visibility(&node: ptr) -> i32:
+L_ENTRY:
+    visible = load node+SA3D_SCENE_NODE_view_visibility as i32
+    !node
+    return visible
+
+@sa3d_scene_node_set_visibility_class_mask(&node: ptr, mask: i32) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_NODE_visibility_class_mask, mask as i32
+    !mask
+    !node
+    return
+
+@sa3d_scene_node_get_visibility_class_mask(&node: ptr) -> i32:
+L_ENTRY:
+    mask = load node+SA3D_SCENE_NODE_visibility_class_mask as i32
+    !node
+    return mask
+
+@sa3d_scene_node_primary_asset(&node: ptr) -> i64:
+L_ENTRY:
+    is_renderable = call @sa3d_scene_node_is_renderable(&node)
+    br is_renderable -> L_MESH, L_CHECK_CAMERA
+
+L_MESH:
+    mesh = load node+SA3D_SCENE_NODE_mesh as i64
+    !is_renderable
+    !node
+    return mesh
+
+L_CHECK_CAMERA:
+    is_camera = call @sa3d_scene_node_is_camera(&node)
+    br is_camera -> L_CAMERA, L_CHECK_LIGHT
+
+L_CAMERA:
+    camera = load node+SA3D_SCENE_NODE_camera as i64
+    !is_camera
+    !is_renderable
+    !node
+    return camera
+
+L_CHECK_LIGHT:
+    is_light = call @sa3d_scene_node_is_light(&node)
+    br is_light -> L_LIGHT, L_ZERO
+
+L_LIGHT:
+    light = load node+SA3D_SCENE_NODE_light as i64
+    !is_light
+    !is_camera
+    !is_renderable
+    !node
+    return light
+
+L_ZERO:
+    !is_light
+    !is_camera
+    !is_renderable
+    !node
+    return 0
+
+@sa3d_scene_slice_init(&slice: ptr, &nodes: ptr, nodes_len: i64, &transforms: ptr, &meshes: ptr, &materials: ptr, &lights: ptr, &cameras: ptr) -> void:
+L_ENTRY:
+    store slice+SA3D_SCENE_SLICE_nodes_ptr, nodes as ptr
+    store slice+SA3D_SCENE_SLICE_nodes_len, nodes_len as i64
+    store slice+SA3D_SCENE_SLICE_transforms_ptr, transforms as ptr
+    store slice+SA3D_SCENE_SLICE_meshes_ptr, meshes as ptr
+    store slice+SA3D_SCENE_SLICE_materials_ptr, materials as ptr
+    store slice+SA3D_SCENE_SLICE_lights_ptr, lights as ptr
+    store slice+SA3D_SCENE_SLICE_cameras_ptr, cameras as ptr
+    !cameras
+    !lights
+    !materials
+    !meshes
+    !transforms
+    !nodes_len
+    !nodes
+    !slice
+    return
+
+@sa3d_scene_slice_is_valid(&slice: ptr) -> i32:
+L_ENTRY:
+    nodes_ptr = load slice+SA3D_SCENE_SLICE_nodes_ptr as i64
+    nodes_len = load slice+SA3D_SCENE_SLICE_nodes_len as i64
+    ptr_ok = ne nodes_ptr, 0
+    len_ok = sge nodes_len, 0
+    ok = and ptr_ok, len_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !nodes_len
+    !nodes_ptr
+    !slice
+    return 1
+
+L_FALSE:
+    !ok
+    !len_ok
+    !ptr_ok
+    !nodes_len
+    !nodes_ptr
+    !slice
+    return 0
+
+@sa3d_scene_slice_is_empty(&slice: ptr) -> i32:
+L_ENTRY:
+    nodes_len = load slice+SA3D_SCENE_SLICE_nodes_len as i64
+    empty = eq nodes_len, 0
+    br empty -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !empty
+    !nodes_len
+    !slice
+    return 1
+
+L_FALSE:
+    !empty
+    !nodes_len
+    !slice
+    return 0
+
+@sa3d_scene_decl_node_init(&node: ptr, kind: i32, id: i64, parent: i64, payload: i64) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_DECL_NODE_kind, kind as i32
+    store node+SA3D_SCENE_DECL_NODE_flags, 0 as i32
+    store node+SA3D_SCENE_DECL_NODE_id, id as i64
+    store node+SA3D_SCENE_DECL_NODE_parent, parent as i64
+    store node+SA3D_SCENE_DECL_NODE_first_child, 0 as i32
+    store node+SA3D_SCENE_DECL_NODE_child_count, 0 as i32
+    store node+SA3D_SCENE_DECL_NODE_first_attr, 0 as i32
+    store node+SA3D_SCENE_DECL_NODE_attr_count, 0 as i32
+    store node+SA3D_SCENE_DECL_NODE_payload, payload as i64
+    !payload
+    !parent
+    !id
+    !kind
+    !node
+    return
+
+@sa3d_scene_decl_node_set_children(&node: ptr, first_child: i32, child_count: i32) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_DECL_NODE_first_child, first_child as i32
+    store node+SA3D_SCENE_DECL_NODE_child_count, child_count as i32
+    !child_count
+    !first_child
+    !node
+    return
+
+@sa3d_scene_decl_node_set_attrs(&node: ptr, first_attr: i32, attr_count: i32) -> void:
+L_ENTRY:
+    store node+SA3D_SCENE_DECL_NODE_first_attr, first_attr as i32
+    store node+SA3D_SCENE_DECL_NODE_attr_count, attr_count as i32
+    !attr_count
+    !first_attr
+    !node
+    return
+
+@sa3d_scene_decl_kind_is_valid(kind: i32) -> i32:
+L_ENTRY:
+    is_scene = eq kind, SA3D_SCENE_DECL_SCENE3D
+    is_camera = eq kind, SA3D_SCENE_DECL_CAMERA
+    is_mesh = eq kind, SA3D_SCENE_DECL_MESH
+    is_material = eq kind, SA3D_SCENE_DECL_MATERIAL
+    is_light = eq kind, SA3D_SCENE_DECL_LIGHT
+    is_particle = eq kind, SA3D_SCENE_DECL_PARTICLE
+    p1 = or is_scene, is_camera
+    p2 = or is_mesh, is_material
+    p3 = or is_light, is_particle
+    q1 = or p1, p2
+    ok = or q1, p3
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !q1
+    !p3
+    !p2
+    !p1
+    !is_particle
+    !is_light
+    !is_material
+    !is_mesh
+    !is_camera
+    !is_scene
+    !kind
+    return 1
+
+L_FALSE:
+    !ok
+    !q1
+    !p3
+    !p2
+    !p1
+    !is_particle
+    !is_light
+    !is_material
+    !is_mesh
+    !is_camera
+    !is_scene
+    !kind
+    return 0
+
+@sa3d_scene_decl_node_is_valid(&node: ptr) -> i32:
+L_ENTRY:
+    kind = load node+SA3D_SCENE_DECL_NODE_kind as i32
+    child_count = load node+SA3D_SCENE_DECL_NODE_child_count as i32
+    attr_count = load node+SA3D_SCENE_DECL_NODE_attr_count as i32
+    kind_ok = call @sa3d_scene_decl_kind_is_valid(kind)
+    child_ok = sge child_count, 0
+    attr_ok = sge attr_count, 0
+    counts_ok = and child_ok, attr_ok
+    ok = and kind_ok, counts_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !counts_ok
+    !attr_ok
+    !child_ok
+    !kind_ok
+    !attr_count
+    !child_count
+    !kind
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !counts_ok
+    !attr_ok
+    !child_ok
+    !kind_ok
+    !attr_count
+    !child_count
+    !kind
+    !node
+    return 0
+
+@sa3d_scene_decl_node_has_children(&node: ptr) -> i32:
+L_ENTRY:
+    child_count = load node+SA3D_SCENE_DECL_NODE_child_count as i32
+    ok = sgt child_count, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !child_count
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !child_count
+    !node
+    return 0
+
+@sa3d_scene_decl_node_has_attrs(&node: ptr) -> i32:
+L_ENTRY:
+    attr_count = load node+SA3D_SCENE_DECL_NODE_attr_count as i32
+    ok = sgt attr_count, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !attr_count
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !attr_count
+    !node
+    return 0
+
+@sa3d_scene_decl_attr_init(&attr: ptr, key: i64, value: i64) -> void:
+L_ENTRY:
+    store attr+SA3D_SCENE_DECL_ATTR_key, key as i64
+    store attr+SA3D_SCENE_DECL_ATTR_value, value as i64
+    !value
+    !key
+    !attr
+    return

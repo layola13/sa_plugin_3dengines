@@ -1,0 +1,88 @@
+@import "../sa3d.sai"
+@import "../sa3d.sal"
+
+#def SA3D_SCENE_CUBE_DRAW_ITEMS = 3
+
+@test "sa3d scene cubes layout uses three draw items"():
+L_ENTRY:
+    scene = alloc SA3D_WGPU_RENDER_SCENE_SIZE
+    draw_items = alloc 168
+    draw_item_center = ptr_add draw_items, 56
+    draw_item_right = ptr_add draw_items, 112
+    store scene+SA3D_WGPU_RENDER_SCENE_draw_items_ptr, draw_items as ptr
+    store scene+SA3D_WGPU_RENDER_SCENE_draw_items_len, SA3D_SCENE_CUBE_DRAW_ITEMS as i64
+    store scene+SA3D_WGPU_RENDER_SCENE_camera_uniform, &SA3D_UNIT_CUBE_CAMERA_UNIFORM as ptr
+    store scene+SA3D_WGPU_RENDER_SCENE_lights_ptr, 0 as i64
+    store scene+SA3D_WGPU_RENDER_SCENE_lights_len, 0 as i64
+
+    store draw_items+SA3D_WGPU_DRAW_ITEM_mesh, 11 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_submesh, 0 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_material, 21 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_transform, 31 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_sort_key, 0 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_transform_frame_stride, 64 as i64
+    store draw_items+SA3D_WGPU_DRAW_ITEM_transform_frame_count, 1 as i64
+
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_mesh, 12 as i64
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_material, 22 as i64
+    store draw_item_center+SA3D_WGPU_DRAW_ITEM_transform, 32 as i64
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_mesh, 13 as i64
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_material, 23 as i64
+    store draw_item_right+SA3D_WGPU_DRAW_ITEM_transform, 33 as i64
+
+    len = load scene+SA3D_WGPU_RENDER_SCENE_draw_items_len as i64
+    ptr = load scene+SA3D_WGPU_RENDER_SCENE_draw_items_ptr as i64
+    camera = load scene+SA3D_WGPU_RENDER_SCENE_camera_uniform as i64
+    item0_mesh = load draw_items+SA3D_WGPU_DRAW_ITEM_mesh as i64
+    item1_mesh = load draw_item_center+SA3D_WGPU_DRAW_ITEM_mesh as i64
+    item2_mesh = load draw_item_right+SA3D_WGPU_DRAW_ITEM_mesh as i64
+    item0_material = load draw_items+SA3D_WGPU_DRAW_ITEM_material as i64
+    item1_material = load draw_item_center+SA3D_WGPU_DRAW_ITEM_material as i64
+    item2_material = load draw_item_right+SA3D_WGPU_DRAW_ITEM_material as i64
+    item0_transform = load draw_items+SA3D_WGPU_DRAW_ITEM_transform as i64
+    item1_transform = load draw_item_center+SA3D_WGPU_DRAW_ITEM_transform as i64
+    item2_transform = load draw_item_right+SA3D_WGPU_DRAW_ITEM_transform as i64
+    stride = load draw_items+SA3D_WGPU_DRAW_ITEM_transform_frame_stride as i64
+    count = load draw_items+SA3D_WGPU_DRAW_ITEM_transform_frame_count as i64
+    scene_size_ok = eq SA3D_WGPU_RENDER_SCENE_SIZE, 56
+    item_size_ok = eq SA3D_WGPU_DRAW_ITEM_SIZE, 56
+    len_ok = eq len, 3
+    ptr_ok = ne ptr, 0
+    camera_ok = ne camera, 0
+    item0_mesh_ok = eq item0_mesh, 11
+    item1_mesh_ok = eq item1_mesh, 12
+    item2_mesh_ok = eq item2_mesh, 13
+    item0_material_ok = eq item0_material, 21
+    item1_material_ok = eq item1_material, 22
+    item2_material_ok = eq item2_material, 23
+    item0_transform_ok = eq item0_transform, 31
+    item1_transform_ok = eq item1_transform, 32
+    item2_transform_ok = eq item2_transform, 33
+    stride_ok = eq stride, 64
+    count_ok = eq count, 1
+    p1 = and scene_size_ok, item_size_ok
+    p2 = and len_ok, ptr_ok
+    p3 = and camera_ok, item0_mesh_ok
+    p4 = and item1_mesh_ok, item2_mesh_ok
+    p5 = and item0_material_ok, item1_material_ok
+    p6 = and item2_material_ok, item0_transform_ok
+    p7 = and item1_transform_ok, item2_transform_ok
+    p8 = and stride_ok, count_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and q1, q2
+    ok = and q5, q3
+    ok2 = and ok, q4
+    br ok2 -> L_OK, L_ERR
+
+L_OK:
+    !draw_items
+    !scene
+    return
+
+L_ERR:
+    !draw_items
+    !scene
+    panic(3170)

@@ -1,0 +1,38 @@
+# Zig build output
+**/.zig-cache/
+**/zig-out/
+zig-cache/
+zig-out/
+
+# Native build artifacts
+*.a
+*.bc
+*.dylib
+*.exe
+*.lib
+*.o
+*.obj
+*.so
+*.wasm
+
+# Node/tooling dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Logs and local scratch files
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Editor/OS metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

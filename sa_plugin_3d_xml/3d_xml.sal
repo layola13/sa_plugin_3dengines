@@ -1,0 +1,451 @@
+#def SA3D_XML_VERSION_MAJOR = 0
+#def SA3D_XML_VERSION_MINOR = 1
+
+#def SA3D_XML_NODE_ELEMENT = 1
+#def SA3D_XML_NODE_TEXT = 2
+#def SA3D_XML_NODE_COMMENT = 3
+#def SA3D_XML_NODE_CDATA = 4
+
+#def SA3D_XML_PARSE_PRESERVE_WHITESPACE = 1
+#def SA3D_XML_PARSE_ALLOW_COMMENTS = 2
+
+#def SA3D_XML_DOC_DESC_source_ptr = +0
+#def SA3D_XML_DOC_DESC_source_len = +8
+#def SA3D_XML_DOC_DESC_base_uri_ptr = +16
+#def SA3D_XML_DOC_DESC_base_uri_len = +24
+#def SA3D_XML_DOC_DESC_flags = +32
+#def SA3D_XML_DOC_DESC_SIZE = 40
+
+#def SA3D_XML_NODE_DESC_kind = +0
+#def SA3D_XML_NODE_DESC_name_ptr = +8
+#def SA3D_XML_NODE_DESC_name_len = +16
+#def SA3D_XML_NODE_DESC_value_ptr = +24
+#def SA3D_XML_NODE_DESC_value_len = +32
+#def SA3D_XML_NODE_DESC_first_attr = +40
+#def SA3D_XML_NODE_DESC_next_sibling = +48
+#def SA3D_XML_NODE_DESC_SIZE = 56
+
+@sa3d_xml_doc_desc_init(&desc: ptr) -> void:
+L_ENTRY:
+    store desc+SA3D_XML_DOC_DESC_source_ptr, 0 as i64
+    store desc+SA3D_XML_DOC_DESC_source_len, 0 as i64
+    store desc+SA3D_XML_DOC_DESC_base_uri_ptr, 0 as i64
+    store desc+SA3D_XML_DOC_DESC_base_uri_len, 0 as i64
+    store desc+SA3D_XML_DOC_DESC_flags, 0 as i32
+    !desc
+    return
+
+@sa3d_xml_doc_desc_get_flags(&desc: ptr) -> i32:
+L_ENTRY:
+    f = load desc+SA3D_XML_DOC_DESC_flags as i32
+    !desc
+    return f
+
+@sa3d_xml_doc_desc_set_flags(&desc: ptr, flags: i32) -> void:
+L_ENTRY:
+    store desc+SA3D_XML_DOC_DESC_flags, flags as i32
+    !flags
+    !desc
+    return
+
+@sa3d_xml_ptr_len_pair_is_valid(ptr: ptr, len: i64) -> i32:
+L_ENTRY:
+    nonnegative = sge len, 0
+    zero = eq len, 0
+    has_ptr = ne ptr, 0
+    ptr_ok = or zero, has_ptr
+    ok = and nonnegative, ptr_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !ptr_ok
+    !has_ptr
+    !zero
+    !nonnegative
+    !len
+    !ptr
+    return 1
+
+L_FALSE:
+    !ok
+    !ptr_ok
+    !has_ptr
+    !zero
+    !nonnegative
+    !len
+    !ptr
+    return 0
+
+@sa3d_xml_doc_desc_set_base_uri(&desc: ptr, base_uri: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store desc+SA3D_XML_DOC_DESC_base_uri_ptr, 0 as i64
+    store desc+SA3D_XML_DOC_DESC_base_uri_len, 0 as i64
+    !negative
+    !len
+    !base_uri
+    !desc
+    return
+
+L_SET:
+    store desc+SA3D_XML_DOC_DESC_base_uri_ptr, base_uri as ptr
+    store desc+SA3D_XML_DOC_DESC_base_uri_len, len as i64
+    !negative
+    !len
+    !base_uri
+    !desc
+    return
+
+@sa3d_xml_parse_flags_are_valid(flags: i32) -> i32:
+L_ENTRY:
+    extra = and flags, -4
+    ok = eq extra, 0
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !extra
+    !flags
+    return 1
+
+L_FALSE:
+    !ok
+    !extra
+    !flags
+    return 0
+
+@sa3d_xml_node_kind_is_valid(kind: i32) -> i32:
+L_ENTRY:
+    is_element = eq kind, SA3D_XML_NODE_ELEMENT
+    is_text = eq kind, SA3D_XML_NODE_TEXT
+    is_comment = eq kind, SA3D_XML_NODE_COMMENT
+    is_cdata = eq kind, SA3D_XML_NODE_CDATA
+    a = or is_element, is_text
+    b = or is_comment, is_cdata
+    ok = or a, b
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !b
+    !a
+    !is_cdata
+    !is_comment
+    !is_text
+    !is_element
+    !kind
+    return 1
+
+L_FALSE:
+    !ok
+    !b
+    !a
+    !is_cdata
+    !is_comment
+    !is_text
+    !is_element
+    !kind
+    return 0
+
+@sa3d_xml_doc_desc_set_source(&desc: ptr, source: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store desc+SA3D_XML_DOC_DESC_source_ptr, 0 as i64
+    store desc+SA3D_XML_DOC_DESC_source_len, 0 as i64
+    !negative
+    !len
+    !source
+    !desc
+    return
+
+L_SET:
+    store desc+SA3D_XML_DOC_DESC_source_ptr, source as ptr
+    store desc+SA3D_XML_DOC_DESC_source_len, len as i64
+    !negative
+    !len
+    !source
+    !desc
+    return
+
+@sa3d_xml_doc_desc_is_valid(&desc: ptr) -> i32:
+L_ENTRY:
+    source_ptr = load desc+SA3D_XML_DOC_DESC_source_ptr as ptr
+    source_len = load desc+SA3D_XML_DOC_DESC_source_len as i64
+    base_uri_ptr = load desc+SA3D_XML_DOC_DESC_base_uri_ptr as ptr
+    base_uri_len = load desc+SA3D_XML_DOC_DESC_base_uri_len as i64
+    flags = load desc+SA3D_XML_DOC_DESC_flags as i32
+    has_source_ptr = ne source_ptr, 0
+    has_source_len = sgt source_len, 0
+    has_source = and has_source_ptr, has_source_len
+    base_uri_ok = call @sa3d_xml_ptr_len_pair_is_valid(base_uri_ptr, base_uri_len)
+    flags_ok = call @sa3d_xml_parse_flags_are_valid(flags)
+    flags_valid = ne flags_ok, 0
+    ok = and has_source, base_uri_ok
+    valid = and ok, flags_valid
+    br valid -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !valid
+    !ok
+    !flags_valid
+    !flags_ok
+    !base_uri_ok
+    !has_source
+    !has_source_len
+    !has_source_ptr
+    !base_uri_len
+    !base_uri_ptr
+    !flags
+    !source_len
+    !source_ptr
+    !desc
+    return 1
+
+L_FALSE:
+    !valid
+    !ok
+    !flags_valid
+    !flags_ok
+    !base_uri_ok
+    !has_source
+    !has_source_len
+    !has_source_ptr
+    !base_uri_len
+    !base_uri_ptr
+    !flags
+    !source_len
+    !source_ptr
+    !desc
+    return 0
+
+@sa3d_xml_node_desc_init(&node: ptr) -> void:
+L_ENTRY:
+    store node+SA3D_XML_NODE_DESC_kind, SA3D_XML_NODE_ELEMENT as i32
+    store node+SA3D_XML_NODE_DESC_name_ptr, 0 as i64
+    store node+SA3D_XML_NODE_DESC_name_len, 0 as i64
+    store node+SA3D_XML_NODE_DESC_value_ptr, 0 as i64
+    store node+SA3D_XML_NODE_DESC_value_len, 0 as i64
+    store node+SA3D_XML_NODE_DESC_first_attr, 0 as i64
+    store node+SA3D_XML_NODE_DESC_next_sibling, 0 as i64
+    !node
+    return
+
+@sa3d_xml_node_desc_get_kind(&node: ptr) -> i32:
+L_ENTRY:
+    k = load node+SA3D_XML_NODE_DESC_kind as i32
+    !node
+    return k
+
+@sa3d_xml_node_desc_set_kind(&node: ptr, kind: i32) -> void:
+L_ENTRY:
+    store node+SA3D_XML_NODE_DESC_kind, kind as i32
+    !kind
+    !node
+    return
+
+@sa3d_xml_node_desc_set_name(&node: ptr, name: ptr, len: i64) -> void:
+L_ENTRY:
+    negative = slt len, 0
+    br negative -> L_ZERO, L_SET
+
+L_ZERO:
+    store node+SA3D_XML_NODE_DESC_name_ptr, 0 as i64
+    store node+SA3D_XML_NODE_DESC_name_len, 0 as i64
+    !negative
+    !len
+    !name
+    !node
+    return
+
+L_SET:
+    store node+SA3D_XML_NODE_DESC_name_ptr, name as ptr
+    store node+SA3D_XML_NODE_DESC_name_len, len as i64
+    !negative
+    !len
+    !name
+    !node
+    return
+
+@sa3d_xml_node_desc_is_valid(&node: ptr) -> i32:
+L_ENTRY:
+    kind = load node+SA3D_XML_NODE_DESC_kind as i32
+    name_len = load node+SA3D_XML_NODE_DESC_name_len as i64
+    kind_ok = call @sa3d_xml_node_kind_is_valid(kind)
+    kind_valid = ne kind_ok, 0
+    is_element = eq kind, SA3D_XML_NODE_ELEMENT
+    has_name = sgt name_len, 0
+    non_element = ne kind, SA3D_XML_NODE_ELEMENT
+    named_ok = or non_element, has_name
+    ok = and kind_valid, named_ok
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !named_ok
+    !non_element
+    !has_name
+    !is_element
+    !kind_valid
+    !kind_ok
+    !name_len
+    !kind
+    !node
+    return 1
+
+L_FALSE:
+    !ok
+    !named_ok
+    !non_element
+    !has_name
+    !is_element
+    !kind_valid
+    !kind_ok
+    !name_len
+    !kind
+    !node
+    return 0
+
+@sa3d_xml_byte_is_ws(byte: u8) -> i32:
+L_ENTRY:
+    sp = eq byte, 32
+    tab = eq byte, 9
+    lf = eq byte, 10
+    cr = eq byte, 13
+    a = or sp, tab
+    b = or lf, cr
+    ok = or a, b
+    br ok -> L_TRUE, L_FALSE
+
+L_TRUE:
+    !ok
+    !b
+    !a
+    !cr
+    !lf
+    !tab
+    !sp
+    !byte
+    return 1
+
+L_FALSE:
+    !ok
+    !b
+    !a
+    !cr
+    !lf
+    !tab
+    !sp
+    !byte
+    return 0
+
+@sa3d_xml_count_siblings(first: ptr) -> i64:
+L_ENTRY:
+    count_slot = stack_alloc 8
+    current_slot = stack_alloc 8
+    store count_slot+0, 0 as i64
+    store current_slot+0, first as ptr
+    !first
+    jmp L_HEAD
+
+L_HEAD:
+    current_value = load current_slot+0 as i64
+    current = load current_slot+0 as ptr
+    is_null = eq current_value, 0
+    br is_null -> L_DONE, L_BODY
+
+L_BODY:
+    count = load count_slot+0 as i64
+    next_count = add count, 1
+    next = load current+SA3D_XML_NODE_DESC_next_sibling as ptr
+    store count_slot+0, next_count as i64
+    store current_slot+0, next as ptr
+    !next
+    !next_count
+    !count
+    !is_null
+    !current
+    !current_value
+    jmp L_HEAD
+
+L_DONE:
+    out = load count_slot+0 as i64
+    !is_null
+    !current
+    !current_value
+    return out
+
+@sa3d_xml_doc_desc_count_start_tags(&desc: ptr) -> i64:
+L_ENTRY:
+    source = load desc+SA3D_XML_DOC_DESC_source_ptr as ptr
+    len = load desc+SA3D_XML_DOC_DESC_source_len as i64
+    has_source_ptr = ne source, 0
+    has_source_len = sgt len, 0
+    ok = and has_source_ptr, has_source_len
+    br ok -> L_CALL, L_ZERO
+
+L_CALL:
+    count = call @sa3d_xml_doc_desc_count_start_tags_from(source, len, 0)
+    !ok
+    !has_source_len
+    !has_source_ptr
+    !len
+    !source
+    return count
+
+L_ZERO:
+    !ok
+    !has_source_len
+    !has_source_ptr
+    !len
+    !source
+    return 0
+
+@sa3d_xml_doc_desc_count_start_tags_from(source: ptr, len: i64, idx: i64) -> i64:
+L_ENTRY:
+    done = sge idx, len
+    br done -> L_DONE, L_LOAD
+
+L_LOAD:
+    cur = ptr_add source, idx
+    byte = load cur+0 as u8
+    is_lt = eq byte, 60
+    br is_lt -> L_TAG, L_NEXT
+
+L_TAG:
+    next = add idx, 1
+    next_done = sge next, len
+    br next_done -> L_NEXT, L_TAG_LOAD
+
+L_TAG_LOAD:
+    next_cur = ptr_add source, next
+    next_byte = load next_cur+0 as u8
+    is_end = eq next_byte, 47
+    is_decl = eq next_byte, 33
+    is_pi = eq next_byte, 63
+    skip_open = or is_end, is_decl
+    skip2 = or skip_open, is_pi
+    br skip2 -> L_NEXT, L_COUNT
+
+L_COUNT:
+    next_idx = add idx, 1
+    rest = call @sa3d_xml_doc_desc_count_start_tags_from(source, len, next_idx)
+    out = add rest, 1
+    !rest
+    !next_idx
+    return out
+
+L_NEXT:
+    next_idx = add idx, 1
+    out = call @sa3d_xml_doc_desc_count_start_tags_from(source, len, next_idx)
+    !next_idx
+    return out
+
+L_DONE:
+    return 0

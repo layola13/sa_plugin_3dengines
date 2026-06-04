@@ -1,0 +1,372 @@
+@import "../3d_scene.sal"
+
+@test "3d_scene node and scene slice layout"():
+L_ENTRY:
+    node = alloc SA3D_SCENE_NODE_SIZE
+    mask = or SA3D_COMPONENT_TRANSFORM, SA3D_COMPONENT_MESH
+    mask2 = or mask, SA3D_COMPONENT_MATERIAL
+    store node+SA3D_SCENE_NODE_entity, 5 as i64
+    store node+SA3D_SCENE_NODE_component_mask, mask2 as i64
+    store node+SA3D_SCENE_NODE_mesh, 77 as i64
+    entity = load node+0 as i64
+    stored_mask = load node+8 as i64
+    mesh = load node+24 as i64
+    entity_ok = eq entity, 5
+    mask_ok = eq stored_mask, 11
+    mesh_ok = eq mesh, 77
+    slice_ok = eq SA3D_SCENE_SLICE_SIZE, 56
+    pair1 = and entity_ok, mask_ok
+    pair2 = and mesh_ok, slice_ok
+    ok = and pair1, pair2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !node
+    return
+
+L_ERR:
+    !node
+    panic(3060)
+
+@test "3d_scene declarative node layout"():
+L_ENTRY:
+    decl = alloc SA3D_SCENE_DECL_NODE_SIZE
+    store decl+SA3D_SCENE_DECL_NODE_kind, SA3D_SCENE_DECL_MESH as i32
+    store decl+SA3D_SCENE_DECL_NODE_id, 101 as i64
+    store decl+SA3D_SCENE_DECL_NODE_parent, 7 as i64
+    store decl+SA3D_SCENE_DECL_NODE_first_attr, 3 as i32
+    store decl+SA3D_SCENE_DECL_NODE_attr_count, 2 as i32
+    store decl+SA3D_SCENE_DECL_NODE_payload, 2048 as i64
+    kind = load decl+0 as i32
+    id = load decl+8 as i64
+    parent = load decl+16 as i64
+    first_attr = load decl+32 as i32
+    attr_count = load decl+36 as i32
+    payload = load decl+40 as i64
+    kind_ok = eq kind, 3
+    id_ok = eq id, 101
+    parent_ok = eq parent, 7
+    attr_ok = eq first_attr, 3
+    count_ok = eq attr_count, 2
+    payload_ok = eq payload, 2048
+    attr_size_ok = eq SA3D_SCENE_DECL_ATTR_SIZE, 16
+    pair1 = and kind_ok, id_ok
+    pair2 = and parent_ok, attr_ok
+    pair3 = and count_ok, payload_ok
+    pair4 = and pair1, pair2
+    pair5 = and pair3, attr_size_ok
+    ok = and pair4, pair5
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !decl
+    return
+
+L_ERR:
+    !decl
+    panic(3061)
+
+@test "3d_scene node component behavior"():
+L_ENTRY:
+    node = alloc SA3D_SCENE_NODE_SIZE
+    call @sa3d_scene_node_init(&node, 42, 3)
+    parent0 = call @sa3d_scene_node_get_parent(&node)
+    children0 = call @sa3d_scene_node_has_children(&node)
+    visibility0 = call @sa3d_scene_node_get_visibility(&node)
+    inherited0 = call @sa3d_scene_node_get_inherited_visibility(&node)
+    hierarchy0 = call @sa3d_scene_node_is_visible_in_hierarchy(&node)
+    view0 = call @sa3d_scene_node_get_view_visibility(&node)
+    class0 = call @sa3d_scene_node_get_visibility_class_mask(&node)
+    call @sa3d_scene_node_add_component(&node, SA3D_COMPONENT_TRANSFORM, 100)
+    call @sa3d_scene_node_add_component(&node, SA3D_COMPONENT_MESH, 200)
+    call @sa3d_scene_node_add_component(&node, SA3D_COMPONENT_MATERIAL, 300)
+    call @sa3d_scene_node_set_parent(&node, 77)
+    call @sa3d_scene_node_set_children(&node, 5, 2)
+    call @sa3d_scene_node_set_visibility(&node, SA3D_VISIBILITY_VISIBLE)
+    call @sa3d_scene_node_set_inherited_visibility(&node, 1)
+    call @sa3d_scene_node_set_view_visibility(&node, 1)
+    call @sa3d_scene_node_set_visibility_class_mask(&node, 13)
+    has_transform = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_TRANSFORM)
+    has_mesh = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_MESH)
+    has_light = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_LIGHT)
+    parent1 = call @sa3d_scene_node_get_parent(&node)
+    children1 = call @sa3d_scene_node_has_children(&node)
+    first_child = call @sa3d_scene_node_get_first_child(&node)
+    child_count = call @sa3d_scene_node_get_child_count(&node)
+    visibility1 = call @sa3d_scene_node_get_visibility(&node)
+    inherited1 = call @sa3d_scene_node_get_inherited_visibility(&node)
+    hierarchy1 = call @sa3d_scene_node_is_visible_in_hierarchy(&node)
+    view1 = call @sa3d_scene_node_get_view_visibility(&node)
+    class1 = call @sa3d_scene_node_get_visibility_class_mask(&node)
+    entity_id = load node+SA3D_ENTITY_id as i32
+    generation = load node+SA3D_ENTITY_generation as i32
+    mask = load node+SA3D_SCENE_NODE_component_mask as i64
+    transform = load node+SA3D_SCENE_NODE_transform as i64
+    mesh = load node+SA3D_SCENE_NODE_mesh as i64
+    material = load node+SA3D_SCENE_NODE_material as i64
+    call @sa3d_scene_node_remove_component(&node, SA3D_COMPONENT_MESH)
+    has_mesh_after = call @sa3d_scene_node_has_component(&node, SA3D_COMPONENT_MESH)
+    mesh_after = load node+SA3D_SCENE_NODE_mesh as i64
+    mask_after = load node+SA3D_SCENE_NODE_component_mask as i64
+    id_ok = eq entity_id, 42
+    gen_ok = eq generation, 3
+    transform_ok = eq transform, 100
+    mesh_ok = eq mesh, 200
+    material_ok = eq material, 300
+    mask_ok = eq mask, 11
+    parent0_ok = eq parent0, 0
+    children0_ok = eq children0, 0
+    visibility0_ok = eq visibility0, SA3D_VISIBILITY_INHERITED
+    inherited0_ok = eq inherited0, 1
+    hierarchy0_ok = eq hierarchy0, 1
+    view0_ok = eq view0, 0
+    class0_ok = eq class0, 0
+    parent1_ok = eq parent1, 77
+    children1_ok = eq children1, 1
+    first_child_ok = eq first_child, 5
+    child_count_ok = eq child_count, 2
+    visibility1_ok = eq visibility1, SA3D_VISIBILITY_VISIBLE
+    inherited1_ok = eq inherited1, 1
+    hierarchy1_ok = eq hierarchy1, 1
+    view1_ok = eq view1, 1
+    class1_ok = eq class1, 13
+    has_transform_ok = eq has_transform, 1
+    has_mesh_ok = eq has_mesh, 1
+    has_light_ok = eq has_light, 0
+    mesh_after_ok = eq mesh_after, 0
+    has_mesh_after_ok = eq has_mesh_after, 0
+    mask_after_ok = eq mask_after, 9
+    p1 = and id_ok, gen_ok
+    p2 = and transform_ok, mesh_ok
+    p3 = and material_ok, mask_ok
+    p4 = and parent0_ok, children0_ok
+    p5 = and visibility0_ok, inherited0_ok
+    p6 = and hierarchy0_ok, view0_ok
+    p7 = and class0_ok, parent1_ok
+    p8 = and children1_ok, first_child_ok
+    p9 = and child_count_ok, visibility1_ok
+    p10 = and inherited1_ok, hierarchy1_ok
+    p11 = and view1_ok, class1_ok
+    p12 = and has_transform_ok, has_mesh_ok
+    p13 = and has_light_ok, mesh_after_ok
+    p14 = and has_mesh_after_ok, mask_after_ok
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p6
+    q4 = and p7, p8
+    q5 = and p9, p10
+    q6 = and p11, p12
+    q7 = and p13, p14
+    r1 = and q1, q2
+    r2 = and q3, q4
+    r3 = and q5, q6
+    r4 = and r1, r2
+    r5 = and r3, q7
+    ok = and r4, r5
+    br ok -> L_BEHAVIOR_OK, L_BEHAVIOR_ERR
+
+L_BEHAVIOR_OK:
+    !node
+    return
+
+L_BEHAVIOR_ERR:
+    !node
+    panic(3062)
+
+@test "3d_scene slice and declarative constructors"():
+L_ENTRY:
+    slice = alloc SA3D_SCENE_SLICE_SIZE
+    nodes = alloc SA3D_SCENE_NODE_SIZE
+    transforms = alloc 16
+    meshes = alloc 16
+    materials = alloc 16
+    lights = alloc 16
+    cameras = alloc 16
+    decl = alloc SA3D_SCENE_DECL_NODE_SIZE
+    attr = alloc SA3D_SCENE_DECL_ATTR_SIZE
+    call @sa3d_scene_slice_init(&slice, &nodes, 1, &transforms, &meshes, &materials, &lights, &cameras)
+    call @sa3d_scene_decl_node_init(&decl, SA3D_SCENE_DECL_MESH, 500, 400, 900)
+    call @sa3d_scene_decl_node_set_children(&decl, 7, 2)
+    call @sa3d_scene_decl_node_set_attrs(&decl, 11, 3)
+    call @sa3d_scene_decl_attr_init(&attr, 1234, 5678)
+    nodes_ptr = load slice+SA3D_SCENE_SLICE_nodes_ptr as ptr
+    nodes_len = load slice+SA3D_SCENE_SLICE_nodes_len as i64
+    cameras_ptr = load slice+SA3D_SCENE_SLICE_cameras_ptr as ptr
+    kind = load decl+SA3D_SCENE_DECL_NODE_kind as i32
+    id = load decl+SA3D_SCENE_DECL_NODE_id as i64
+    parent = load decl+SA3D_SCENE_DECL_NODE_parent as i64
+    first_child = load decl+SA3D_SCENE_DECL_NODE_first_child as i32
+    child_count = load decl+SA3D_SCENE_DECL_NODE_child_count as i32
+    first_attr = load decl+SA3D_SCENE_DECL_NODE_first_attr as i32
+    attr_count = load decl+SA3D_SCENE_DECL_NODE_attr_count as i32
+    payload = load decl+SA3D_SCENE_DECL_NODE_payload as i64
+    key = load attr+SA3D_SCENE_DECL_ATTR_key as i64
+    value = load attr+SA3D_SCENE_DECL_ATTR_value as i64
+    nodes_ptr_ok = eq nodes_ptr, nodes
+    nodes_len_ok = eq nodes_len, 1
+    cameras_ptr_ok = eq cameras_ptr, cameras
+    kind_ok = eq kind, SA3D_SCENE_DECL_MESH
+    id_ok = eq id, 500
+    parent_ok = eq parent, 400
+    first_child_ok = eq first_child, 7
+    child_count_ok = eq child_count, 2
+    first_attr_ok = eq first_attr, 11
+    attr_count_ok = eq attr_count, 3
+    payload_ok = eq payload, 900
+    key_ok = eq key, 1234
+    value_ok = eq value, 5678
+    p1 = and nodes_ptr_ok, nodes_len_ok
+    p2 = and cameras_ptr_ok, kind_ok
+    p3 = and id_ok, parent_ok
+    p4 = and first_child_ok, child_count_ok
+    p5 = and first_attr_ok, attr_count_ok
+    p6 = and payload_ok, key_ok
+    p7 = and value_ok, p6
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and p5, p7
+    r1 = and q1, q2
+    ok = and r1, q3
+    br ok -> L_SLICE_OK, L_SLICE_ERR
+
+L_SLICE_OK:
+    !attr
+    !decl
+    !cameras
+    !lights
+    !materials
+    !meshes
+    !transforms
+    !nodes
+    !slice
+    return
+
+L_SLICE_ERR:
+    !attr
+    !decl
+    !cameras
+    !lights
+    !materials
+    !meshes
+    !transforms
+    !nodes
+    !slice
+    panic(3063)
+
+@test "3d_scene node roles and primary assets"():
+L_ENTRY:
+    renderable = alloc SA3D_SCENE_NODE_SIZE
+    camera = alloc SA3D_SCENE_NODE_SIZE
+    light = alloc SA3D_SCENE_NODE_SIZE
+    empty = alloc SA3D_SCENE_NODE_SIZE
+    call @sa3d_scene_node_init(&renderable, 10, 1)
+    call @sa3d_scene_node_add_component(&renderable, SA3D_COMPONENT_TRANSFORM, 100)
+    call @sa3d_scene_node_add_component(&renderable, SA3D_COMPONENT_MESH, 200)
+    call @sa3d_scene_node_add_component(&renderable, SA3D_COMPONENT_MATERIAL, 300)
+    call @sa3d_scene_node_init(&camera, 11, 1)
+    call @sa3d_scene_node_add_component(&camera, SA3D_COMPONENT_TRANSFORM, 110)
+    call @sa3d_scene_node_add_component(&camera, SA3D_COMPONENT_CAMERA, 410)
+    call @sa3d_scene_node_init(&light, 12, 1)
+    call @sa3d_scene_node_add_component(&light, SA3D_COMPONENT_TRANSFORM, 120)
+    call @sa3d_scene_node_add_component(&light, SA3D_COMPONENT_LIGHT, 520)
+    call @sa3d_scene_node_clear(&empty)
+    renderable_ok = call @sa3d_scene_node_is_renderable(&renderable)
+    render_asset = call @sa3d_scene_node_primary_asset(&renderable)
+    camera_ok = call @sa3d_scene_node_is_camera(&camera)
+    camera_asset = call @sa3d_scene_node_primary_asset(&camera)
+    light_ok = call @sa3d_scene_node_is_light(&light)
+    light_asset = call @sa3d_scene_node_primary_asset(&light)
+    empty_asset = call @sa3d_scene_node_primary_asset(&empty)
+    match_ok = call @sa3d_scene_node_entity_matches(&renderable, 10, 1)
+    match_bad = call @sa3d_scene_node_entity_matches(&renderable, 10, 2)
+    bit_ok = call @sa3d_scene_component_bit_is_valid(SA3D_COMPONENT_MESH)
+    bit_bad = call @sa3d_scene_component_bit_is_valid(64)
+    a0 = eq renderable_ok, 1
+    a1 = eq render_asset, 200
+    a2 = eq camera_ok, 1
+    a3 = eq camera_asset, 410
+    a4 = eq light_ok, 1
+    a5 = eq light_asset, 520
+    a6 = eq empty_asset, 0
+    a7 = eq match_ok, 1
+    a8 = eq match_bad, 0
+    a9 = eq bit_ok, 1
+    a10 = eq bit_bad, 0
+    p1 = and a0, a1
+    p2 = and a2, a3
+    p3 = and a4, a5
+    p4 = and a6, a7
+    p5 = and a8, a9
+    p6 = and p1, p2
+    p7 = and p3, p4
+    p8 = and p5, a10
+    q1 = and p6, p7
+    ok = and q1, p8
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !empty
+    !light
+    !camera
+    !renderable
+    return
+
+L_ERR:
+    !empty
+    !light
+    !camera
+    !renderable
+    panic(3064)
+
+@test "3d_scene slice and declaration validation"():
+L_ENTRY:
+    slice = alloc SA3D_SCENE_SLICE_SIZE
+    nodes = alloc SA3D_SCENE_NODE_SIZE
+    decl = alloc SA3D_SCENE_DECL_NODE_SIZE
+    call @sa3d_scene_slice_init(&slice, &nodes, 0, &nodes, &nodes, &nodes, &nodes, &nodes)
+    slice_valid = call @sa3d_scene_slice_is_valid(&slice)
+    slice_empty = call @sa3d_scene_slice_is_empty(&slice)
+    call @sa3d_scene_decl_node_init(&decl, SA3D_SCENE_DECL_SCENE3D, 1, 0, 0)
+    decl_valid0 = call @sa3d_scene_decl_node_is_valid(&decl)
+    children0 = call @sa3d_scene_decl_node_has_children(&decl)
+    attrs0 = call @sa3d_scene_decl_node_has_attrs(&decl)
+    call @sa3d_scene_decl_node_set_children(&decl, 2, 3)
+    call @sa3d_scene_decl_node_set_attrs(&decl, 5, 2)
+    children1 = call @sa3d_scene_decl_node_has_children(&decl)
+    attrs1 = call @sa3d_scene_decl_node_has_attrs(&decl)
+    kind_ok = call @sa3d_scene_decl_kind_is_valid(SA3D_SCENE_DECL_LIGHT)
+    kind_bad = call @sa3d_scene_decl_kind_is_valid(99)
+    call @sa3d_scene_decl_node_init(&decl, 99, 1, 0, 0)
+    decl_valid_bad = call @sa3d_scene_decl_node_is_valid(&decl)
+    s0 = eq slice_valid, 1
+    s1 = eq slice_empty, 1
+    d0 = eq decl_valid0, 1
+    c0 = eq children0, 0
+    at0 = eq attrs0, 0
+    c1 = eq children1, 1
+    at1 = eq attrs1, 1
+    k0 = eq kind_ok, 1
+    k1 = eq kind_bad, 0
+    d1 = eq decl_valid_bad, 0
+    p1 = and s0, s1
+    p2 = and d0, c0
+    p3 = and at0, c1
+    p4 = and at1, k0
+    p5 = and k1, d1
+    q1 = and p1, p2
+    q2 = and p3, p4
+    q3 = and q1, q2
+    ok = and q3, p5
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !decl
+    !nodes
+    !slice
+    return
+
+L_ERR:
+    !decl
+    !nodes
+    !slice
+    panic(3065)
