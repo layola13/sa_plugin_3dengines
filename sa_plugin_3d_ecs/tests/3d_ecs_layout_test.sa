@@ -427,3 +427,150 @@ L_ERR:
     !b_desc
     !a_desc
     panic(3148)
+
+@test "3d_ecs Bevy Option and Or empty filter access compatibility"():
+L_ENTRY:
+    a_desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    b_desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    a_terms = alloc 48
+    b_terms = alloc 48
+    a0 = ptr_add a_terms, 0
+    a1 = ptr_add a_terms, SA3D_ECS_QUERY_TERM_SIZE
+    a2 = ptr_add a_terms, 32
+    b0 = ptr_add b_terms, 0
+    b1 = ptr_add b_terms, SA3D_ECS_QUERY_TERM_SIZE
+    b2 = ptr_add b_terms, 32
+
+    call @sa3d_ecs_query_term_init(&a0, 2, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&a1, 1, SA3D_ECS_QUERY_ACCESS_OPTIONAL_READ, 0)
+    call @sa3d_ecs_query_term_init(&b0, 2, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&b1, 1, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 2, 16)
+    call @sa3d_ecs_query_desc_init(&b_desc, b_terms, 2, 16)
+    option_has_no_filter_with = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 2, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&a1, 1, SA3D_ECS_QUERY_ACCESS_OPTIONAL_READ, 0)
+    call @sa3d_ecs_query_term_init(&a2, 1, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 3, 24)
+    option_keeps_required_with = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 2, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&a1, 1, SA3D_ECS_QUERY_ACCESS_WITH, 0)
+    call @sa3d_ecs_query_term_init(&b0, 2, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&b1, 0, SA3D_ECS_QUERY_ACCESS_FILTER_SET, 0)
+    call @sa3d_ecs_query_term_init(&b2, 1, SA3D_ECS_QUERY_ACCESS_WITHOUT, 1)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 2, 16)
+    call @sa3d_ecs_query_desc_init(&b_desc, b_terms, 3, 24)
+    with_and_or_empty_without = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 1, SA3D_ECS_QUERY_ACCESS_OPTIONAL_WRITE, 0)
+    call @sa3d_ecs_query_term_init(&b0, 1, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 1, 8)
+    call @sa3d_ecs_query_desc_init(&b_desc, b_terms, 1, 8)
+    optional_write_conflicts_read = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    option_no_filter_ok = eq option_has_no_filter_with, 0
+    option_required_ok = eq option_keeps_required_with, 1
+    empty_branch_ok = eq with_and_or_empty_without, 0
+    opt_write_ok = eq optional_write_conflicts_read, 0
+    p0 = and option_no_filter_ok, option_required_ok
+    p1 = and empty_branch_ok, opt_write_ok
+    ok = and p0, p1
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !b2
+    !b1
+    !b0
+    !a2
+    !a1
+    !a0
+    !b_terms
+    !a_terms
+    !b_desc
+    !a_desc
+    return 0
+
+L_ERR:
+    !b2
+    !b1
+    !b0
+    !a2
+    !a1
+    !a0
+    !b_terms
+    !a_terms
+    !b_desc
+    !a_desc
+    panic(3149)
+
+@test "3d_ecs Bevy EntityRef EntityMut read_all write_all compatibility"():
+L_ENTRY:
+    a_desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    b_desc = alloc SA3D_ECS_QUERY_DESC_SIZE
+    a_terms = alloc 32
+    b_terms = alloc 32
+    a0 = ptr_add a_terms, 0
+    a1 = ptr_add a_terms, SA3D_ECS_QUERY_TERM_SIZE
+    b0 = ptr_add b_terms, 0
+    b1 = ptr_add b_terms, SA3D_ECS_QUERY_TERM_SIZE
+
+    call @sa3d_ecs_query_term_init(&a0, 0, SA3D_ECS_QUERY_ACCESS_READ_ALL, 0)
+    call @sa3d_ecs_query_term_init(&b0, 0, SA3D_ECS_QUERY_ACCESS_WRITE_ALL, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 1, 8)
+    call @sa3d_ecs_query_desc_init(&b_desc, b_terms, 1, 8)
+    entity_ref_entity_mut = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 0, SA3D_ECS_QUERY_ACCESS_WRITE_ALL, 0)
+    call @sa3d_ecs_query_term_init(&a1, 1, SA3D_ECS_QUERY_ACCESS_WITHOUT, 0)
+    call @sa3d_ecs_query_term_init(&b0, 1, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 2, 16)
+    call @sa3d_ecs_query_desc_init(&b_desc, b_terms, 1, 8)
+    entity_mut_without_a_read_a = call @sa3d_ecs_query_descs_compatible(&a_desc, &b_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 0, SA3D_ECS_QUERY_ACCESS_READ_ALL, 0)
+    call @sa3d_ecs_query_term_init(&a1, 1, SA3D_ECS_QUERY_ACCESS_WRITE, 0)
+    call @sa3d_ecs_query_desc_init(&a_desc, a_terms, 2, 16)
+    entity_ref_with_mut_a_valid = call @sa3d_ecs_query_desc_validate(&a_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 0, SA3D_ECS_QUERY_ACCESS_READ_ALL, 0)
+    call @sa3d_ecs_query_term_init(&a1, 1, SA3D_ECS_QUERY_ACCESS_READ, 0)
+    entity_ref_with_read_a_valid = call @sa3d_ecs_query_desc_validate(&a_desc)
+
+    call @sa3d_ecs_query_term_init(&a0, 0, SA3D_ECS_QUERY_ACCESS_WRITE_ALL, 0)
+    call @sa3d_ecs_query_term_init(&a1, 1, SA3D_ECS_QUERY_ACCESS_OPTIONAL_READ, 0)
+    entity_mut_with_option_a_valid = call @sa3d_ecs_query_desc_validate(&a_desc)
+
+    ref_mut_ok = eq entity_ref_entity_mut, 0
+    mut_without_ok = eq entity_mut_without_a_read_a, 1
+    ref_write_valid_ok = eq entity_ref_with_mut_a_valid, 0
+    ref_read_valid_ok = eq entity_ref_with_read_a_valid, 1
+    mut_option_valid_ok = eq entity_mut_with_option_a_valid, 0
+    p0 = and ref_mut_ok, mut_without_ok
+    p1 = and ref_write_valid_ok, ref_read_valid_ok
+    p2 = and p0, p1
+    ok = and p2, mut_option_valid_ok
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !b1
+    !b0
+    !a1
+    !a0
+    !b_terms
+    !a_terms
+    !b_desc
+    !a_desc
+    return 0
+
+L_ERR:
+    !b1
+    !b0
+    !a1
+    !a0
+    !b_terms
+    !a_terms
+    !b_desc
+    !a_desc
+    panic(3150)

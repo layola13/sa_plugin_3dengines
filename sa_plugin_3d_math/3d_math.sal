@@ -1174,6 +1174,21 @@ L_POS:
     !neg
     return value
 
+@sa3d_f32_signum(value: f32) -> f32:
+L_ENTRY:
+    neg = fcmp_lt value, 0.0
+    br neg -> L_NEG, L_POS
+
+L_NEG:
+    !neg
+    !value
+    return -1.0
+
+L_POS:
+    !neg
+    !value
+    return 1.0
+
 @sa3d_f32_atan_poly(value: f32) -> f32:
 L_ENTRY:
     x2 = fmul value, value
@@ -2219,6 +2234,472 @@ L_ENTRY:
     !rotation
     !scale
     !mat
+    return
+
+@sa3d_mat4_determinant(&mat: ptr) -> f32:
+L_ENTRY:
+    m00 = load mat+0 as f32
+    m01 = load mat+4 as f32
+    m02 = load mat+8 as f32
+    m03 = load mat+12 as f32
+    m10 = load mat+16 as f32
+    m11 = load mat+20 as f32
+    m12 = load mat+24 as f32
+    m13 = load mat+28 as f32
+    m20 = load mat+32 as f32
+    m21 = load mat+36 as f32
+    m22 = load mat+40 as f32
+    m23 = load mat+44 as f32
+    m30 = load mat+48 as f32
+    m31 = load mat+52 as f32
+    m32 = load mat+56 as f32
+    m33 = load mat+60 as f32
+    a2323_l = fmul m22, m33
+    a2323_r = fmul m23, m32
+    a2323 = fsub a2323_l, a2323_r
+    a1323_l = fmul m21, m33
+    a1323_r = fmul m23, m31
+    a1323 = fsub a1323_l, a1323_r
+    a1223_l = fmul m21, m32
+    a1223_r = fmul m22, m31
+    a1223 = fsub a1223_l, a1223_r
+    a0323_l = fmul m20, m33
+    a0323_r = fmul m23, m30
+    a0323 = fsub a0323_l, a0323_r
+    a0223_l = fmul m20, m32
+    a0223_r = fmul m22, m30
+    a0223 = fsub a0223_l, a0223_r
+    a0123_l = fmul m20, m31
+    a0123_r = fmul m21, m30
+    a0123 = fsub a0123_l, a0123_r
+    t0_a = fmul m11, a2323
+    t0_b = fmul m12, a1323
+    t0_c = fmul m13, a1223
+    t0_ab = fsub t0_a, t0_b
+    t0 = fadd t0_ab, t0_c
+    term0 = fmul m00, t0
+    t1_a = fmul m10, a2323
+    t1_b = fmul m12, a0323
+    t1_c = fmul m13, a0223
+    t1_ab = fsub t1_a, t1_b
+    t1 = fadd t1_ab, t1_c
+    term1 = fmul m01, t1
+    t2_a = fmul m10, a1323
+    t2_b = fmul m11, a0323
+    t2_c = fmul m13, a0123
+    t2_ab = fsub t2_a, t2_b
+    t2 = fadd t2_ab, t2_c
+    term2 = fmul m02, t2
+    t3_a = fmul m10, a1223
+    t3_b = fmul m11, a0223
+    t3_c = fmul m12, a0123
+    t3_ab = fsub t3_a, t3_b
+    t3 = fadd t3_ab, t3_c
+    term3 = fmul m03, t3
+    s0 = fsub term0, term1
+    s1 = fadd s0, term2
+    det = fsub s1, term3
+    !s1
+    !s0
+    !term3
+    !t3
+    !t3_ab
+    !t3_c
+    !t3_b
+    !t3_a
+    !term2
+    !t2
+    !t2_ab
+    !t2_c
+    !t2_b
+    !t2_a
+    !term1
+    !t1
+    !t1_ab
+    !t1_c
+    !t1_b
+    !t1_a
+    !term0
+    !t0
+    !t0_ab
+    !t0_c
+    !t0_b
+    !t0_a
+    !a0123
+    !a0123_r
+    !a0123_l
+    !a0223
+    !a0223_r
+    !a0223_l
+    !a0323
+    !a0323_r
+    !a0323_l
+    !a1223
+    !a1223_r
+    !a1223_l
+    !a1323
+    !a1323_r
+    !a1323_l
+    !a2323
+    !a2323_r
+    !a2323_l
+    !m33
+    !m32
+    !m31
+    !m30
+    !m23
+    !m22
+    !m21
+    !m20
+    !m13
+    !m12
+    !m11
+    !m10
+    !m03
+    !m02
+    !m01
+    !m00
+    !mat
+    return det
+
+@sa3d_quat_from_rotation_axes(&out: ptr, &x_axis: ptr, &y_axis: ptr, &z_axis: ptr) -> void:
+L_ENTRY:
+    m00 = load x_axis+SA3D_VEC3_x as f32
+    m01 = load x_axis+SA3D_VEC3_y as f32
+    m02 = load x_axis+SA3D_VEC3_z as f32
+    m10 = load y_axis+SA3D_VEC3_x as f32
+    m11 = load y_axis+SA3D_VEC3_y as f32
+    m12 = load y_axis+SA3D_VEC3_z as f32
+    m20 = load z_axis+SA3D_VEC3_x as f32
+    m21 = load z_axis+SA3D_VEC3_y as f32
+    m22 = load z_axis+SA3D_VEC3_z as f32
+    m22_nonpos = fcmp_le m22, 0.0
+    br m22_nonpos -> L_M22_NONPOS, L_M22_POS
+
+L_M22_NONPOS:
+    dif10 = fsub m11, m00
+    omm22 = fsub 1.0, m22
+    dif_nonpos = fcmp_le dif10, 0.0
+    br dif_nonpos -> L_X_DOMINANT, L_Y_DOMINANT
+
+L_X_DOMINANT:
+    four_xsq = fsub omm22, dif10
+    root_x = call @sa3d_f32_sqrt(four_xsq)
+    inv4x = fdiv 0.5, root_x
+    qx = fmul four_xsq, inv4x
+    y_sum_x = fadd m01, m10
+    qy = fmul y_sum_x, inv4x
+    z_sum_x = fadd m02, m20
+    qz = fmul z_sum_x, inv4x
+    w_diff_x = fsub m12, m21
+    qw = fmul w_diff_x, inv4x
+    store out+SA3D_QUAT_x, qx as f32
+    store out+SA3D_QUAT_y, qy as f32
+    store out+SA3D_QUAT_z, qz as f32
+    store out+SA3D_QUAT_w, qw as f32
+    !qw
+    !w_diff_x
+    !qz
+    !z_sum_x
+    !qy
+    !y_sum_x
+    !qx
+    !inv4x
+    !root_x
+    !four_xsq
+    !dif_nonpos
+    !omm22
+    !dif10
+    !m22_nonpos
+    !m22
+    !m21
+    !m20
+    !m12
+    !m11
+    !m10
+    !m02
+    !m01
+    !m00
+    !z_axis
+    !y_axis
+    !x_axis
+    !out
+    return
+
+L_Y_DOMINANT:
+    four_ysq = fadd omm22, dif10
+    root_y = call @sa3d_f32_sqrt(four_ysq)
+    inv4y = fdiv 0.5, root_y
+    x_sum_y = fadd m01, m10
+    qx_y = fmul x_sum_y, inv4y
+    qy_y = fmul four_ysq, inv4y
+    z_sum_y = fadd m12, m21
+    qz_y = fmul z_sum_y, inv4y
+    w_diff_y = fsub m20, m02
+    qw_y = fmul w_diff_y, inv4y
+    store out+SA3D_QUAT_x, qx_y as f32
+    store out+SA3D_QUAT_y, qy_y as f32
+    store out+SA3D_QUAT_z, qz_y as f32
+    store out+SA3D_QUAT_w, qw_y as f32
+    !qw_y
+    !w_diff_y
+    !qz_y
+    !z_sum_y
+    !qy_y
+    !qx_y
+    !x_sum_y
+    !inv4y
+    !root_y
+    !four_ysq
+    !dif_nonpos
+    !omm22
+    !dif10
+    !m22_nonpos
+    !m22
+    !m21
+    !m20
+    !m12
+    !m11
+    !m10
+    !m02
+    !m01
+    !m00
+    !z_axis
+    !y_axis
+    !x_axis
+    !out
+    return
+
+L_M22_POS:
+    sum10 = fadd m11, m00
+    opm22 = fadd 1.0, m22
+    sum_nonpos = fcmp_le sum10, 0.0
+    br sum_nonpos -> L_Z_DOMINANT, L_W_DOMINANT
+
+L_Z_DOMINANT:
+    four_zsq = fsub opm22, sum10
+    root_z = call @sa3d_f32_sqrt(four_zsq)
+    inv4z = fdiv 0.5, root_z
+    x_sum_z = fadd m02, m20
+    qx_z = fmul x_sum_z, inv4z
+    y_sum_z = fadd m12, m21
+    qy_z = fmul y_sum_z, inv4z
+    qz_z = fmul four_zsq, inv4z
+    w_diff_z = fsub m01, m10
+    qw_z = fmul w_diff_z, inv4z
+    store out+SA3D_QUAT_x, qx_z as f32
+    store out+SA3D_QUAT_y, qy_z as f32
+    store out+SA3D_QUAT_z, qz_z as f32
+    store out+SA3D_QUAT_w, qw_z as f32
+    !qw_z
+    !w_diff_z
+    !qz_z
+    !qy_z
+    !y_sum_z
+    !qx_z
+    !x_sum_z
+    !inv4z
+    !root_z
+    !four_zsq
+    !sum_nonpos
+    !opm22
+    !sum10
+    !m22_nonpos
+    !m22
+    !m21
+    !m20
+    !m12
+    !m11
+    !m10
+    !m02
+    !m01
+    !m00
+    !z_axis
+    !y_axis
+    !x_axis
+    !out
+    return
+
+L_W_DOMINANT:
+    four_wsq = fadd opm22, sum10
+    root_w = call @sa3d_f32_sqrt(four_wsq)
+    inv4w = fdiv 0.5, root_w
+    x_diff_w = fsub m12, m21
+    qx_w = fmul x_diff_w, inv4w
+    y_diff_w = fsub m20, m02
+    qy_w = fmul y_diff_w, inv4w
+    z_diff_w = fsub m01, m10
+    qz_w = fmul z_diff_w, inv4w
+    qw_w = fmul four_wsq, inv4w
+    store out+SA3D_QUAT_x, qx_w as f32
+    store out+SA3D_QUAT_y, qy_w as f32
+    store out+SA3D_QUAT_z, qz_w as f32
+    store out+SA3D_QUAT_w, qw_w as f32
+    !qw_w
+    !qz_w
+    !z_diff_w
+    !qy_w
+    !y_diff_w
+    !qx_w
+    !x_diff_w
+    !inv4w
+    !root_w
+    !four_wsq
+    !sum_nonpos
+    !opm22
+    !sum10
+    !m22_nonpos
+    !m22
+    !m21
+    !m20
+    !m12
+    !m11
+    !m10
+    !m02
+    !m01
+    !m00
+    !z_axis
+    !y_axis
+    !x_axis
+    !out
+    return
+
+@sa3d_mat4_to_scale_rotation_translation(&scale: ptr, &rotation: ptr, &translation: ptr, &mat: ptr) -> void:
+L_ENTRY:
+    m00 = load mat+0 as f32
+    m01 = load mat+4 as f32
+    m02 = load mat+8 as f32
+    m03 = load mat+12 as f32
+    m10 = load mat+16 as f32
+    m11 = load mat+20 as f32
+    m12 = load mat+24 as f32
+    m13 = load mat+28 as f32
+    m20 = load mat+32 as f32
+    m21 = load mat+36 as f32
+    m22 = load mat+40 as f32
+    m23 = load mat+44 as f32
+    tx = load mat+48 as f32
+    ty = load mat+52 as f32
+    tz = load mat+56 as f32
+    det = call @sa3d_mat4_determinant(&mat)
+    sign = call @sa3d_f32_signum(det)
+    x00 = fmul m00, m00
+    x01 = fmul m01, m01
+    x02 = fmul m02, m02
+    x03 = fmul m03, m03
+    xs0 = fadd x00, x01
+    xs1 = fadd x02, x03
+    xlen2 = fadd xs0, xs1
+    xlen = call @sa3d_f32_sqrt(xlen2)
+    sx = fmul xlen, sign
+    y00 = fmul m10, m10
+    y01 = fmul m11, m11
+    y02 = fmul m12, m12
+    y03 = fmul m13, m13
+    ys0 = fadd y00, y01
+    ys1 = fadd y02, y03
+    ylen2 = fadd ys0, ys1
+    sy = call @sa3d_f32_sqrt(ylen2)
+    z00 = fmul m20, m20
+    z01 = fmul m21, m21
+    z02 = fmul m22, m22
+    z03 = fmul m23, m23
+    zs0 = fadd z00, z01
+    zs1 = fadd z02, z03
+    zlen2 = fadd zs0, zs1
+    sz = call @sa3d_f32_sqrt(zlen2)
+    store scale+SA3D_VEC3_x, sx as f32
+    store scale+SA3D_VEC3_y, sy as f32
+    store scale+SA3D_VEC3_z, sz as f32
+    store translation+SA3D_VEC3_x, tx as f32
+    store translation+SA3D_VEC3_y, ty as f32
+    store translation+SA3D_VEC3_z, tz as f32
+    inv_sx = fdiv 1.0, sx
+    inv_sy = fdiv 1.0, sy
+    inv_sz = fdiv 1.0, sz
+    x_axis = alloc SA3D_VEC3_SIZE
+    y_axis = alloc SA3D_VEC3_SIZE
+    z_axis = alloc SA3D_VEC3_SIZE
+    ax0 = fmul m00, inv_sx
+    ax1 = fmul m01, inv_sx
+    ax2 = fmul m02, inv_sx
+    ay0 = fmul m10, inv_sy
+    ay1 = fmul m11, inv_sy
+    ay2 = fmul m12, inv_sy
+    az0 = fmul m20, inv_sz
+    az1 = fmul m21, inv_sz
+    az2 = fmul m22, inv_sz
+    store x_axis+SA3D_VEC3_x, ax0 as f32
+    store x_axis+SA3D_VEC3_y, ax1 as f32
+    store x_axis+SA3D_VEC3_z, ax2 as f32
+    store y_axis+SA3D_VEC3_x, ay0 as f32
+    store y_axis+SA3D_VEC3_y, ay1 as f32
+    store y_axis+SA3D_VEC3_z, ay2 as f32
+    store z_axis+SA3D_VEC3_x, az0 as f32
+    store z_axis+SA3D_VEC3_y, az1 as f32
+    store z_axis+SA3D_VEC3_z, az2 as f32
+    call @sa3d_quat_from_rotation_axes(&rotation, &x_axis, &y_axis, &z_axis)
+    !az2
+    !az1
+    !az0
+    !ay2
+    !ay1
+    !ay0
+    !ax2
+    !ax1
+    !ax0
+    !z_axis
+    !y_axis
+    !x_axis
+    !inv_sz
+    !inv_sy
+    !inv_sx
+    !sz
+    !zlen2
+    !zs1
+    !zs0
+    !z03
+    !z02
+    !z01
+    !z00
+    !sy
+    !ylen2
+    !ys1
+    !ys0
+    !y03
+    !y02
+    !y01
+    !y00
+    !sx
+    !xlen
+    !xlen2
+    !xs1
+    !xs0
+    !x03
+    !x02
+    !x01
+    !x00
+    !sign
+    !det
+    !tz
+    !ty
+    !tx
+    !m23
+    !m22
+    !m21
+    !m20
+    !m13
+    !m12
+    !m11
+    !m10
+    !m03
+    !m02
+    !m01
+    !m00
+    !mat
+    !translation
+    !rotation
+    !scale
     return
 
 @sa3d_vec3_length_squared_f(&vec: ptr) -> f32:

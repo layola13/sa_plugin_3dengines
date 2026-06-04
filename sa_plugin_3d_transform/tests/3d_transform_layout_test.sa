@@ -88,6 +88,76 @@ L_TRANSFORM_ERR:
     !transform
     panic(3011)
 
+@test "3d_transform Bevy from_matrix decomposes translation scale rotation"():
+L_ENTRY:
+    mat = alloc SA3D_MAT4_SIZE
+    transform = alloc SA3D_TRANSFORM3D_SIZE
+    call @sa3d_mat4_identity(&mat)
+    store mat+0, 2.0 as f32
+    store mat+20, 3.0 as f32
+    store mat+40, 4.0 as f32
+    store mat+48, 1.0 as f32
+    store mat+52, 2.0 as f32
+    store mat+56, 3.0 as f32
+    call @sa3d_transform3d_from_matrix(&transform, &mat)
+    translation = ptr_add transform, SA3D_TRANSFORM3D_translation
+    rotation = ptr_add transform, SA3D_TRANSFORM3D_rotation
+    scale = ptr_add transform, SA3D_TRANSFORM3D_scale
+    tx = load translation+SA3D_VEC3_x as i32
+    ty = load translation+SA3D_VEC3_y as i32
+    tz = load translation+SA3D_VEC3_z as i32
+    rx = load rotation+SA3D_QUAT_x as f32
+    ry = load rotation+SA3D_QUAT_y as f32
+    rz = load rotation+SA3D_QUAT_z as f32
+    rw = load rotation+SA3D_QUAT_w as f32
+    sx = load scale+SA3D_VEC3_x as i32
+    sy = load scale+SA3D_VEC3_y as i32
+    sz = load scale+SA3D_VEC3_z as i32
+    tx_ok = eq tx, SA3D_F32_ONE_BITS
+    ty_ok = eq ty, 1073741824
+    tz_ok = eq tz, 1077936128
+    rx_low = fcmp_gt rx, -0.001
+    rx_high = fcmp_lt rx, 0.001
+    ry_low = fcmp_gt ry, -0.001
+    ry_high = fcmp_lt ry, 0.001
+    rz_low = fcmp_gt rz, -0.001
+    rz_high = fcmp_lt rz, 0.001
+    rw_low = fcmp_gt rw, 0.999
+    rw_high = fcmp_lt rw, 1.001
+    sx_ok = eq sx, 1073741824
+    sy_ok = eq sy, 1077936128
+    sz_ok = eq sz, 1082130432
+    p0 = and tx_ok, ty_ok
+    p1 = and tz_ok, rx_low
+    p2 = and rx_high, ry_low
+    p3 = and ry_high, rz_low
+    p4 = and rz_high, rw_low
+    p5 = and rw_high, sx_ok
+    p6 = and sy_ok, sz_ok
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    r0 = and q0, q1
+    r1 = and q2, p6
+    ok = and r0, r1
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !scale
+    !rotation
+    !translation
+    !transform
+    !mat
+    return
+
+L_ERR:
+    !scale
+    !rotation
+    !translation
+    !transform
+    !mat
+    panic(3016)
+
 @test "3d_transform node dirty world lifecycle"():
 L_ENTRY:
     node = alloc SA3D_TRANSFORM_NODE_SIZE

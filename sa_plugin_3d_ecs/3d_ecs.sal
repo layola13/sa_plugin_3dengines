@@ -21,6 +21,11 @@
 #def SA3D_ECS_QUERY_ACCESS_WRITE = 2
 #def SA3D_ECS_QUERY_ACCESS_WITH = 3
 #def SA3D_ECS_QUERY_ACCESS_WITHOUT = 4
+#def SA3D_ECS_QUERY_ACCESS_OPTIONAL_READ = 5
+#def SA3D_ECS_QUERY_ACCESS_OPTIONAL_WRITE = 6
+#def SA3D_ECS_QUERY_ACCESS_FILTER_SET = 7
+#def SA3D_ECS_QUERY_ACCESS_READ_ALL = 8
+#def SA3D_ECS_QUERY_ACCESS_WRITE_ALL = 9
 
 #def SA3D_ECS_QUERY_DESC_terms_ptr = +0
 #def SA3D_ECS_QUERY_DESC_terms_len = +8
@@ -129,6 +134,49 @@ L_ENTRY:
 L_ENTRY:
     is_read = eq access, SA3D_ECS_QUERY_ACCESS_READ
     is_write = eq access, SA3D_ECS_QUERY_ACCESS_WRITE
+    is_opt_read = eq access, SA3D_ECS_QUERY_ACCESS_OPTIONAL_READ
+    is_opt_write = eq access, SA3D_ECS_QUERY_ACCESS_OPTIONAL_WRITE
+    is_read_all = eq access, SA3D_ECS_QUERY_ACCESS_READ_ALL
+    is_write_all = eq access, SA3D_ECS_QUERY_ACCESS_WRITE_ALL
+    data_required = or is_read, is_write
+    data_optional = or is_opt_read, is_opt_write
+    data_all = or is_read_all, is_write_all
+    data_finite = or data_required, data_optional
+    ok = or data_finite, data_all
+    br ok -> L_YES, L_NO
+L_YES:
+    !ok
+    !data_finite
+    !data_all
+    !data_optional
+    !data_required
+    !is_write_all
+    !is_read_all
+    !is_opt_write
+    !is_opt_read
+    !is_write
+    !is_read
+    !access
+    return 1
+L_NO:
+    !ok
+    !data_finite
+    !data_all
+    !data_optional
+    !data_required
+    !is_write_all
+    !is_read_all
+    !is_opt_write
+    !is_opt_read
+    !is_write
+    !is_read
+    !access
+    return 0
+
+@sa3d_ecs_query_access_is_required_data(access: i32) -> i32:
+L_ENTRY:
+    is_read = eq access, SA3D_ECS_QUERY_ACCESS_READ
+    is_write = eq access, SA3D_ECS_QUERY_ACCESS_WRITE
     ok = or is_read, is_write
     br ok -> L_YES, L_NO
 L_YES:
@@ -144,20 +192,83 @@ L_NO:
     !access
     return 0
 
+@sa3d_ecs_query_access_has_write(access: i32) -> i32:
+L_ENTRY:
+    is_write = eq access, SA3D_ECS_QUERY_ACCESS_WRITE
+    is_opt_write = eq access, SA3D_ECS_QUERY_ACCESS_OPTIONAL_WRITE
+    is_write_all = eq access, SA3D_ECS_QUERY_ACCESS_WRITE_ALL
+    a = or is_write, is_opt_write
+    ok = or a, is_write_all
+    br ok -> L_YES, L_NO
+L_YES:
+    !ok
+    !a
+    !is_write_all
+    !is_opt_write
+    !is_write
+    !access
+    return 1
+L_NO:
+    !ok
+    !a
+    !is_write_all
+    !is_opt_write
+    !is_write
+    !access
+    return 0
+
+@sa3d_ecs_query_access_reads_all(access: i32) -> i32:
+L_ENTRY:
+    is_read_all = eq access, SA3D_ECS_QUERY_ACCESS_READ_ALL
+    is_write_all = eq access, SA3D_ECS_QUERY_ACCESS_WRITE_ALL
+    ok = or is_read_all, is_write_all
+    br ok -> L_YES, L_NO
+L_YES:
+    !ok
+    !is_write_all
+    !is_read_all
+    !access
+    return 1
+L_NO:
+    !ok
+    !is_write_all
+    !is_read_all
+    !access
+    return 0
+
+@sa3d_ecs_query_access_writes_all(access: i32) -> i32:
+L_ENTRY:
+    is_write_all = eq access, SA3D_ECS_QUERY_ACCESS_WRITE_ALL
+    br is_write_all -> L_YES, L_NO
+L_YES:
+    !is_write_all
+    !access
+    return 1
+L_NO:
+    !is_write_all
+    !access
+    return 0
+
 @sa3d_ecs_query_access_is_filter(access: i32) -> i32:
 L_ENTRY:
     is_with = eq access, SA3D_ECS_QUERY_ACCESS_WITH
     is_without = eq access, SA3D_ECS_QUERY_ACCESS_WITHOUT
-    ok = or is_with, is_without
+    is_filter_set = eq access, SA3D_ECS_QUERY_ACCESS_FILTER_SET
+    filters = or is_with, is_without
+    ok = or filters, is_filter_set
     br ok -> L_YES, L_NO
 L_YES:
     !ok
+    !filters
+    !is_filter_set
     !is_without
     !is_with
     !access
     return 1
 L_NO:
     !ok
+    !filters
+    !is_filter_set
     !is_without
     !is_with
     !access
@@ -187,53 +298,52 @@ L_NO:
 
 @sa3d_ecs_query_terms_conflict(&a: ptr, &b: ptr) -> i32:
 L_ENTRY:
-    a_component = load a+SA3D_ECS_QUERY_TERM_component_type as i64
-    b_component = load b+SA3D_ECS_QUERY_TERM_component_type as i64
-    same_component = eq a_component, b_component
-    br same_component -> L_CHECK_ACCESS, L_NO
-
-L_CHECK_ACCESS:
     a_access = load a+SA3D_ECS_QUERY_TERM_access as i32
     b_access = load b+SA3D_ECS_QUERY_TERM_access as i32
     a_data = call @sa3d_ecs_query_access_is_data(a_access)
     b_data = call @sa3d_ecs_query_access_is_data(b_access)
     both_data = and a_data, b_data
-    br both_data -> L_CHECK_WRITE, L_NO_ACCESS
+    br both_data -> L_CHECK_A_WRITES, L_NO_ACCESS
 
-L_CHECK_WRITE:
-    a_write = eq a_access, SA3D_ECS_QUERY_ACCESS_WRITE
-    b_write = eq b_access, SA3D_ECS_QUERY_ACCESS_WRITE
-    any_write = or a_write, b_write
-    br any_write -> L_YES, L_NO_WRITE
+L_CHECK_A_WRITES:
+    a_writes = call @sa3d_ecs_query_term_write_overlaps_read(&a, &b)
+    br a_writes -> L_YES_A_WRITES, L_CHECK_B_WRITES
 
-L_YES:
-    !any_write
-    !b_write
-    !a_write
+L_CHECK_B_WRITES:
+    b_writes = call @sa3d_ecs_query_term_write_overlaps_read(&b, &a)
+    br b_writes -> L_YES_B_WRITES, L_NO_WRITE
+
+L_YES_A_WRITES:
+    !a_writes
     !both_data
     !b_data
     !a_data
     !b_access
     !a_access
-    !same_component
-    !b_component
-    !a_component
+    !b
+    !a
+    return 1
+
+L_YES_B_WRITES:
+    !b_writes
+    !a_writes
+    !both_data
+    !b_data
+    !a_data
+    !b_access
+    !a_access
     !b
     !a
     return 1
 
 L_NO_WRITE:
-    !any_write
-    !b_write
-    !a_write
+    !b_writes
+    !a_writes
     !both_data
     !b_data
     !a_data
     !b_access
     !a_access
-    !same_component
-    !b_component
-    !a_component
     !b
     !a
     return 0
@@ -244,25 +354,105 @@ L_NO_ACCESS:
     !a_data
     !b_access
     !a_access
-    !same_component
-    !b_component
-    !a_component
     !b
     !a
     return 0
 
-L_NO:
-    !same_component
-    !b_component
-    !a_component
-    !b
-    !a
+@sa3d_ecs_query_term_write_overlaps_read(&writer: ptr, &reader: ptr) -> i32:
+L_ENTRY:
+    writer_access = load writer+SA3D_ECS_QUERY_TERM_access as i32
+    reader_access = load reader+SA3D_ECS_QUERY_TERM_access as i32
+    writer_has_write = call @sa3d_ecs_query_access_has_write(writer_access)
+    br writer_has_write -> L_READER_DATA, L_NO_WRITE
+
+L_READER_DATA:
+    reader_has_data = call @sa3d_ecs_query_access_is_data(reader_access)
+    br reader_has_data -> L_ALL_CHECK, L_NO_READER_DATA
+
+L_ALL_CHECK:
+    writer_all = call @sa3d_ecs_query_access_writes_all(writer_access)
+    br writer_all -> L_YES_WRITER_ALL, L_READER_ALL_CHECK
+
+L_READER_ALL_CHECK:
+    reader_all = call @sa3d_ecs_query_access_reads_all(reader_access)
+    br reader_all -> L_YES_READER_ALL, L_COMPONENT_CHECK
+
+L_COMPONENT_CHECK:
+    writer_component = load writer+SA3D_ECS_QUERY_TERM_component_type as i64
+    reader_component = load reader+SA3D_ECS_QUERY_TERM_component_type as i64
+    same = eq writer_component, reader_component
+    br same -> L_YES_COMPONENT, L_NO_COMPONENT
+
+L_YES_WRITER_ALL:
+    !writer_all
+    !reader_has_data
+    !writer_has_write
+    !reader_access
+    !writer_access
+    !reader
+    !writer
+    return 1
+
+L_YES_READER_ALL:
+    !reader_all
+    !writer_all
+    !reader_has_data
+    !writer_has_write
+    !reader_access
+    !writer_access
+    !reader
+    !writer
+    return 1
+
+L_YES_COMPONENT:
+    !same
+    !reader_component
+    !writer_component
+    !reader_all
+    !writer_all
+    !reader_has_data
+    !writer_has_write
+    !reader_access
+    !writer_access
+    !reader
+    !writer
+    return 1
+
+L_NO_COMPONENT:
+    !same
+    !reader_component
+    !writer_component
+    !reader_all
+    !writer_all
+    !reader_has_data
+    !writer_has_write
+    !reader_access
+    !writer_access
+    !reader
+    !writer
+    return 0
+
+L_NO_READER_DATA:
+    !reader_has_data
+    !writer_has_write
+    !reader_access
+    !writer_access
+    !reader
+    !writer
+    return 0
+
+L_NO_WRITE:
+    !writer_has_write
+    !reader_access
+    !writer_access
+    !reader
+    !writer
     return 0
 
 @sa3d_ecs_query_term_requires_with(&term: ptr) -> i32:
 L_ENTRY:
     access = load term+SA3D_ECS_QUERY_TERM_access as i32
-    is_data = call @sa3d_ecs_query_access_is_data(access)
+    is_data = call @sa3d_ecs_query_access_is_required_data(access)
     is_with = eq access, SA3D_ECS_QUERY_ACCESS_WITH
     required = or is_data, is_with
     br required -> L_YES, L_NO
@@ -751,7 +941,7 @@ L_BODY:
 
 L_CHECK_ACCESS:
     access = load term+SA3D_ECS_QUERY_TERM_access as i32
-    is_data = call @sa3d_ecs_query_access_is_data(access)
+    is_data = call @sa3d_ecs_query_access_is_required_data(access)
     br is_data -> L_YES_DATA, L_CHECK_WITH
 
 L_CHECK_WITH:

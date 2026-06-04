@@ -97,6 +97,21 @@ L_ENTRY:
     !mat
     return
 
+@sa3d_transform3d_from_matrix(&transform: ptr, &mat: ptr) -> void:
+L_ENTRY:
+    translation = ptr_add transform, SA3D_TRANSFORM3D_translation
+    rotation = ptr_add transform, SA3D_TRANSFORM3D_rotation
+    scale = ptr_add transform, SA3D_TRANSFORM3D_scale
+    call @sa3d_mat4_to_scale_rotation_translation(&scale, &rotation, &translation, &mat)
+    store translation+SA3D_VEC4_w, 0.0 as f32
+    store scale+SA3D_VEC4_w, 0.0 as f32
+    !scale
+    !rotation
+    !translation
+    !mat
+    !transform
+    return
+
 @sa3d_transform3d_from_xyz(&transform: ptr, x: f32, y: f32, z: f32) -> void:
 L_ENTRY:
     call @sa3d_transform3d_identity(&transform)

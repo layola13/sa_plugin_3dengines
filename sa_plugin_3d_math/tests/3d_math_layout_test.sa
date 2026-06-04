@@ -909,6 +909,105 @@ L_FLOAT_ERR:
     !a
     panic(3013)
 
+@test "3d_math Bevy mat4 SRT decomposition keeps determinant sign on X"():
+L_ENTRY:
+    scale = alloc SA3D_VEC3_SIZE
+    translation = alloc SA3D_VEC3_SIZE
+    rotation = alloc SA3D_QUAT_SIZE
+    mat = alloc SA3D_MAT4_SIZE
+    out_scale = alloc SA3D_VEC3_SIZE
+    out_rotation = alloc SA3D_QUAT_SIZE
+    out_translation = alloc SA3D_VEC3_SIZE
+
+    store scale+SA3D_VEC3_x, -2.0 as f32
+    store scale+SA3D_VEC3_y, 3.0 as f32
+    store scale+SA3D_VEC3_z, 4.0 as f32
+    store translation+SA3D_VEC3_x, 5.0 as f32
+    store translation+SA3D_VEC3_y, 6.0 as f32
+    store translation+SA3D_VEC3_z, 7.0 as f32
+    call @sa3d_quat_identity(&rotation)
+    call @sa3d_mat4_from_scale_rotation_translation(&mat, &scale, &rotation, &translation)
+
+    det = call @sa3d_mat4_determinant(&mat)
+    call @sa3d_mat4_to_scale_rotation_translation(&out_scale, &out_rotation, &out_translation, &mat)
+
+    sx = load out_scale+SA3D_VEC3_x as f32
+    sy = load out_scale+SA3D_VEC3_y as f32
+    sz = load out_scale+SA3D_VEC3_z as f32
+    tx = load out_translation+SA3D_VEC3_x as f32
+    ty = load out_translation+SA3D_VEC3_y as f32
+    tz = load out_translation+SA3D_VEC3_z as f32
+    rx = load out_rotation+SA3D_QUAT_x as f32
+    ry = load out_rotation+SA3D_QUAT_y as f32
+    rz = load out_rotation+SA3D_QUAT_z as f32
+    rw = load out_rotation+SA3D_QUAT_w as f32
+
+    det_low = fcmp_gt det, -24.01
+    det_high = fcmp_lt det, -23.99
+    sx_low = fcmp_gt sx, -2.01
+    sx_high = fcmp_lt sx, -1.99
+    sy_low = fcmp_gt sy, 2.99
+    sy_high = fcmp_lt sy, 3.01
+    sz_low = fcmp_gt sz, 3.99
+    sz_high = fcmp_lt sz, 4.01
+    tx_low = fcmp_gt tx, 4.99
+    tx_high = fcmp_lt tx, 5.01
+    ty_low = fcmp_gt ty, 5.99
+    ty_high = fcmp_lt ty, 6.01
+    tz_low = fcmp_gt tz, 6.99
+    tz_high = fcmp_lt tz, 7.01
+    rx_low = fcmp_gt rx, -0.001
+    rx_high = fcmp_lt rx, 0.001
+    ry_low = fcmp_gt ry, -0.001
+    ry_high = fcmp_lt ry, 0.001
+    rz_low = fcmp_gt rz, -0.001
+    rz_high = fcmp_lt rz, 0.001
+    rw_low = fcmp_gt rw, 0.999
+    rw_high = fcmp_lt rw, 1.001
+
+    p0 = and det_low, det_high
+    p1 = and sx_low, sx_high
+    p2 = and sy_low, sy_high
+    p3 = and sz_low, sz_high
+    p4 = and tx_low, tx_high
+    p5 = and ty_low, ty_high
+    p6 = and tz_low, tz_high
+    p7 = and rx_low, rx_high
+    p8 = and ry_low, ry_high
+    p9 = and rz_low, rz_high
+    p10 = and rw_low, rw_high
+    q0 = and p0, p1
+    q1 = and p2, p3
+    q2 = and p4, p5
+    q3 = and p6, p7
+    q4 = and p8, p9
+    r0 = and q0, q1
+    r1 = and q2, q3
+    r2 = and q4, p10
+    s0 = and r0, r1
+    ok = and s0, r2
+    br ok -> L_OK, L_ERR
+
+L_OK:
+    !out_translation
+    !out_rotation
+    !out_scale
+    !mat
+    !rotation
+    !translation
+    !scale
+    return
+
+L_ERR:
+    !out_translation
+    !out_rotation
+    !out_scale
+    !mat
+    !rotation
+    !translation
+    !scale
+    panic(3014)
+
 @test "3d_math bevy backed native selftest"():
 L_ENTRY:
     status = call @sa3d_math_selftest()
