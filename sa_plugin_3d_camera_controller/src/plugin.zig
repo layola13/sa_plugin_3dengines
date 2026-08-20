@@ -57,8 +57,8 @@ fn initOrbit(state: *State) void {
         .target_z = 0,
         .yaw = 0,
         .pitch = 0,
-        .distance = 1065353216,
-        .move_speed = 1065353216,
+        .distance = 1082130432,
+        .move_speed = 1082130432,
         .look_speed = 1065353216,
         .input_bindings = 0,
         .input_bindings_len = 0,
@@ -101,7 +101,7 @@ fn flyUpdate(state: *State, input: *const Input) void {
 pub export fn sa3d_camera_controller_selftest() callconv(.c) i32 {
     var orbit: State = undefined;
     initOrbit(&orbit);
-    if (orbit.mode != ORBIT or orbit.distance != 1065353216) return 1;
+    if (orbit.mode != ORBIT or orbit.distance != 1082130432) return 1;
 
     var fly: State = undefined;
     initFly(&fly);

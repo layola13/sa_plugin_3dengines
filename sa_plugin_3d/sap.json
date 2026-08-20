@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "source": { "type": "local", "path": "." },
   "abi": { "plugin": 1, "saasm": ">=0.4.0", "symbols": "browser-imports" },
-  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d.so" } },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d.so" },
+    "windows-x86_64": {
+      "path": "zig-out/bin/3d.dll"
+    } },
   "interfaces": {
     "wasm_imports": [{ "path": "sa3d.sai" }],
     "sal": { "path": "3d.sal" }

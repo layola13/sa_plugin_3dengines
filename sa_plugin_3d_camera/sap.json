@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "source": { "type": "local", "path": "." },
   "abi": { "plugin": 1, "saasm": ">=0.4.0" },
-  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_camera.so" } },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_camera.so" },
+    "windows-x86_64": {
+      "path": "zig-out/bin/3d_camera.dll"
+    } },
   "interfaces": { "sal": { "path": "3d_camera.sal" } },
   "assets": { "share": [{ "path": "3d_camera.sal", "target": "3d_camera.sal" }] },
   "skills": ["3d.camera"],

@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "source": { "type": "local", "path": "." },
   "abi": { "plugin": 1, "saasm": ">=0.4.0" },
-  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_light.so" } },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_light.so" },
+    "windows-x86_64": {
+      "path": "zig-out/bin/3d_light.dll"
+    } },
   "interfaces": { "sal": { "path": "3d_light.sal" } },
   "assets": { "share": [{ "path": "3d_light.sal", "target": "3d_light.sal" }] },
   "skills": ["3d.light"],

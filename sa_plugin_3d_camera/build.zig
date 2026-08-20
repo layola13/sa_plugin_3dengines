@@ -3,8 +3,8 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const sa_repo_root = b.option([]const u8, "sa-repo-root", "SA repository root used to resolve the host binary.") orelse "/home/vscode/projects/sci";
-    const sa_bin = b.option([]const u8, "sa-bin", "Path to the SA host binary used for module SA tests.") orelse b.pathJoin(&.{ sa_repo_root, "zig-out/bin/sa" });
+    const sa_repo_root = b.option([]const u8, "sa-repo-root", "SA repository root used to resolve the host binary.") orelse if (target.result.os.tag == .windows) b.pathJoin(&.{ "..", "..", "sci" }) else "/home/vscode/projects/sci";
+    const sa_bin = b.option([]const u8, "sa-bin", "Path to the SA host binary used for module SA tests.") orelse b.pathJoin(&.{ sa_repo_root, if (target.result.os.tag == .windows) "zig-out/bin/sa.exe" else "zig-out/bin/sa" });
 
     const plugin_api = b.createModule(.{ .root_source_file = b.path("../common/plugin_api.zig"), .target = target, .optimize = optimize });
     const module_config = b.createModule(.{ .root_source_file = b.path("src/module_config.zig"), .target = target, .optimize = optimize });
@@ -15,12 +15,15 @@ pub fn build(b: *std.Build) void {
     const root_module = b.createModule(.{ .root_source_file = b.path("src/plugin.zig"), .target = target, .optimize = optimize });
     root_module.addImport("module_plugin", module_plugin);
 
+    if (target.result.os.tag != .windows) {
     const camera_sa_object = b.addSystemCommand(&.{ sa_bin, "build-obj" });
     camera_sa_object.addFileArg(b.path("3d_camera.sal"));
     camera_sa_object.addFileInput(b.path("../sa_plugin_3d_math/3d_math.sal"));
     camera_sa_object.addArg("-o");
     const camera_sa_object_file = camera_sa_object.addOutputFileArg("3d_camera.o");
     root_module.addObjectFile(camera_sa_object_file);
+
+    }
 
     const lib = b.addLibrary(.{ .name = "3d_camera", .root_module = root_module, .linkage = .dynamic });
     lib.linkLibC();
@@ -34,8 +37,10 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(b.getInstallStep());
 
     const sa_layout_test = b.addSystemCommand(&.{ sa_bin, "test", "tests/3d_camera_layout_test.sa" });
-    const installed_lib = b.getInstallPath(.lib, "lib3d_camera.so");
+    const installed_lib = if (target.result.os.tag == .windows) b.getInstallPath(.bin, "3d_camera.dll") else b.getInstallPath(.lib, "lib3d_camera.so");
     sa_layout_test.setEnvironmentVariable("SA_PLUGINS_PATH", installed_lib);
+    const sa_std_dir = b.option([]const u8, "sa-std-dir", "Path to the SA standard library root.") orelse b.pathJoin(&.{ sa_repo_root, "sa_std" });
+    sa_layout_test.setEnvironmentVariable("SA_STD_DIR", sa_std_dir);
     sa_layout_test.addFileInput(b.path("tests/3d_camera_layout_test.sa"));
     sa_layout_test.addFileInput(b.path("3d_camera.sal"));
     sa_layout_test.addFileInput(lib.getEmittedBin());

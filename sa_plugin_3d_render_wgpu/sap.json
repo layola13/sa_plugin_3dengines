@@ -4,9 +4,11 @@
   "version": "0.1.0",
   "source": { "type": "local", "path": "." },
   "abi": { "plugin": 1, "saasm": ">=0.4.0", "symbols": "browser-imports" },
-  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_render_wgpu.so" } },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_render_wgpu.so" },
+    "windows-x86_64": {
+      "path": "zig-out/bin/3d_render_wgpu.dll"
+    } },
   "interfaces": {
-    "wasm_imports": [{ "path": "3d_render_wgpu.sai" }],
     "sal": { "path": "3d_render_wgpu.sal" }
   },
   "assets": {

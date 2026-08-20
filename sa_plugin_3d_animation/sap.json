@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "source": { "type": "local", "path": "." },
   "abi": { "plugin": 1, "saasm": ">=0.4.0" },
-  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_animation.so" } },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_animation.so" },
+    "windows-x86_64": {
+      "path": "zig-out/bin/3d_animation.dll"
+    } },
   "interfaces": { "sal": { "path": "3d_animation.sal" } },
   "assets": { "share": [{ "path": "3d_animation.sal", "target": "3d_animation.sal" }] },
   "skills": ["3d.animation"],

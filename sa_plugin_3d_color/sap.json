@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "source": { "type": "local", "path": "." },
   "abi": { "plugin": 1, "saasm": ">=0.4.0" },
-  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_color.so" } },
+  "artifacts": { "linux-x86_64": { "path": "zig-out/lib/lib3d_color.so" },
+    "windows-x86_64": {
+      "path": "zig-out/bin/3d_color.dll"
+    } },
   "interfaces": { "sal": { "path": "3d_color.sal" } },
   "assets": { "share": [{ "path": "3d_color.sal", "target": "3d_color.sal" }] },
   "skills": ["3d.color"],
