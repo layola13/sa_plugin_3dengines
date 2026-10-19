@@ -22,7 +22,10 @@
     ]
   },
   "skills": ["3d"],
-  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [], "env": ["HOME", "SA_*"], "process": { "spawn": false, "exec": [] } },
+  "permissions": { "fs": [{ "op": "read", "path": "$PROJECT/**" }], "net": [
+      { "url": "http://localhost", "methods": ["GET"] },
+      { "url": "http://127.0.0.1", "methods": ["GET"] }
+    ], "env": ["HOME", "SA_*"], "process": { "spawn": false, "exec": [] } },
   "dependencies": {
     "3d_animation": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_animation", "optional": false },
     "3d_app": { "version": ">=0.1.0", "abi": 1, "path": "../sa_plugin_3d_app", "optional": false },

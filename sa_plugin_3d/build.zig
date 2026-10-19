@@ -8,6 +8,13 @@ pub fn build(b: *std.Build) void {
     const sa_bin = b.option([]const u8, "sa-bin", "Path to the SA host binary used for module SA tests.") orelse b.pathJoin(&.{ sa_repo_root, "zig-out/bin/sa" });
     const sax_lib = b.option([]const u8, "sax-lib", "Path to the SAX plugin dynamic library used for SA3D demo builds.") orelse "/home/vscode/projects/sa_plugins/sa_plugin_sax/zig-out/lib/libsax.so";
 
+    const sci_root = b.option([]const u8, "sci-root", "Path to the sci checkout") orelse sa_repo_root;
+    const sio_module = b.createModule(.{
+        .root_source_file = .{ .cwd_relative = b.pathJoin(&.{ sci_root, "src", "sa_io.zig" }) },
+        .target = target,
+        .optimize = optimize,
+    });
+
     const plugin_api = b.createModule(.{ .root_source_file = b.path("../common/plugin_api.zig"), .target = target, .optimize = optimize });
     const module_config = b.createModule(.{ .root_source_file = b.path("src/module_config.zig"), .target = target, .optimize = optimize });
     const module_plugin = b.createModule(.{ .root_source_file = b.path("../common/module_plugin.zig"), .target = target, .optimize = optimize });
@@ -16,6 +23,7 @@ pub fn build(b: *std.Build) void {
 
     const root_module = b.createModule(.{ .root_source_file = b.path("src/plugin.zig"), .target = target, .optimize = optimize });
     root_module.addImport("plugin_api", plugin_api);
+    root_module.addImport("sio", sio_module);
     root_module.addImport("module_config", module_config);
     root_module.addImport("module_plugin", module_plugin);
 
@@ -62,7 +70,7 @@ pub fn build(b: *std.Build) void {
     verify_airlock.addFileArg(airlock_file);
     test_step.dependOn(&verify_airlock.step);
 
-    const installed_lib = b.getInstallPath(.lib, "lib3d.so");
+    const installed_lib = b.pathJoin(&.{ "zig-out", "lib", "lib3d.so" });
     const plugin_path = b.fmt("{s}:{s}", .{ sax_lib, installed_lib });
     const demo_input = b.path("demos/rotating_cube_3d.sax");
     const sax_lib_input: std.Build.LazyPath = .{ .cwd_relative = sax_lib };

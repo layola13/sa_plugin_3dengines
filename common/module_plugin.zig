@@ -18,55 +18,79 @@ fn cArgvToSlice(argv: [*]const [*:0]const u8, argv_len: usize, allocator: std.me
     return out;
 }
 
-fn anyWriterFromHostStream(stream: plugin_api.HostStream, storage: *plugin_api.HostStream) ?std.io.AnyWriter {
-    if (stream.write_all == null) return null;
-    storage.* = stream;
-    return .{ .context = storage, .writeFn = struct {
-        fn write(ctx: *const anyopaque, bytes: []const u8) anyerror!usize {
-            const hs = @as(*const plugin_api.HostStream, @ptrCast(@alignCast(ctx)));
-            const write_all = hs.write_all orelse return error.WriteFailed;
-            if (write_all(hs.ctx, bytes.ptr, bytes.len) != @intFromEnum(plugin_api.AbiStatus.ok)) return error.WriteFailed;
-            return bytes.len;
+const HostWriter = struct {
+    writer: std.Io.Writer,
+    stream: plugin_api.HostStream,
+
+    fn drain(w: *std.Io.Writer, data: []const []const u8, splat: usize) std.Io.Writer.Error!usize {
+        const self: *HostWriter = @fieldParentPtr("writer", w);
+        const write_all = self.stream.write_all orelse return error.WriteFailed;
+        const ok = @intFromEnum(plugin_api.AbiStatus.ok);
+        if (w.end > 0) {
+            if (write_all(self.stream.ctx, w.buffer.ptr, w.end) != ok) return error.WriteFailed;
+            w.end = 0;
         }
-    }.write };
+        for (data[0 .. data.len - 1]) |slice| {
+            if (write_all(self.stream.ctx, slice.ptr, slice.len) != ok) return error.WriteFailed;
+        }
+        const last = data[data.len - 1];
+        var r: usize = 0;
+        while (r < splat) : (r += 1) {
+            if (write_all(self.stream.ctx, last.ptr, last.len) != ok) return error.WriteFailed;
+        }
+        return std.Io.Writer.countSplat(data, splat);
+    }
+
+    fn init(stream: plugin_api.HostStream) HostWriter {
+        return .{
+            .writer = .{ .vtable = &.{ .drain = drain }, .buffer = &.{} },
+            .stream = stream,
+        };
+    }
+};
+
+fn anyWriterFromHostStream(stream: plugin_api.HostStream, storage: *HostWriter) ?*std.Io.Writer {
+    if (stream.write_all == null or stream.ctx == null) return null;
+    storage.* = HostWriter.init(stream);
+    return &storage.writer;
 }
 
 fn commandMatches(name: []const u8) bool {
     return std.mem.eql(u8, name, config.plugin_name) or std.mem.eql(u8, name, config.skill_name);
 }
 
-fn writeInfo(stdout: std.io.AnyWriter) !void {
+fn writeInfo(stdout: *std.Io.Writer) !void {
     try stdout.print("{s}\n", .{config.plugin_name});
     try stdout.print("skill: {s}\n", .{config.skill_name});
     try stdout.print("summary: {s}\n", .{config.skill_summary});
 }
 
-fn writeSkills(stdout: std.io.AnyWriter) !void {
+fn writeSkills(stdout: *std.Io.Writer) !void {
     try stdout.print("{s}: {s}\n", .{ config.skill_name, config.skill_summary });
     for (config.skill_items) |item| try stdout.print("- {s}\n", .{item});
 }
 
-fn writeCheck(stdout: std.io.AnyWriter) !void {
+fn writeCheck(stdout: *std.Io.Writer) !void {
     try stdout.print("3D module check passed: {s}\n", .{config.plugin_name});
     try stdout.print("descriptor abi: {d}\n", .{plugin_api.abi_version});
     try stdout.print("skills: {d}\n", .{skills.len});
     try stdout.print("items: {d}\n", .{config.skill_items.len});
 }
 
-fn writeInspectLayout(stdout: std.io.AnyWriter) !void {
+fn writeInspectLayout(stdout: *std.Io.Writer) !void {
     try stdout.print("module: {s}\n", .{config.plugin_name});
     try stdout.print("sal: {s}.sal\n", .{config.plugin_name});
     try stdout.print("contract: explicit #def layout constants plus SA @test coverage\n", .{});
 }
 
-fn writeUsage(writer: std.io.AnyWriter) !void {
+fn writeUsage(writer: *std.Io.Writer) !void {
     try writer.print(
         "usage: sa {s} <info|skills|check|inspect-layout>\n",
         .{config.plugin_name},
     );
 }
 
-fn runModuleCommand(argv: []const []const u8, stdout: std.io.AnyWriter, stderr: std.io.AnyWriter) !?u8 {
+fn runModuleCommand(argv: []const []const u8, stdout: *std.Io.Writer, stderr: *std.Io.Writer) !?u8 {
     if (argv.len < 2) return null;
     if (!commandMatches(argv[1])) return null;
     if (argv.len < 3) {
@@ -114,8 +138,8 @@ fn runModuleCommandAbi(
     const args = cArgvToSlice(argv, argv_len, ctx.allocator) catch return @intFromEnum(plugin_api.AbiStatus.failed);
     defer ctx.allocator.free(args);
 
-    var stdout_storage = stdout;
-    var stderr_storage = stderr;
+    var stdout_storage: HostWriter = undefined;
+    var stderr_storage: HostWriter = undefined;
     const stdout_writer = anyWriterFromHostStream(stdout, &stdout_storage) orelse return @intFromEnum(plugin_api.AbiStatus.failed);
     const stderr_writer = anyWriterFromHostStream(stderr, &stderr_storage) orelse return @intFromEnum(plugin_api.AbiStatus.failed);
 

@@ -7,8 +7,8 @@ pub const AirlockGenerator = struct {
         return .{ .allocator = allocator };
     }
 
-    pub fn generate(self: *AirlockGenerator) !std.ArrayList(u8) {
-        var out = std.ArrayList(u8).init(self.allocator);
+    pub fn generate(self: *AirlockGenerator) !std.array_list.Managed(u8) {
+        var out = std.array_list.Managed(u8).init(self.allocator);
         errdefer out.deinit();
         try out.appendSlice(source);
         return out;
