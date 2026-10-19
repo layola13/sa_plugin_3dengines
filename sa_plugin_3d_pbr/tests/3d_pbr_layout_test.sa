@@ -294,21 +294,48 @@ L_ENV_ERR:
 
 @test "3d_pbr bevy pbr math helpers"():
 L_ENTRY:
-    rough = call @sa3d_pbr_perceptual_roughness_to_roughness(SA3D_PBR_F32_0_5)
-    f0d = call @sa3d_pbr_calculate_f0_dielectric(SA3D_PBR_F32_0_5)
-    f0 = call @sa3d_pbr_calculate_f0_channel(SA3D_PBR_F32_1, SA3D_PBR_F32_0_5, SA3D_PBR_F32_0_5)
-    diffuse = call @sa3d_pbr_calculate_diffuse_channel(SA3D_PBR_F32_1, SA3D_PBR_F32_0_5, SA3D_PBR_F32_0_5, SA3D_PBR_F32_0)
-    rough_ok = eq rough, 1048576000
-    f0d_ok = eq f0d, 1025758986
-    f0_ok = eq f0, 1057300152
-    diffuse_ok = eq diffuse, 1056964608
+    bits = alloc 16
+    rough = call @sa3d_pbr_perceptual_roughness_to_roughness(0.5)
+    store bits+0, rough as f32
+    f0d = call @sa3d_pbr_calculate_f0_dielectric(0.5)
+    store bits+4, f0d as f32
+    f0 = call @sa3d_pbr_calculate_f0_channel(1.0, 0.5, 0.5)
+    store bits+8, f0 as f32
+    diffuse = call @sa3d_pbr_calculate_diffuse_channel(1.0, 0.5, 0.5, 0.0)
+    store bits+12, diffuse as f32
+    rough_bits = load bits+0 as i32
+    f0d_bits = load bits+4 as i32
+    f0_bits = load bits+8 as i32
+    diffuse_bits = load bits+12 as i32
+    rough_ok = eq rough_bits, 1048576000
+    f0d_ok = eq f0d_bits, 1025758986
+    f0_ok = eq f0_bits, 1057300152
+    diffuse_ok = eq diffuse_bits, 1048576000
     p1 = and rough_ok, f0d_ok
     p2 = and f0_ok, diffuse_ok
     ok = and p1, p2
     br ok -> L_MATH_OK, L_MATH_ERR
 
 L_MATH_OK:
+    !diffuse_bits
+    !f0_bits
+    !f0d_bits
+    !rough_bits
+    !diffuse
+    !f0
+    !f0d
+    !rough
+    !bits
     return 0
 
 L_MATH_ERR:
+    !diffuse_bits
+    !f0_bits
+    !f0d_bits
+    !rough_bits
+    !diffuse
+    !f0
+    !f0d
+    !rough
+    !bits
     panic(3074)

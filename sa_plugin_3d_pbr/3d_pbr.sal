@@ -409,32 +409,32 @@ L_ENTRY:
     !desc
     return
 
-@sa3d_pbr_f32_clamp01(v: i32) -> i32:
+@sa3d_pbr_f32_clamp01(v: f32) -> f32:
 L_ENTRY:
-    lt0 = fcmp_lt v, SA3D_PBR_F32_0
+    lt0 = fcmp_lt v, 0.0
     br lt0 -> L_ZERO, L_CHECK_ONE
 
 L_ZERO:
     !lt0
     !v
-    return SA3D_PBR_F32_0
+    return 0.0
 
 L_CHECK_ONE:
-    gt1 = fcmp_gt v, SA3D_PBR_F32_1
+    gt1 = fcmp_gt v, 1.0
     br gt1 -> L_ONE, L_VALUE
 
 L_ONE:
     !gt1
     !lt0
     !v
-    return SA3D_PBR_F32_1
+    return 1.0
 
 L_VALUE:
     !gt1
     !lt0
     return v
 
-@sa3d_pbr_perceptual_roughness_to_roughness(perceptual_roughness: i32) -> i32:
+@sa3d_pbr_perceptual_roughness_to_roughness(perceptual_roughness: f32) -> f32:
 L_ENTRY:
     p = call @sa3d_pbr_f32_clamp01(perceptual_roughness)
     roughness = fmul p, p
@@ -442,20 +442,20 @@ L_ENTRY:
     !perceptual_roughness
     return roughness
 
-@sa3d_pbr_calculate_f0_dielectric(reflectance: i32) -> i32:
+@sa3d_pbr_calculate_f0_dielectric(reflectance: f32) -> f32:
 L_ENTRY:
     r = call @sa3d_pbr_f32_clamp01(reflectance)
     rr = fmul r, r
-    f0 = fmul SA3D_PBR_F32_0_16, rr
+    f0 = fmul 0.16, rr
     !rr
     !r
     !reflectance
     return f0
 
-@sa3d_pbr_calculate_f0_channel(base_color: i32, metallic: i32, reflectance: i32) -> i32:
+@sa3d_pbr_calculate_f0_channel(base_color: f32, metallic: f32, reflectance: f32) -> f32:
 L_ENTRY:
     m = call @sa3d_pbr_f32_clamp01(metallic)
-    one_minus_m = fsub SA3D_PBR_F32_1, m
+    one_minus_m = fsub 1.0, m
     dielectric = call @sa3d_pbr_calculate_f0_dielectric(reflectance)
     d_part = fmul dielectric, one_minus_m
     b_part = fmul base_color, m
@@ -470,14 +470,14 @@ L_ENTRY:
     !base_color
     return f0
 
-@sa3d_pbr_calculate_diffuse_channel(base_color: i32, metallic: i32, specular_transmission: i32, diffuse_transmission: i32) -> i32:
+@sa3d_pbr_calculate_diffuse_channel(base_color: f32, metallic: f32, specular_transmission: f32, diffuse_transmission: f32) -> f32:
 L_ENTRY:
     m = call @sa3d_pbr_f32_clamp01(metallic)
     st = call @sa3d_pbr_f32_clamp01(specular_transmission)
     dt = call @sa3d_pbr_f32_clamp01(diffuse_transmission)
-    one_minus_m = fsub SA3D_PBR_F32_1, m
-    one_minus_st = fsub SA3D_PBR_F32_1, st
-    one_minus_dt = fsub SA3D_PBR_F32_1, dt
+    one_minus_m = fsub 1.0, m
+    one_minus_st = fsub 1.0, st
+    one_minus_dt = fsub 1.0, dt
     a = fmul base_color, one_minus_m
     b = fmul a, one_minus_st
     diffuse = fmul b, one_minus_dt

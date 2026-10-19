@@ -1558,9 +1558,9 @@ L_CHECK_TERM_ACCESS:
     br access_ok -> L_PAIR_LOOP_INIT, L_INVALID_ACCESS
 
 L_PAIR_LOOP_INIT:
-    j = add i, 1
-    store j_slot+0, j as i64
-    !j
+    j_init = add i, 1
+    store j_slot+0, j_init as i64
+    !j_init
     jmp L_PAIR_LOOP_COND
 
 L_PAIR_LOOP_COND:
