@@ -1,6 +1,11 @@
 const std = @import("std");
 
-pub usingnamespace @import("module_plugin");
+const module_plugin = @import("module_plugin");
+pub const saasm_plugin_descriptor_v1 = module_plugin.saasm_plugin_descriptor_v1;
+pub const saasm_plugin_descriptor_v1_fn = module_plugin.saasm_plugin_descriptor_v1_fn;
+comptime {
+    _ = module_plugin;
+}
 
 pub const ImageDimension = enum(i32) {
     d1 = 1,
@@ -258,7 +263,7 @@ pub export fn sa3d_image_native_selftest() callconv(.c) i32 {
     if (!sa3d_image_desc_new_uninit_native(&image, 128, 64, 2, @intFromEnum(ImageDimension.d2), @intFromEnum(ImageFormat.rgba16_float))) return 7;
     if (image.data_len != 0 or image.row_pitch != 1024) return 8;
     if (sa3d_image_desc_compute_data_len_native(&image) != 131072) return 9;
-    var pixel: [16]u8 = [_]u8{ 255, 0, 0, 255 } ** 4;
+    var pixel: [16]u8 = .{ 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255 };
     if (!sa3d_image_desc_new_fill_native(&image, 2, 2, 1, @intFromEnum(ImageDimension.d2), @intFromEnum(ImageFormat.rgba8_unorm_srgb), &pixel, 16)) return 10;
     if (image.data_ptr == null or image.data_len != 16) return 11;
     if (sa3d_image_desc_new_fill_native(&image, 2, 2, 1, @intFromEnum(ImageDimension.d2), @intFromEnum(ImageFormat.rgba8_unorm_srgb), &pixel, 15)) return 12;

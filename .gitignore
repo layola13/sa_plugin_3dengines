@@ -36,3 +36,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# SA build cache
+**/.sa_cache/
