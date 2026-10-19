@@ -1,5 +1,9 @@
 # SA 3D Engines Plugins
 
+> **Build requirement: Zig 0.17** — this plugin targets and is verified against **Zig 0.17.0**. Build and test with Zig 0.17; older toolchains such as 0.14.x are not supported.
+> 本插件需使用 **Zig 0.17** 编译与测试。
+
+
 This directory contains the SA 3D engine plugin family. The plugins are grouped here because they belong to the same engine stack, but each module remains independently buildable and installable through its own `sap.json`.
 
 The engine architecture is being realigned against Bevy. The current layout contracts remain useful ABI drafts, but layout constants alone do not make a module complete. The active completion gate is [BEVY_ALIGNMENT.md](BEVY_ALIGNMENT.md): each module needs SA-callable behavior and SA behavior tests tied to the closest Bevy crate responsibility.
